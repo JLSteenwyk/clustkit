@@ -83,6 +83,56 @@ class TestReadSequences:
             read_sequences(bad_file, "protein")
 
 
+class TestReadNucleotideSequences:
+    def test_read_nucleotide_fasta(self, synthetic_nt_fasta_path):
+        dataset = read_sequences(synthetic_nt_fasta_path, "nucleotide")
+        assert dataset.num_sequences == 9
+        assert dataset.mode == "nucleotide"
+        assert dataset.ids[0] == "nseq1"
+        assert dataset.ids[8] == "nseq9"
+        assert dataset.encoded_sequences.shape[0] == 9
+
+    def test_nucleotide_encoding_values(self, synthetic_nt_fasta_path):
+        dataset = read_sequences(synthetic_nt_fasta_path, "nucleotide")
+        # First sequence starts with ATGCTAGC...
+        # A=0, T=3, G=2, C=1
+        enc = dataset.encoded_sequences[0]
+        assert enc[0] == 0  # A
+        assert enc[1] == 3  # T
+        assert enc[2] == 2  # G
+        assert enc[3] == 1  # C
+
+    def test_nucleotide_encoding_full_alphabet(self):
+        seq = "ACGTACGT"
+        encoded = encode_sequence(seq, "nucleotide")
+        assert list(encoded) == [0, 1, 2, 3, 0, 1, 2, 3]
+
+    def test_nucleotide_unknown_char(self):
+        seq = "ACNGT"  # N is not in nucleotide alphabet
+        encoded = encode_sequence(seq, "nucleotide")
+        assert encoded[0] == 0  # A
+        assert encoded[1] == 1  # C
+        assert encoded[2] == 4  # N -> unknown sentinel (len("ACGT") == 4)
+        assert encoded[3] == 2  # G
+        assert encoded[4] == 3  # T
+
+    def test_nucleotide_padding(self, synthetic_nt_fasta_path):
+        dataset = read_sequences(synthetic_nt_fasta_path, "nucleotide")
+        max_len = dataset.max_length
+        assert dataset.encoded_sequences.shape == (9, max_len)
+        # Padding value for nucleotide should be 4 (NUCLEOTIDE_UNKNOWN)
+        # All sequences are same length so no padding needed,
+        # but verify the matrix shape is correct
+        for i in range(9):
+            assert dataset.lengths[i] == len(dataset.records[i].sequence)
+
+    def test_nucleotide_sequence_lengths(self, synthetic_nt_fasta_path):
+        dataset = read_sequences(synthetic_nt_fasta_path, "nucleotide")
+        # All base sequences are ~100bp
+        for i in range(9):
+            assert dataset.lengths[i] >= 100
+
+
 class TestWriteOutputs:
     def test_write_representatives_fasta(self, synthetic_fasta_path, output_dir):
         dataset = read_sequences(synthetic_fasta_path, "protein")

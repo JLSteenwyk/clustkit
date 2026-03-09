@@ -28,9 +28,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+leiden = [
+    "leidenalg",
+    "python-igraph",
+]
 gpu = [
-    "cupy-cuda12x>=13.0.0",
-    "cugraph-cu12>=24.02",
+    "cupy-cuda12x",
 ]
 dev = [
     "pytest>=7.0",

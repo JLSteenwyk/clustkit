@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 
-from clustkit.cluster import cluster_connected_components, cluster_greedy, cluster_sequences
+from clustkit.cluster import cluster_connected_components, cluster_greedy, cluster_sequences, _leiden_clustering
 from clustkit.graph import build_similarity_graph
 
 
@@ -83,7 +83,42 @@ class TestClusterDispatch:
         with pytest.raises(ValueError, match="Unknown clustering method"):
             cluster_sequences(graph, method="invalid")
 
-    def test_leiden_not_implemented(self):
+    def test_leiden_dispatch(self):
+        leidenalg = pytest.importorskip("leidenalg")
         graph = sparse.csr_matrix((3, 3), dtype=np.float32)
-        with pytest.raises(NotImplementedError):
-            cluster_sequences(graph, method="leiden")
+        labels = cluster_sequences(graph, method="leiden")
+        assert len(labels) == 3
+
+
+class TestLeidenClustering:
+    def test_basic_leiden(self):
+        leidenalg = pytest.importorskip("leidenalg")
+        # Two clear components: {0,1,2} and {3,4}
+        pairs = np.array([[0, 1], [1, 2], [3, 4]], dtype=np.int32)
+        sims = np.array([0.9, 0.9, 0.9], dtype=np.float32)
+        graph = build_similarity_graph(5, pairs, sims)
+
+        labels = _leiden_clustering(graph)
+        assert len(labels) == 5
+        # Nodes in same component should share a label
+        assert labels[0] == labels[1] == labels[2]
+        assert labels[3] == labels[4]
+        assert labels[0] != labels[3]
+
+    def test_all_singletons(self):
+        leidenalg = pytest.importorskip("leidenalg")
+        graph = sparse.csr_matrix((5, 5), dtype=np.float32)
+        labels = _leiden_clustering(graph)
+        assert len(labels) == 5
+        # Each node should be its own cluster
+        assert len(np.unique(labels)) == 5
+
+    def test_single_cluster(self):
+        leidenalg = pytest.importorskip("leidenalg")
+        pairs = np.array([[0, 1], [1, 2], [2, 3]], dtype=np.int32)
+        sims = np.array([0.9, 0.9, 0.9], dtype=np.float32)
+        graph = build_similarity_graph(4, pairs, sims)
+        labels = _leiden_clustering(graph)
+        assert len(labels) == 4
+        # All connected, should be one cluster
+        assert len(np.unique(labels)) == 1

@@ -18,7 +18,7 @@ from clustkit.pairwise import compute_pairwise_alignment, compute_pairwise_jacca
 from clustkit.graph import build_similarity_graph
 from clustkit.cluster import cluster_sequences
 from clustkit.representatives import select_representatives
-from clustkit.utils import auto_lsh_params, logger, timer
+from clustkit.utils import auto_lsh_params, gpu_available, logger, timer
 
 
 def run_pipeline(config: dict):
@@ -42,6 +42,18 @@ def run_pipeline(config: dict):
     rep_method = config["representative"]
     output_format = config["format"]
     alignment_mode = config.get("alignment", "align")
+    device = config.get("device", "cpu")
+
+    # --- Device selection ---
+    if device != "cpu":
+        if gpu_available():
+            logger.info(f"GPU mode enabled (device {device})")
+        else:
+            logger.warning(
+                f"GPU device '{device}' requested but CuPy/CUDA not available. "
+                "Falling back to CPU."
+            )
+            device = "cpu"
 
     # --- Phase 0: Read sequences ---
     with timer("Phase 0: Reading sequences"):
@@ -69,6 +81,7 @@ def run_pipeline(config: dict):
             k,
             sketch_size,
             mode,
+            device=device,
         )
 
     # --- Phase 2: LSH Bucketing ---
@@ -83,6 +96,7 @@ def run_pipeline(config: dict):
             sketches,
             num_tables=lsh_params["num_tables"],
             num_bands=lsh_params["num_bands"],
+            device=device,
         )
 
     logger.info(f"  Found {len(candidate_pairs)} candidate pairs")
@@ -97,9 +111,11 @@ def run_pipeline(config: dict):
         )
         with timer("Phase 3: Pairwise similarity (k-mer Jaccard)"):
             filtered_pairs, similarities = compute_pairwise_jaccard(
-                candidate_pairs, sketches, kmer_threshold
+                candidate_pairs, sketches, kmer_threshold,
+                device=device,
             )
     else:
+        # Alignment mode (default): two-stage approach
         # Alignment mode (default): use actual global alignment identity
         band_width = max(20, int(dataset.max_length * 0.2))
         logger.info(
@@ -113,6 +129,7 @@ def run_pipeline(config: dict):
                 dataset.lengths,
                 threshold,
                 band_width=band_width,
+                device=device,
             )
 
     logger.info(f"  {len(filtered_pairs)} pairs above threshold {threshold}")
@@ -134,7 +151,12 @@ def run_pipeline(config: dict):
 
     # --- Phase 6: Representative selection ---
     with timer("Phase 6: Selecting representatives"):
-        reps = select_representatives(labels, dataset.lengths, method=rep_method)
+        reps = select_representatives(
+            labels,
+            dataset.lengths,
+            method=rep_method,
+            graph=graph if rep_method in ("centroid", "most_connected") else None,
+        )
 
     # --- Write outputs ---
     _write_outputs(output_dir, dataset, labels, reps, output_format, config, start_time)

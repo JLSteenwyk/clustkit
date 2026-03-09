@@ -265,6 +265,7 @@ def write_clusters_cdhit(
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     rep_set = set(int(i) for i in representative_indices)
+    unit = "nt" if dataset.mode == "nucleotide" else "aa"
 
     # Group sequences by cluster
     clusters: dict[int, list[int]] = {}
@@ -281,6 +282,6 @@ def write_clusters_cdhit(
                 rec = dataset.records[seq_idx]
                 length = rec.length
                 if seq_idx in rep_set:
-                    f.write(f"{member_idx}\t{length}aa, >{rec.id}... *\n")
+                    f.write(f"{member_idx}\t{length}{unit}, >{rec.id}... *\n")
                 else:
-                    f.write(f"{member_idx}\t{length}aa, >{rec.id}...\n")
+                    f.write(f"{member_idx}\t{length}{unit}, >{rec.id}...\n")

@@ -4,6 +4,48 @@ import numpy as np
 from scipy import sparse
 
 
+def _leiden_clustering(graph: sparse.csr_matrix, resolution: float = 1.0) -> np.ndarray:
+    """Cluster sequences using the Leiden algorithm.
+
+    Args:
+        graph: (N, N) sparse CSR similarity graph.
+        resolution: Resolution parameter for Leiden (higher = more clusters).
+
+    Returns:
+        (N,) int32 array of cluster labels.
+    """
+    try:
+        import igraph as ig
+        import leidenalg
+    except ImportError:
+        raise ImportError(
+            "Leiden clustering requires the 'leidenalg' and 'python-igraph' packages. "
+            "Install them with: pip install clustkit[leiden]"
+        )
+
+    n = graph.shape[0]
+
+    # Ensure the graph is symmetric and extract upper triangle to avoid duplicate edges
+    sym = sparse.triu(graph, format="coo")
+
+    # Build igraph Graph from edge list and weights
+    edges = list(zip(sym.row.tolist(), sym.col.tolist()))
+    weights = sym.data.tolist()
+
+    g = ig.Graph(n=n, edges=edges, directed=False)
+    g.es["weight"] = weights
+
+    partition = leidenalg.find_partition(
+        g,
+        leidenalg.RBConfigurationVertexPartition,
+        weights="weight",
+        resolution_parameter=resolution,
+    )
+
+    labels = np.array(partition.membership, dtype=np.int32)
+    return labels
+
+
 def cluster_connected_components(graph: sparse.csr_matrix) -> np.ndarray:
     """Cluster sequences using connected components of the similarity graph.
 
@@ -84,9 +126,6 @@ def cluster_sequences(
             raise ValueError("Greedy clustering requires sequence lengths.")
         return cluster_greedy(graph, lengths)
     elif method == "leiden":
-        raise NotImplementedError(
-            "Leiden clustering requires cuGraph GPU support. "
-            "Use --cluster-method connected or greedy for CPU mode."
-        )
+        return _leiden_clustering(graph)
     else:
         raise ValueError(f"Unknown clustering method: {method}")

@@ -1,10 +1,17 @@
 """Phase 1: Sketch — Extract minimizer/k-mer signatures per sequence.
 
-Uses Numba JIT for performance. Falls back to pure NumPy if Numba is unavailable.
+Uses Numba JIT for performance on CPU. Uses CuPy kernels on GPU.
 """
 
 import numpy as np
 from numba import njit, prange, uint64, uint8, int32
+
+try:
+    import cupy as cp
+
+    _CUPY_AVAILABLE = True
+except ImportError:
+    _CUPY_AVAILABLE = False
 
 
 @njit(uint64(uint64, uint64), cache=True)
@@ -100,6 +107,7 @@ def compute_sketches(
     sketch_size: int,
     mode: str,
     seed: int = 42,
+    device: str = "cpu",
 ) -> np.ndarray:
     """Compute sketches for all sequences.
 
@@ -110,11 +118,149 @@ def compute_sketches(
         sketch_size: Number of minimum hashes per sketch.
         mode: "protein" or "nucleotide".
         seed: Hash seed.
+        device: "cpu" or GPU device ID (e.g., "0").
 
     Returns:
-        (N, sketch_size) uint64 array of sketches.
+        (N, sketch_size) uint64 array of sketches (always on CPU).
     """
     alphabet_size = 20 if mode == "protein" else 4
+
+    if device != "cpu" and _CUPY_AVAILABLE:
+        return _compute_sketches_gpu(
+            encoded_sequences, lengths, k, sketch_size, alphabet_size, seed,
+            int(device),
+        )
+
     return _compute_sketches_numba(
         encoded_sequences, lengths, k, sketch_size, alphabet_size, seed
     )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# GPU path (CuPy)
+# ──────────────────────────────────────────────────────────────────────
+
+# Raw CUDA kernel: one thread per sequence.  Each thread computes all
+# k-mer hashes for its sequence, sorts them in-place, and writes the
+# bottom-s values to the output sketch matrix.
+_SKETCH_KERNEL_CODE = r"""
+extern "C" __global__
+void sketch_kernel(
+    const unsigned char* sequences,   // (N, max_len) row-major
+    const int*            lengths,     // (N,)
+    unsigned long long*   sketches,    // (N, sketch_size) output
+    int N,
+    int max_len,
+    int k,
+    int sketch_size,
+    int alphabet_size,
+    unsigned long long seed
+) {
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx >= N) return;
+
+    const unsigned char* seq = sequences + (long long)idx * max_len;
+    unsigned long long*  out = sketches  + (long long)idx * sketch_size;
+    int seq_len = lengths[idx];
+
+    unsigned long long MAX_VAL = 0xFFFFFFFFFFFFFFFFULL;
+
+    if (seq_len < k) {
+        for (int s = 0; s < sketch_size; s++) out[s] = 0ULL;
+        return;
+    }
+
+    int num_kmers = seq_len - k + 1;
+
+    // We use a register-based insertion sort into a bottom-s buffer.
+    // This avoids allocating a large per-thread hash array.
+    // Initialise sketch to MAX_VAL.
+    for (int s = 0; s < sketch_size; s++) out[s] = MAX_VAL;
+
+    // Track current max in the bottom-s buffer and its position.
+    int buf_count = 0;
+    unsigned long long buf_max = 0ULL;
+    int buf_max_pos = 0;
+
+    for (int i = 0; i < num_kmers; i++) {
+        // Encode k-mer as integer
+        unsigned long long val = 0ULL;
+        for (int j = 0; j < k; j++) {
+            val = val * (unsigned long long)alphabet_size
+                + (unsigned long long)seq[i + j];
+        }
+
+        // MurmurHash3 64-bit finaliser
+        unsigned long long h = val ^ seed;
+        h ^= h >> 33;
+        h *= 0xFF51AFD7ED558CCDULL;
+        h ^= h >> 33;
+        h *= 0xC4CEB9FE1A85EC53ULL;
+        h ^= h >> 33;
+
+        // Insert into bottom-s buffer
+        if (buf_count < sketch_size) {
+            out[buf_count] = h;
+            if (buf_count == 0 || h > buf_max) {
+                buf_max = h;
+                buf_max_pos = buf_count;
+            }
+            buf_count++;
+        } else if (h < buf_max) {
+            out[buf_max_pos] = h;
+            // Re-find max
+            buf_max = out[0];
+            buf_max_pos = 0;
+            for (int s = 1; s < sketch_size; s++) {
+                if (out[s] > buf_max) {
+                    buf_max = out[s];
+                    buf_max_pos = s;
+                }
+            }
+        }
+    }
+
+    // Sort the sketch (insertion sort — sketch_size is small, typically 128)
+    for (int i = 1; i < sketch_size; i++) {
+        unsigned long long key = out[i];
+        int j = i - 1;
+        while (j >= 0 && out[j] > key) {
+            out[j + 1] = out[j];
+            j--;
+        }
+        out[j + 1] = key;
+    }
+}
+"""
+
+
+def _compute_sketches_gpu(
+    encoded_sequences: np.ndarray,
+    lengths: np.ndarray,
+    k: int,
+    sketch_size: int,
+    alphabet_size: int,
+    seed: int,
+    device_id: int,
+) -> np.ndarray:
+    """Compute MinHash sketches on GPU using a CuPy raw kernel."""
+    with cp.cuda.Device(device_id):
+        n, max_len = encoded_sequences.shape
+
+        d_sequences = cp.asarray(encoded_sequences)       # uint8
+        d_lengths = cp.asarray(lengths.astype(np.int32))   # int32
+        d_sketches = cp.empty((n, sketch_size), dtype=cp.uint64)
+
+        kernel = cp.RawKernel(_SKETCH_KERNEL_CODE, "sketch_kernel")
+        threads_per_block = 256
+        blocks = (n + threads_per_block - 1) // threads_per_block
+
+        kernel(
+            (blocks,), (threads_per_block,),
+            (d_sequences, d_lengths, d_sketches,
+             np.int32(n), np.int32(max_len), np.int32(k),
+             np.int32(sketch_size), np.int32(alphabet_size),
+             np.uint64(seed)),
+        )
+
+        return cp.asnumpy(d_sketches)
