@@ -14,7 +14,7 @@ from clustkit.io import (
 )
 from clustkit.sketch import compute_sketches
 from clustkit.lsh import lsh_candidates
-from clustkit.pairwise import compute_pairwise_jaccard
+from clustkit.pairwise import compute_pairwise_alignment, compute_pairwise_jaccard
 from clustkit.graph import build_similarity_graph
 from clustkit.cluster import cluster_sequences
 from clustkit.representatives import select_representatives
@@ -41,6 +41,7 @@ def run_pipeline(config: dict):
     cluster_method = config["cluster_method"]
     rep_method = config["representative"]
     output_format = config["format"]
+    alignment_mode = config.get("alignment", "align")
 
     # --- Phase 0: Read sequences ---
     with timer("Phase 0: Reading sequences"):
@@ -71,7 +72,7 @@ def run_pipeline(config: dict):
         )
 
     # --- Phase 2: LSH Bucketing ---
-    lsh_params = auto_lsh_params(threshold, sensitivity)
+    lsh_params = auto_lsh_params(threshold, sensitivity, k=k)
     logger.info(
         f"  LSH params: {lsh_params['num_tables']} tables, "
         f"{lsh_params['num_bands']} bands/table"
@@ -87,14 +88,34 @@ def run_pipeline(config: dict):
     logger.info(f"  Found {len(candidate_pairs)} candidate pairs")
 
     # --- Phase 3: Pairwise similarity ---
-    with timer("Phase 3: Pairwise similarity"):
-        filtered_pairs, similarities = compute_pairwise_jaccard(
-            candidate_pairs, sketches, threshold
+    if alignment_mode == "kmer":
+        # K-mer Jaccard mode: convert identity threshold to k-mer space
+        kmer_threshold = threshold ** k
+        logger.info(
+            f"  Mode: k-mer Jaccard | identity {threshold} → "
+            f"k-mer threshold {kmer_threshold:.4f} (k={k})"
         )
+        with timer("Phase 3: Pairwise similarity (k-mer Jaccard)"):
+            filtered_pairs, similarities = compute_pairwise_jaccard(
+                candidate_pairs, sketches, kmer_threshold
+            )
+    else:
+        # Alignment mode (default): use actual global alignment identity
+        band_width = max(20, int(dataset.max_length * 0.2))
+        logger.info(
+            f"  Mode: alignment | threshold {threshold} | "
+            f"band_width {band_width}"
+        )
+        with timer("Phase 3: Pairwise similarity (alignment)"):
+            filtered_pairs, similarities = compute_pairwise_alignment(
+                candidate_pairs,
+                dataset.encoded_sequences,
+                dataset.lengths,
+                threshold,
+                band_width=band_width,
+            )
 
-    logger.info(
-        f"  {len(filtered_pairs)} pairs above threshold {threshold}"
-    )
+    logger.info(f"  {len(filtered_pairs)} pairs above threshold {threshold}")
 
     # --- Phase 4: Graph construction ---
     with timer("Phase 4: Building similarity graph"):

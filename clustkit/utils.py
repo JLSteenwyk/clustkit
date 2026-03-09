@@ -62,33 +62,37 @@ def to_cpu(array) -> np.ndarray:
     return np.asarray(array)
 
 
-def auto_lsh_params(threshold: float, sensitivity: str) -> dict:
+def auto_lsh_params(threshold: float, sensitivity: str, k: int = 5) -> dict:
     """Choose LSH parameters (num_tables, num_bands) based on threshold and sensitivity.
 
-    Higher threshold → pairs are more similar → easier to detect → fewer tables needed.
-    Higher sensitivity → more tables, fewer bands → higher recall, more candidates.
+    LSH operates in k-mer Jaccard space, where the effective similarity is
+    approximately threshold^k. Lower identity thresholds produce much lower
+    k-mer Jaccard values, which are harder for LSH to detect and require
+    more aggressive parameters (more tables, fewer bands per table).
     """
-    # Base parameters tuned for ~90% identity threshold
+    # Effective similarity in sketch space
+    kmer_sim = threshold ** k
+
     base_tables = {
         "low": 16,
         "medium": 32,
         "high": 64,
     }
     base_bands = {
-        "low": 8,
-        "medium": 4,
-        "high": 2,
+        "low": 4,
+        "medium": 2,
+        "high": 1,
     }
 
     L = base_tables.get(sensitivity, 32)
-    b = base_bands.get(sensitivity, 4)
+    b = base_bands.get(sensitivity, 2)
 
-    # Adjust for threshold: lower thresholds need more tables for recall
-    if threshold < 0.7:
+    # Scale tables up for low k-mer similarity (harder to detect)
+    if kmer_sim < 0.3:
+        L = int(L * 2.5)
+        b = max(1, b)
+    elif kmer_sim < 0.5:
         L = int(L * 1.5)
-        b = max(1, b - 1)
-    elif threshold < 0.5:
-        L = L * 2
-        b = max(1, b - 2)
+        b = max(1, b)
 
     return {"num_tables": L, "num_bands": b}

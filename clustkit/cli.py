@@ -64,9 +64,9 @@ def cluster(
         help="Sequence type: 'protein' or 'nucleotide'.",
     ),
     alignment: str = typer.Option(
-        "auto",
+        "align",
         "--alignment",
-        help="Similarity method: 'kmer', 'exact', or 'auto'.",
+        help="Similarity method: 'align' (default, accurate) or 'kmer' (fast).",
     ),
     sketch_size: int = typer.Option(
         128,
@@ -117,10 +117,6 @@ def cluster(
     # Resolve k-mer size default
     if kmer_size is None:
         kmer_size = 5 if mode == "protein" else 11
-
-    # Resolve alignment method
-    if alignment == "auto":
-        alignment = "kmer" if threshold >= 0.9 else "exact"
 
     config = {
         "input": input,
