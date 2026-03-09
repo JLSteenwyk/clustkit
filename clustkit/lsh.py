@@ -1,27 +1,84 @@
-"""Phase 2: LSH Bucketing — Find candidate pairs via locality-sensitive hashing (CPU reference)."""
+"""Phase 2: LSH Bucketing — Find candidate pairs via locality-sensitive hashing.
 
-import warnings
+Uses Numba JIT for hashing and pair extraction. Deduplication via sort-based
+approach on packed int64 pairs instead of Python sets.
+"""
 
 import numpy as np
-from collections import defaultdict
-
-# Integer overflow is expected and intentional in hash functions (modular arithmetic)
-warnings.filterwarnings("ignore", message="overflow encountered", category=RuntimeWarning)
+from numba import njit, prange, uint64, int32, int64
 
 
-def _hash_band(sketch: np.ndarray, band_indices: np.ndarray, seed: int = 0) -> int:
-    """Hash a band of sketch values into a single bucket ID.
-
-    Uses a simple polynomial rolling hash on the selected sketch entries.
-    """
-    h = np.uint64(seed)
+@njit(uint64(uint64[:], int32[:], uint64), cache=True)
+def _hash_band_numba(sketch, band_indices, seed):
+    """Hash a band of sketch values into a single bucket ID."""
+    h = seed
     for idx in band_indices:
-        val = np.uint64(sketch[idx])
-        h = np.uint64(h * np.uint64(0x517CC1B727220A95) + val)
-    # Finalize
-    h = np.uint64((h ^ (h >> np.uint64(13))) * np.uint64(0xC2B2AE35))
-    h = np.uint64(h ^ (h >> np.uint64(16)))
-    return int(h)
+        val = sketch[idx]
+        h = h * uint64(0x517CC1B727220A95) + val
+    h = (h ^ (h >> uint64(33))) * uint64(0xC4CEB9FE1A85EC53)
+    h = h ^ (h >> uint64(33))
+    return h
+
+
+@njit(parallel=True, cache=True)
+def _hash_all_tables(sketches, all_band_indices, all_seeds, num_tables):
+    """Hash all sequences across all tables at once.
+
+    Returns (num_tables, N) array of bucket IDs.
+    """
+    n = sketches.shape[0]
+    num_bands = all_band_indices.shape[1]
+    result = np.empty((num_tables, n), dtype=np.uint64)
+
+    for ti in prange(num_tables):
+        band_indices = all_band_indices[ti]
+        seed = uint64(all_seeds[ti])
+        for i in range(n):
+            result[ti, i] = _hash_band_numba(sketches[i], band_indices, seed)
+
+    return result
+
+
+@njit(cache=True)
+def _extract_pairs_from_sorted(order, sorted_ids, n, max_bucket):
+    """Extract candidate pairs from sorted bucket IDs.
+
+    Returns pairs packed as int64: pair = i * N + j (where i < j).
+    """
+    # First pass: count pairs to pre-allocate
+    total_pairs = int64(0)
+    i = 0
+    while i < n:
+        j = i + 1
+        while j < n and sorted_ids[j] == sorted_ids[i]:
+            j += 1
+        bucket_size = min(j - i, max_bucket)
+        total_pairs += int64(bucket_size) * int64(bucket_size - 1) // int64(2)
+        i = j
+
+    if total_pairs == 0:
+        return np.empty(0, dtype=np.int64)
+
+    packed = np.empty(total_pairs, dtype=np.int64)
+    write_pos = 0
+
+    i = 0
+    while i < n:
+        j = i + 1
+        while j < n and sorted_ids[j] == sorted_ids[i]:
+            j += 1
+        end = min(j, i + max_bucket)
+        for a in range(i, end):
+            for b in range(a + 1, end):
+                x = int64(order[a])
+                y = int64(order[b])
+                if x > y:
+                    x, y = y, x
+                packed[write_pos] = x * int64(n) + y
+                write_pos += 1
+        i = j
+
+    return packed[:write_pos]
 
 
 def lsh_candidates(
@@ -31,10 +88,6 @@ def lsh_candidates(
     seed: int = 42,
 ) -> np.ndarray:
     """Find candidate pairs using multi-probe LSH on sketch arrays.
-
-    For each of `num_tables` hash tables, selects `num_bands` positions from the
-    sketch, hashes them into a bucket, and records co-occurring sequences as
-    candidate pairs.
 
     Args:
         sketches: (N, sketch_size) uint64 array of MinHash sketches.
@@ -46,36 +99,48 @@ def lsh_candidates(
         (M, 2) int32 array of deduplicated candidate pairs (i, j) where i < j.
     """
     n, sketch_size = sketches.shape
-    rng = np.random.RandomState(seed)
-    candidate_set: set[tuple[int, int]] = set()
-
-    for t in range(num_tables):
-        # Select which sketch positions form this band
-        band_indices = rng.choice(sketch_size, size=num_bands, replace=False).astype(np.int32)
-        table_seed = int(rng.randint(0, 2**31))
-
-        # Build buckets for this hash table
-        buckets: dict[int, list[int]] = defaultdict(list)
-        for i in range(n):
-            bucket_id = _hash_band(sketches[i], band_indices, seed=table_seed)
-            buckets[bucket_id].append(i)
-
-        # All pairs within each bucket are candidates
-        for members in buckets.values():
-            if len(members) < 2:
-                continue
-            # Cap bucket size to avoid quadratic blowup from degenerate buckets
-            if len(members) > 1000:
-                members = members[:1000]
-            for a_idx in range(len(members)):
-                for b_idx in range(a_idx + 1, len(members)):
-                    i, j = members[a_idx], members[b_idx]
-                    if i > j:
-                        i, j = j, i
-                    candidate_set.add((i, j))
-
-    if not candidate_set:
+    if n < 2:
         return np.empty((0, 2), dtype=np.int32)
 
-    pairs = np.array(sorted(candidate_set), dtype=np.int32)
+    rng = np.random.RandomState(seed)
+
+    # Pre-generate all band indices and seeds
+    all_band_indices = np.empty((num_tables, num_bands), dtype=np.int32)
+    all_seeds = np.empty(num_tables, dtype=np.int64)
+    for t in range(num_tables):
+        all_band_indices[t] = rng.choice(sketch_size, size=num_bands, replace=False).astype(np.int32)
+        all_seeds[t] = int(rng.randint(0, 2**31))
+
+    # Batch hash all sequences across all tables (parallel over tables)
+    all_bucket_ids = _hash_all_tables(sketches, all_band_indices, all_seeds, num_tables)
+
+    # Extract pairs table by table (argsort + Numba pair extraction)
+    all_packed = []
+    for t in range(num_tables):
+        bucket_ids = all_bucket_ids[t]
+        order = np.argsort(bucket_ids)
+        sorted_ids = bucket_ids[order]
+
+        packed = _extract_pairs_from_sorted(order, sorted_ids, n, 1000)
+        if len(packed) > 0:
+            all_packed.append(packed)
+
+    if not all_packed:
+        return np.empty((0, 2), dtype=np.int32)
+
+    # Concatenate, sort, deduplicate
+    all_packed = np.concatenate(all_packed)
+    all_packed.sort()
+
+    # Unique via consecutive-diff mask
+    mask = np.empty(len(all_packed), dtype=np.bool_)
+    mask[0] = True
+    mask[1:] = all_packed[1:] != all_packed[:-1]
+    unique_packed = all_packed[mask]
+
+    # Unpack to (i, j) pairs
+    pairs = np.empty((len(unique_packed), 2), dtype=np.int32)
+    pairs[:, 0] = (unique_packed // n).astype(np.int32)
+    pairs[:, 1] = (unique_packed % n).astype(np.int32)
+
     return pairs

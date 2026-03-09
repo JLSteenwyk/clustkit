@@ -1,29 +1,27 @@
-"""Phase 3: Pairwise Similarity — Compute identity for candidate pairs (CPU reference)."""
+"""Phase 3: Pairwise Similarity — Compute identity for candidate pairs.
+
+Uses Numba JIT for the Jaccard kernel; batch processing in parallel.
+"""
 
 import numpy as np
+from numba import njit, prange, uint64, float32
 
 
-def jaccard_from_sketches(
-    sketch_a: np.ndarray,
-    sketch_b: np.ndarray,
-) -> float:
-    """Estimate Jaccard similarity from two sorted MinHash sketches.
-
-    Uses the merge-based MinHash Jaccard estimator:
-    count shared hashes / total unique hashes in the union of bottom-s.
-    """
+@njit(float32(uint64[:], uint64[:]), cache=True)
+def _jaccard_sorted(sketch_a, sketch_b):
+    """Jaccard similarity from two sorted MinHash sketches (merge-based)."""
     s = len(sketch_a)
-    max_val = np.iinfo(np.uint64).max
+    max_val = uint64(0xFFFFFFFFFFFFFFFF)
 
     shared = 0
-    i, j = 0, 0
+    i = 0
+    j = 0
     union_count = 0
 
     while union_count < s and i < s and j < s:
         a_val = sketch_a[i]
         b_val = sketch_b[j]
 
-        # Skip padding values
         if a_val == max_val and b_val == max_val:
             break
 
@@ -38,9 +36,41 @@ def jaccard_from_sketches(
         union_count += 1
 
     if union_count == 0:
-        return 0.0
+        return float32(0.0)
 
-    return shared / union_count
+    return float32(shared / union_count)
+
+
+@njit(parallel=True, cache=True)
+def _batch_jaccard(pairs, sketches, threshold):
+    """Compute Jaccard for all candidate pairs in parallel.
+
+    Returns similarities array and a mask of which pairs pass the threshold.
+    """
+    m = pairs.shape[0]
+    sims = np.empty(m, dtype=np.float32)
+    mask = np.empty(m, dtype=np.bool_)
+
+    for idx in prange(m):
+        i = pairs[idx, 0]
+        j = pairs[idx, 1]
+        sim = _jaccard_sorted(sketches[i], sketches[j])
+        sims[idx] = sim
+        mask[idx] = sim >= threshold
+
+    return sims, mask
+
+
+def jaccard_from_sketches(
+    sketch_a: np.ndarray,
+    sketch_b: np.ndarray,
+) -> float:
+    """Estimate Jaccard similarity from two sorted MinHash sketches.
+
+    Uses the merge-based MinHash Jaccard estimator:
+    count shared hashes / total unique hashes in the union of bottom-s.
+    """
+    return float(_jaccard_sorted(sketch_a, sketch_b))
 
 
 def compute_pairwise_jaccard(
@@ -63,20 +93,9 @@ def compute_pairwise_jaccard(
     if len(candidate_pairs) == 0:
         return np.empty((0, 2), dtype=np.int32), np.empty(0, dtype=np.float32)
 
-    kept_pairs = []
-    kept_sims = []
+    sims, mask = _batch_jaccard(candidate_pairs, sketches, np.float32(threshold))
 
-    for pair_idx in range(len(candidate_pairs)):
-        i, j = candidate_pairs[pair_idx]
-        sim = jaccard_from_sketches(sketches[i], sketches[j])
-        if sim >= threshold:
-            kept_pairs.append((i, j))
-            kept_sims.append(sim)
+    filtered_pairs = candidate_pairs[mask]
+    filtered_sims = sims[mask]
 
-    if not kept_pairs:
-        return np.empty((0, 2), dtype=np.int32), np.empty(0, dtype=np.float32)
-
-    return (
-        np.array(kept_pairs, dtype=np.int32),
-        np.array(kept_sims, dtype=np.float32),
-    )
+    return filtered_pairs, filtered_sims
