@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clustkit"
+version = "0.1.0"
+description = "GPU-accelerated sequence clustering for bioinformatics"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "ClustKIT Contributors" },
+]
+keywords = ["bioinformatics", "clustering", "GPU", "sequences", "cd-hit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "biopython>=1.82",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "scipy>=1.11.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "cupy-cuda12x>=13.0.0",
+    "cugraph-cu12>=24.02",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+clustkit = "clustkit.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clustkit*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
