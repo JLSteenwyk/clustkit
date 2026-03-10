@@ -62,6 +62,40 @@ def to_cpu(array) -> np.ndarray:
     return np.asarray(array)
 
 
+def auto_kmer_for_lsh(threshold: float, mode: str, user_k: int) -> int:
+    """Choose k-mer size for LSH candidate generation.
+
+    In alignment mode, the pairwise stage uses NW alignment (not k-mers),
+    so we can freely optimize k for LSH recall. Smaller k gives higher
+    k-mer Jaccard at low identity, improving recall at the cost of more
+    false positive candidates (which alignment handles efficiently).
+
+    Args:
+        threshold: sequence identity threshold.
+        mode: "protein" or "nucleotide".
+        user_k: user-specified k (returned if threshold is high enough).
+
+    Returns:
+        Optimal k for LSH sketching.
+    """
+    if mode == "nucleotide":
+        if threshold >= 0.9:
+            return min(user_k, 11)
+        elif threshold >= 0.7:
+            return min(user_k, 9)
+        elif threshold >= 0.5:
+            return min(user_k, 7)
+        else:
+            return min(user_k, 5)
+    else:  # protein
+        if threshold >= 0.7:
+            return min(user_k, 5)
+        elif threshold >= 0.5:
+            return min(user_k, 4)
+        else:
+            return min(user_k, 3)
+
+
 def auto_lsh_params(threshold: float, sensitivity: str, k: int = 5) -> dict:
     """Choose LSH parameters (num_tables, num_bands) based on threshold and sensitivity.
 
@@ -88,7 +122,14 @@ def auto_lsh_params(threshold: float, sensitivity: str, k: int = 5) -> dict:
     b = base_bands.get(sensitivity, 2)
 
     # Scale tables up for low k-mer similarity (harder to detect)
-    if kmer_sim < 0.3:
+    if kmer_sim < 0.05:
+        # Very low J (e.g., 50% id with k=5): need many tables for recall
+        L = int(L * 5)
+        b = 1
+    elif kmer_sim < 0.1:
+        L = int(L * 4)
+        b = 1
+    elif kmer_sim < 0.3:
         L = int(L * 2.5)
         b = max(1, b)
     elif kmer_sim < 0.5:

@@ -18,7 +18,7 @@ from clustkit.pairwise import compute_pairwise_alignment, compute_pairwise_jacca
 from clustkit.graph import build_similarity_graph
 from clustkit.cluster import cluster_sequences
 from clustkit.representatives import select_representatives
-from clustkit.utils import auto_lsh_params, gpu_available, logger, timer
+from clustkit.utils import auto_kmer_for_lsh, auto_lsh_params, gpu_available, logger, timer
 
 
 def run_pipeline(config: dict):
@@ -74,18 +74,29 @@ def run_pipeline(config: dict):
         return
 
     # --- Phase 1: Sketch ---
+    # In alignment mode, use adaptive k for better LSH recall at low identity.
+    # Smaller k gives higher k-mer Jaccard, making LSH more sensitive.
+    # In kmer mode, k must match between sketch and pairwise stages.
+    if alignment_mode == "align":
+        k_lsh = auto_kmer_for_lsh(threshold, mode, k)
+    else:
+        k_lsh = k
+
+    if k_lsh != k:
+        logger.info(f"  Adaptive k: using k={k_lsh} for LSH (threshold={threshold})")
+
     with timer("Phase 1: Computing sketches"):
         sketches = compute_sketches(
             dataset.encoded_sequences,
             dataset.lengths,
-            k,
+            k_lsh,
             sketch_size,
             mode,
             device=device,
         )
 
     # --- Phase 2: LSH Bucketing ---
-    lsh_params = auto_lsh_params(threshold, sensitivity, k=k)
+    lsh_params = auto_lsh_params(threshold, sensitivity, k=k_lsh)
     logger.info(
         f"  LSH params: {lsh_params['num_tables']} tables, "
         f"{lsh_params['num_bands']} bands/table"
@@ -115,8 +126,7 @@ def run_pipeline(config: dict):
                 device=device,
             )
     else:
-        # Alignment mode (default): two-stage approach
-        # Alignment mode (default): use actual global alignment identity
+        # Alignment mode (default): global alignment identity
         band_width = max(20, int(dataset.max_length * 0.2))
         logger.info(
             f"  Mode: alignment | threshold {threshold} | "
@@ -130,6 +140,7 @@ def run_pipeline(config: dict):
                 threshold,
                 band_width=band_width,
                 device=device,
+                mode=mode,
             )
 
     logger.info(f"  {len(filtered_pairs)} pairs above threshold {threshold}")

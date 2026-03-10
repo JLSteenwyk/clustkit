@@ -1,6 +1,6 @@
-"""CD-HIT vs ClustKIT Head-to-Head Comparison
+"""CD-HIT vs MMseqs2 vs ClustKIT Head-to-Head Comparison
 
-Runs both tools on the same simulated datasets and compares accuracy metrics.
+Runs all three tools on the same simulated datasets and compares accuracy metrics.
 """
 
 import json
@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from clustkit.pipeline import run_pipeline
 
 CDHIT_SIF = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/cd-hit.sif"
+MMSEQS_BIN = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/mmseqs/bin/mmseqs"
 OUTPUT_DIR = Path(__file__).resolve().parent / "data" / "cdhit_comparison_results"
 
 
@@ -134,6 +135,63 @@ def run_cdhit(fasta_path, output_prefix, threshold, threads=1):
 
     clstr_path = str(output_prefix) + ".clstr"
     clusters = parse_cdhit_clusters(clstr_path)
+    return clusters, elapsed
+
+
+def parse_mmseqs_clusters(tsv_path):
+    """Parse MMseqs2 cluster TSV into a dict of seq_id -> cluster_id.
+
+    MMseqs2 easy-cluster outputs a TSV with two columns:
+      representative_id\tmember_id
+    We assign each unique representative a numeric cluster ID.
+    """
+    clusters = {}
+    rep_to_id = {}
+    next_id = 0
+    with open(tsv_path) as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) < 2:
+                continue
+            rep, member = parts[0], parts[1]
+            if rep not in rep_to_id:
+                rep_to_id[rep] = next_id
+                next_id += 1
+            clusters[member] = rep_to_id[rep]
+    return clusters
+
+
+def run_mmseqs(fasta_path, output_prefix, threshold, threads=1):
+    """Run MMseqs2 easy-cluster and return cluster assignments."""
+    import shutil
+    import tempfile
+
+    tmp_dir = tempfile.mkdtemp(prefix="mmseqs_tmp_")
+
+    cmd = [
+        MMSEQS_BIN, "easy-cluster",
+        str(fasta_path),
+        str(output_prefix),
+        tmp_dir,
+        "--min-seq-id", str(threshold),
+        "--threads", str(threads),
+        "-c", "0.8",          # coverage threshold
+        "--cov-mode", "0",    # bidirectional coverage
+    ]
+
+    start = time.perf_counter()
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    elapsed = time.perf_counter() - start
+
+    # Clean up temp dir
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    if result.returncode != 0:
+        print(f"MMseqs2 failed: {result.stderr}")
+        return None, elapsed
+
+    tsv_path = str(output_prefix) + "_cluster.tsv"
+    clusters = parse_mmseqs_clusters(tsv_path)
     return clusters, elapsed
 
 
@@ -251,7 +309,7 @@ def run_comparison():
     all_results = {}
 
     print("=" * 90)
-    print("CD-HIT vs ClustKIT HEAD-TO-HEAD COMPARISON")
+    print("CD-HIT vs MMseqs2 vs ClustKIT HEAD-TO-HEAD COMPARISON")
     print("=" * 90)
 
     for scenario in scenarios:
@@ -294,6 +352,22 @@ def run_comparison():
             cdhit_results = {"error": "CD-HIT failed"}
             print("  CD-HIT failed!")
 
+        # --- MMseqs2 ---
+        mmseqs_prefix = OUTPUT_DIR / f"mmseqs_{label.replace(' ', '_').replace(',', '')}"
+        print(f"\nRunning MMseqs2 (min-seq-id={threshold})...")
+        mmseqs_clusters, mmseqs_time = run_mmseqs(fasta_path, mmseqs_prefix, threshold)
+
+        if mmseqs_clusters:
+            mmseqs_results = evaluate(ground_truth, mmseqs_clusters)
+            mmseqs_results["runtime"] = round(mmseqs_time, 2)
+            print(f"  Clusters: {mmseqs_results['n_clusters']}, "
+                  f"ARI: {mmseqs_results['ARI']}, "
+                  f"F1(pw): {mmseqs_results['pw_F1']}, "
+                  f"Time: {mmseqs_time:.2f}s")
+        else:
+            mmseqs_results = {"error": "MMseqs2 failed"}
+            print("  MMseqs2 failed!")
+
         # --- ClustKIT ---
         clustkit_dir = OUTPUT_DIR / f"clustkit_{label.replace(' ', '_').replace(',', '')}"
         clustkit_dir.mkdir(parents=True, exist_ok=True)
@@ -308,6 +382,7 @@ def run_comparison():
 
         all_results[label] = {
             "cdhit": cdhit_results,
+            "mmseqs2": mmseqs_results,
             "clustkit": clustkit_results,
         }
 
@@ -324,7 +399,8 @@ def run_comparison():
     for scenario in scenarios:
         label = scenario["label"]
         r = all_results[label]
-        for tool, res in [("CD-HIT", r["cdhit"]), ("ClustKIT", r["clustkit"])]:
+        for tool, key in [("CD-HIT", "cdhit"), ("MMseqs2", "mmseqs2"), ("ClustKIT", "clustkit")]:
+            res = r[key]
             if "error" in res:
                 print(f"{label:<20} {tool:<10} {'FAILED':>6}")
             else:
@@ -338,7 +414,7 @@ def run_comparison():
         print()
 
     # Save
-    results_file = OUTPUT_DIR / "cdhit_comparison_results.json"
+    results_file = OUTPUT_DIR / "comparison_results.json"
     with open(results_file, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"Results saved to {results_file}")

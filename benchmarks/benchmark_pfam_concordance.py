@@ -1,8 +1,8 @@
 """Pfam Concordance Benchmark
 
-Downloads sequences from multiple Pfam families, mixes them into a single
-dataset, clusters with ClustKIT at various thresholds, and measures how well
-the output clusters recover the known Pfam family labels.
+Loads sequences from multiple Pfam families, mixes them into a single
+dataset, clusters with ClustKIT / CD-HIT / MMseqs2 at various thresholds,
+and measures how well the output clusters recover the known Pfam family labels.
 
 Metrics:
   - Adjusted Rand Index (ARI)
@@ -13,7 +13,10 @@ Metrics:
 
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from collections import Counter
 from pathlib import Path
@@ -34,6 +37,9 @@ from clustkit.pipeline import run_pipeline
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "pfam_families"
 OUTPUT_DIR = Path(__file__).resolve().parent / "data" / "pfam_benchmark_results"
+
+CDHIT_SIF = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/cd-hit.sif"
+MMSEQS_BIN = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/mmseqs/bin/mmseqs"
 
 
 def load_and_mix_families(data_dir: Path, max_per_family: int = 500):
@@ -151,51 +157,123 @@ def pairwise_precision_recall_f1(true_labels, pred_labels):
     }
 
 
-def evaluate_clustering(ground_truth, cluster_tsv_path):
-    """Evaluate a clustering result against Pfam ground truth.
 
-    Returns dict of all metrics.
-    """
-    # Read cluster assignments
-    pred_map = {}  # seq_id -> cluster_id
-    with open(cluster_tsv_path) as f:
-        next(f)  # skip header
+def parse_cdhit_clusters(clstr_path):
+    """Parse CD-HIT .clstr file."""
+    clusters = {}
+    current_cluster = -1
+    with open(clstr_path) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(">Cluster"):
+                current_cluster = int(line.split()[1])
+            elif line:
+                seq_id = line.split(">")[1].split("...")[0]
+                clusters[seq_id] = current_cluster
+    return clusters
+
+
+def parse_mmseqs_clusters(tsv_path):
+    """Parse MMseqs2 cluster TSV."""
+    clusters = {}
+    rep_to_id = {}
+    next_id = 0
+    with open(tsv_path) as f:
         for line in f:
             parts = line.strip().split("\t")
-            pred_map[parts[0]] = int(parts[1])
+            if len(parts) < 2:
+                continue
+            rep, member = parts[0], parts[1]
+            if rep not in rep_to_id:
+                rep_to_id[rep] = next_id
+                next_id += 1
+            clusters[member] = rep_to_id[rep]
+    return clusters
 
-    # Align ground truth and predictions (only sequences present in both)
-    common_ids = sorted(set(ground_truth.keys()) & set(pred_map.keys()))
+
+def run_cdhit(fasta_path, output_prefix, threshold, threads=4):
+    """Run CD-HIT."""
+    cmd = [
+        "singularity", "exec", CDHIT_SIF,
+        "cd-hit",
+        "-i", str(fasta_path),
+        "-o", str(output_prefix),
+        "-c", str(threshold),
+        "-T", str(threads),
+        "-M", "0",
+        "-d", "0",
+    ]
+    if threshold >= 0.7:
+        cmd.extend(["-n", "5"])
+    elif threshold >= 0.6:
+        cmd.extend(["-n", "4"])
+    elif threshold >= 0.5:
+        cmd.extend(["-n", "3"])
+    else:
+        cmd.extend(["-n", "2"])
+
+    start = time.perf_counter()
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    elapsed = time.perf_counter() - start
+
+    if result.returncode != 0:
+        return None, elapsed
+
+    clusters = parse_cdhit_clusters(str(output_prefix) + ".clstr")
+    return clusters, elapsed
+
+
+def run_mmseqs(fasta_path, output_prefix, threshold, threads=4):
+    """Run MMseqs2."""
+    tmp_dir = tempfile.mkdtemp(prefix="mmseqs_tmp_")
+    cmd = [
+        MMSEQS_BIN, "easy-cluster",
+        str(fasta_path),
+        str(output_prefix),
+        tmp_dir,
+        "--min-seq-id", str(threshold),
+        "--threads", str(threads),
+        "-c", "0.8",
+        "--cov-mode", "0",
+    ]
+
+    start = time.perf_counter()
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    elapsed = time.perf_counter() - start
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    if result.returncode != 0:
+        return None, elapsed
+
+    clusters = parse_mmseqs_clusters(str(output_prefix) + "_cluster.tsv")
+    return clusters, elapsed
+
+
+def evaluate_tool(ground_truth, pred_clusters):
+    """Evaluate predicted clusters (dict: seq_id -> cluster_id) against ground truth."""
+    common_ids = sorted(set(ground_truth.keys()) & set(pred_clusters.keys()))
     if not common_ids:
-        raise ValueError("No common sequence IDs between ground truth and predictions")
+        return {"error": "no common sequences"}
 
-    # Encode labels as integer arrays
     true_family_list = [ground_truth[sid] for sid in common_ids]
-    pred_cluster_list = [pred_map[sid] for sid in common_ids]
+    pred_cluster_list = [pred_clusters[sid] for sid in common_ids]
 
-    # Map string labels to ints for numpy operations
     family_to_int = {f: i for i, f in enumerate(sorted(set(true_family_list)))}
     true_labels = np.array([family_to_int[f] for f in true_family_list], dtype=np.int32)
     pred_labels = np.array(pred_cluster_list, dtype=np.int32)
 
-    # Sklearn metrics
     ari = adjusted_rand_score(true_labels, pred_labels)
     nmi = normalized_mutual_info_score(true_labels, pred_labels)
     homogeneity, completeness, v_measure = homogeneity_completeness_v_measure(
         true_labels, pred_labels
     )
-
-    # Pairwise metrics
     pw = pairwise_precision_recall_f1(true_labels, pred_labels)
 
-    # Cluster stats
-    n_true_families = len(set(true_family_list))
-    n_pred_clusters = len(set(pred_cluster_list))
-
-    results = {
+    return {
         "n_sequences": len(common_ids),
-        "n_true_families": n_true_families,
-        "n_predicted_clusters": n_pred_clusters,
+        "n_true_families": len(set(true_family_list)),
+        "n_predicted_clusters": len(set(pred_cluster_list)),
         "ARI": round(ari, 4),
         "NMI": round(nmi, 4),
         "homogeneity": round(homogeneity, 4),
@@ -204,20 +282,18 @@ def evaluate_clustering(ground_truth, cluster_tsv_path):
         **pw,
     }
 
-    return results
-
 
 def run_benchmark(thresholds=None, max_per_family=500):
-    """Run the full Pfam concordance benchmark."""
+    """Run the full Pfam concordance benchmark with ClustKIT, CD-HIT, and MMseqs2."""
     if thresholds is None:
-        thresholds = [0.3, 0.5, 0.7, 0.9]
+        thresholds = [0.3, 0.5, 0.7]
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Load and mix families
-    print("=" * 70)
-    print("PFAM CONCORDANCE BENCHMARK")
-    print("=" * 70)
+    print("=" * 120)
+    print("PFAM CONCORDANCE BENCHMARK — ClustKIT vs CD-HIT vs MMseqs2")
+    print("=" * 120)
     print()
 
     mixed_fasta, ground_truth = load_and_mix_families(DATA_DIR, max_per_family)
@@ -226,11 +302,15 @@ def run_benchmark(thresholds=None, max_per_family=500):
     all_results = {}
 
     for threshold in thresholds:
-        print("-" * 70)
-        print(f"Clustering at threshold = {threshold}")
-        print("-" * 70)
+        print("-" * 120)
+        print(f"Threshold = {threshold}")
+        print("-" * 120)
 
-        out_dir = OUTPUT_DIR / f"threshold_{threshold}"
+        scenario = {}
+
+        # --- ClustKIT ---
+        print(f"  ClustKIT (align)...", end=" ", flush=True)
+        out_dir = OUTPUT_DIR / f"clustkit_t{threshold}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
         config = {
@@ -238,7 +318,7 @@ def run_benchmark(thresholds=None, max_per_family=500):
             "output": out_dir,
             "threshold": threshold,
             "mode": "protein",
-            "alignment": "kmer",
+            "alignment": "align",
             "sketch_size": 128,
             "kmer_size": 5,
             "sensitivity": "high",
@@ -253,52 +333,86 @@ def run_benchmark(thresholds=None, max_per_family=500):
         run_pipeline(config)
         elapsed = time.perf_counter() - start
 
-        # Evaluate
-        cluster_tsv = out_dir / "clusters.tsv"
-        results = evaluate_clustering(ground_truth, cluster_tsv)
-        results["runtime_seconds"] = round(elapsed, 2)
+        # Parse ClustKIT output
+        clustkit_clusters = {}
+        with open(out_dir / "clusters.tsv") as f:
+            next(f)
+            for line in f:
+                parts = line.strip().split("\t")
+                clustkit_clusters[parts[0]] = int(parts[1])
 
-        all_results[str(threshold)] = results
+        clustkit_eval = evaluate_tool(ground_truth, clustkit_clusters)
+        clustkit_eval["runtime_seconds"] = round(elapsed, 2)
+        scenario["clustkit"] = clustkit_eval
+        print(f"{clustkit_eval['n_predicted_clusters']} clusters, "
+              f"ARI={clustkit_eval['ARI']}, F1={clustkit_eval['pairwise_F1']}, "
+              f"{elapsed:.2f}s")
 
-        print()
-        print(f"  Results @ t={threshold}:")
-        print(f"    Sequences:  {results['n_sequences']}")
-        print(f"    Families:   {results['n_true_families']}")
-        print(f"    Clusters:   {results['n_predicted_clusters']}")
-        print(f"    ARI:        {results['ARI']}")
-        print(f"    NMI:        {results['NMI']}")
-        print(f"    Homogeneity:  {results['homogeneity']}")
-        print(f"    Completeness: {results['completeness']}")
-        print(f"    V-measure:    {results['V_measure']}")
-        print(f"    Pairwise Precision: {results['pairwise_precision']}")
-        print(f"    Pairwise Recall:    {results['pairwise_recall']}")
-        print(f"    Pairwise F1:        {results['pairwise_F1']}")
-        print(f"    Pairwise Accuracy:  {results['pairwise_accuracy']}")
-        print(f"    Runtime:    {results['runtime_seconds']}s")
+        # --- CD-HIT ---
+        print(f"  CD-HIT...", end=" ", flush=True)
+        cdhit_prefix = OUTPUT_DIR / f"cdhit_t{threshold}"
+        cdhit_clusters, cdhit_time = run_cdhit(mixed_fasta, cdhit_prefix, threshold)
+        if cdhit_clusters:
+            cdhit_eval = evaluate_tool(ground_truth, cdhit_clusters)
+            cdhit_eval["runtime_seconds"] = round(cdhit_time, 2)
+            scenario["cdhit"] = cdhit_eval
+            print(f"{cdhit_eval['n_predicted_clusters']} clusters, "
+                  f"ARI={cdhit_eval['ARI']}, F1={cdhit_eval['pairwise_F1']}, "
+                  f"{cdhit_time:.2f}s")
+        else:
+            scenario["cdhit"] = {"error": "failed", "runtime_seconds": round(cdhit_time, 2)}
+            print(f"FAILED ({cdhit_time:.2f}s)")
+
+        # --- MMseqs2 ---
+        print(f"  MMseqs2...", end=" ", flush=True)
+        mmseqs_prefix = OUTPUT_DIR / f"mmseqs_t{threshold}"
+        mmseqs_clusters, mmseqs_time = run_mmseqs(mixed_fasta, mmseqs_prefix, threshold)
+        if mmseqs_clusters:
+            mmseqs_eval = evaluate_tool(ground_truth, mmseqs_clusters)
+            mmseqs_eval["runtime_seconds"] = round(mmseqs_time, 2)
+            scenario["mmseqs2"] = mmseqs_eval
+            print(f"{mmseqs_eval['n_predicted_clusters']} clusters, "
+                  f"ARI={mmseqs_eval['ARI']}, F1={mmseqs_eval['pairwise_F1']}, "
+                  f"{mmseqs_time:.2f}s")
+        else:
+            scenario["mmseqs2"] = {"error": "failed", "runtime_seconds": round(mmseqs_time, 2)}
+            print(f"FAILED ({mmseqs_time:.2f}s)")
+
+        all_results[str(threshold)] = scenario
         print()
 
     # Summary table
-    print("=" * 70)
+    print("=" * 120)
     print("SUMMARY")
-    print("=" * 70)
-    header = f"{'Threshold':>10} {'Clusters':>10} {'ARI':>8} {'NMI':>8} {'Homog':>8} {'Compl':>8} {'P(pw)':>8} {'R(pw)':>8} {'F1(pw)':>8} {'Acc(pw)':>8}"
-    print(header)
-    print("-" * len(header))
+    print("=" * 120)
+    print()
+    print(f"{'Thresh':<8} {'Tool':<10} {'Clust':>6} {'ARI':>8} {'NMI':>8} "
+          f"{'Homog':>8} {'Compl':>8} {'P(pw)':>8} {'R(pw)':>8} {'F1(pw)':>8} {'Time':>10}")
+    print("-" * 120)
+
     for t in thresholds:
         r = all_results[str(t)]
-        print(
-            f"{t:>10.1f} {r['n_predicted_clusters']:>10} "
-            f"{r['ARI']:>8.4f} {r['NMI']:>8.4f} "
-            f"{r['homogeneity']:>8.4f} {r['completeness']:>8.4f} "
-            f"{r['pairwise_precision']:>8.4f} {r['pairwise_recall']:>8.4f} "
-            f"{r['pairwise_F1']:>8.4f} {r['pairwise_accuracy']:>8.4f}"
-        )
+        for tool_name, key in [("ClustKIT", "clustkit"), ("CD-HIT", "cdhit"), ("MMseqs2", "mmseqs2")]:
+            res = r.get(key, {})
+            if "error" in res:
+                rt = res.get("runtime_seconds", "?")
+                print(f"{t:<8} {tool_name:<10} {'FAIL':>6} {'':>8} {'':>8} "
+                      f"{'':>8} {'':>8} {'':>8} {'':>8} {'':>8} {rt:>9}s")
+            elif res:
+                print(
+                    f"{t:<8} {tool_name:<10} {res['n_predicted_clusters']:>6} "
+                    f"{res['ARI']:>8.4f} {res['NMI']:>8.4f} "
+                    f"{res['homogeneity']:>8.4f} {res['completeness']:>8.4f} "
+                    f"{res['pairwise_precision']:>8.4f} {res['pairwise_recall']:>8.4f} "
+                    f"{res['pairwise_F1']:>8.4f} {res['runtime_seconds']:>9.2f}s"
+                )
+        print()
 
     # Save results
     results_file = OUTPUT_DIR / "pfam_concordance_results.json"
     with open(results_file, "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\nResults saved to {results_file}")
+    print(f"Results saved to {results_file}")
 
 
 if __name__ == "__main__":
