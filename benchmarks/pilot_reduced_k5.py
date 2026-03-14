@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmarks.benchmark_scop_search import (
     classify_hit, compute_roc_n, read_fasta, write_fasta, RankedHit,
 )
-import numba; numba.set_num_threads(4)  # half threads since running in parallel
+import numba; numba.set_num_threads(8)
 from clustkit.database import load_database
 from clustkit.io import read_sequences
 from clustkit.kmer_index import search_kmer_index

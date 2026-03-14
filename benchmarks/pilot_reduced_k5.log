@@ -1,0 +1,44 @@
+Loading database index...
+11:25:42 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+11:25:42 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+11:26:21 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (38.72s)
+11:26:21 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (38.72s)
+11:26:21 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+11:26:21 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries
+
+>>> Dual index: std k=3 + reduced k=5 (mc=8000)
+11:26:21 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+11:26:21 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+11:26:21 [INFO]   K-mer freq threshold: 63425
+11:26:21 [INFO]   K-mer freq threshold: 63425
+11:26:21 [INFO] Search Stage 1: K-mer index scoring...
+11:26:21 [INFO] Search Stage 1: K-mer index scoring...
+11:27:26 [INFO] Search Stage 1: K-mer index scoring done (64.46s)
+11:27:26 [INFO] Search Stage 1: K-mer index scoring done (64.46s)
+11:27:26 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+11:27:26 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+11:27:26 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+11:27:26 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+11:27:28 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+11:27:28 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+11:27:57 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+11:27:57 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+11:27:57 [INFO] Search Stage 1.5: Reduced alphabet scoring done (30.80s)
+11:27:57 [INFO] Search Stage 1.5: Reduced alphabet scoring done (30.80s)
+11:27:58 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+11:27:58 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+11:27:58 [INFO] Search Stage 2: SW local alignment...
+11:27:58 [INFO] Search Stage 2: SW local alignment...
+11:42:30 [INFO] Search Stage 2: SW local alignment done (871.83s)
+11:42:30 [INFO] Search Stage 2: SW local alignment done (871.83s)
+11:42:30 [INFO]   31185095 pairs above threshold 0.1
+11:42:30 [INFO]   31185095 pairs above threshold 0.1
+11:42:41 [INFO]   1000000 total hits for 2000/2000 queries
+11:42:41 [INFO]   1000000 total hits for 2000/2000 queries
+11:42:41 [INFO] Search completed in 979.64s
+11:42:41 [INFO] Search completed in 979.64s
+
+RESULT: reduced k=5  ROC1=0.7948  aligned=31185095  time=979.7s
+
+Reference: MMseqs2=0.7942  DIAMOND=0.7963  reduced k=4=0.7949
