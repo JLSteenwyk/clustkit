@@ -605,6 +605,206 @@ def _batch_score_queries(
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# IDF-weighted Phase A scoring
+# ──────────────────────────────────────────────────────────────────────────
+
+@njit(cache=True)
+def _score_query_two_stage_idf(
+    q_seq, q_len, k, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+    num_db, min_total_hits, min_diag_hits, diag_bin_width,
+    phase_a_topk, idf_weights,
+):
+    """Two-stage scoring with IDF-weighted Phase A.
+
+    Phase A accumulates IDF scores (log2(N/freq)) instead of raw counts.
+    This upweights rare k-mers, making candidate ranking more informative
+    for distant homology detection.  Phase B remains count-based.
+    """
+    num_kmers = q_len - k + 1
+    if num_kmers <= 0:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+
+    # ── Phase A: IDF-weighted scoring ────────────────────────────────
+    target_scores = np.zeros(num_db, dtype=np.float32)
+    target_counts = np.zeros(num_db, dtype=np.int16)  # for Phase B prealloc
+
+    for qpos in range(num_kmers):
+        kmer_val = int64(0)
+        valid = True
+        for j in range(k):
+            r = q_seq[qpos + j]
+            if r >= alpha_size:
+                valid = False
+                break
+            kmer_val = kmer_val * int64(alpha_size) + int64(r)
+        if not valid:
+            continue
+        if kmer_freqs[kmer_val] > freq_thresh:
+            continue
+        w = idf_weights[kmer_val]
+        s = kmer_offsets[kmer_val]
+        e = kmer_offsets[kmer_val + 1]
+        for h in range(s, e):
+            tid = int32(kmer_entries[h] >> 32)
+            target_scores[tid] += w
+            if target_counts[tid] < 32767:
+                target_counts[tid] += int16(1)
+
+    # ── Select top-K from Phase A (by IDF score) ────────────────────
+    min_score_f = np.float32(min_total_hits)
+    num_passing = int32(0)
+    for i in range(num_db):
+        if target_scores[i] >= min_score_f:
+            num_passing += int32(1)
+
+    if num_passing == 0:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+
+    passing_ids = np.empty(num_passing, dtype=np.int32)
+    passing_idf = np.empty(num_passing, dtype=np.float32)
+    pos = int32(0)
+    for i in range(num_db):
+        if target_scores[i] >= min_score_f:
+            passing_ids[pos] = int32(i)
+            passing_idf[pos] = target_scores[i]
+            pos += int32(1)
+
+    if min_diag_hits <= 1:
+        result_scores = np.empty(num_passing, dtype=np.int32)
+        for i in range(num_passing):
+            result_scores[i] = int32(passing_idf[i])
+        return passing_ids, result_scores
+
+    # Select top-K by IDF score for Phase B
+    topk = min(int32(phase_a_topk), num_passing)
+    if topk < num_passing:
+        order = np.argsort(-passing_idf)
+        topk_ids = np.empty(topk, dtype=np.int32)
+        for i in range(topk):
+            topk_ids[i] = passing_ids[order[i]]
+    else:
+        topk_ids = passing_ids
+
+    # ── Phase B: diagonal scoring (count-based, same as standard) ───
+    survivor_mask = np.zeros(num_db, dtype=np.bool_)
+    for i in range(len(topk_ids)):
+        survivor_mask[topk_ids[i]] = True
+
+    n_surv_hits = int64(0)
+    for i in range(len(topk_ids)):
+        n_surv_hits += int64(target_counts[topk_ids[i]])
+
+    DIAG_MULT = int64(1000000)
+    max_diag_shift = int32(q_len)
+    surv_keys = np.empty(n_surv_hits, dtype=np.int64)
+    sw = int64(0)
+
+    for qpos in range(num_kmers):
+        kmer_val = int64(0)
+        valid = True
+        for j in range(k):
+            r = q_seq[qpos + j]
+            if r >= alpha_size:
+                valid = False
+                break
+            kmer_val = kmer_val * int64(alpha_size) + int64(r)
+        if not valid:
+            continue
+        if kmer_freqs[kmer_val] > freq_thresh:
+            continue
+        s = kmer_offsets[kmer_val]
+        e = kmer_offsets[kmer_val + 1]
+        for h in range(s, e):
+            entry = kmer_entries[h]
+            tid = int32(entry >> 32)
+            if survivor_mask[tid]:
+                tpos = int32(entry & 0xFFFFFFFF)
+                diag = int32(tpos) - int32(qpos) + max_diag_shift
+                dbin = int32(diag // diag_bin_width)
+                surv_keys[sw] = int64(tid) * DIAG_MULT + int64(dbin)
+                sw += int64(1)
+
+    surv_keys = surv_keys[:sw]
+    surv_keys.sort()
+
+    final_ids = np.empty(len(topk_ids), dtype=np.int32)
+    final_scores = np.empty(len(topk_ids), dtype=np.int32)
+    num_final = int32(0)
+    prev_tid = int32(-1)
+    best_count = int32(0)
+    i = int64(0)
+    n = int64(len(surv_keys))
+
+    while i < n:
+        key = surv_keys[i]
+        tid = int32(key // DIAG_MULT)
+        dbin = int32(key % DIAG_MULT)
+        run = int32(0)
+        while i < n:
+            k2 = surv_keys[i]
+            if int32(k2 // DIAG_MULT) != tid or int32(k2 % DIAG_MULT) != dbin:
+                break
+            run += int32(1)
+            i += int64(1)
+        if tid != prev_tid:
+            if prev_tid >= 0 and best_count >= min_diag_hits:
+                final_ids[num_final] = prev_tid
+                final_scores[num_final] = best_count
+                num_final += int32(1)
+            prev_tid = tid
+            best_count = run
+        else:
+            if run > best_count:
+                best_count = run
+
+    if prev_tid >= 0 and best_count >= min_diag_hits:
+        final_ids[num_final] = prev_tid
+        final_scores[num_final] = best_count
+        num_final += int32(1)
+
+    return final_ids[:num_final], final_scores[:num_final]
+
+
+@njit(parallel=True, cache=True)
+def _batch_score_queries_idf(
+    q_flat, q_offsets, q_lengths,
+    k, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs,
+    freq_thresh, num_db, min_total_hits,
+    min_diag_hits, diag_bin_width,
+    max_cands, phase_a_topk,
+    idf_weights,
+    out_targets, out_counts,
+):
+    """Score all queries with IDF-weighted Phase A (parallel)."""
+    nq = len(q_lengths)
+    for qi in prange(nq):
+        qs = int64(q_offsets[qi])
+        ql = int32(q_lengths[qi])
+        q_seq = q_flat[qs:qs + ql]
+
+        cand_ids, cand_scores = _score_query_two_stage_idf(
+            q_seq, ql,
+            k, alpha_size,
+            kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+            num_db, min_total_hits, min_diag_hits, diag_bin_width,
+            phase_a_topk, idf_weights,
+        )
+
+        nc = len(cand_ids)
+        if nc > max_cands:
+            order = np.argsort(-cand_scores)
+            for j in range(max_cands):
+                out_targets[qi, j] = cand_ids[order[j]]
+            out_counts[qi] = max_cands
+        else:
+            for j in range(nc):
+                out_targets[qi, j] = cand_ids[j]
+            out_counts[qi] = int32(nc)
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Similar k-mer matching (BLOSUM62-aware, k=5)
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -776,7 +976,8 @@ def search_kmer_index(
     local_alignment: bool = True,
     evalue_normalize: bool = True,
     reduced_alphabet: bool = False,
-    reduced_k: int = 4,
+    reduced_k: int | list[int] = 5,
+    use_idf: bool = False,
 ):
     """Search queries against a pre-built k-mer inverted index.
 
@@ -859,6 +1060,17 @@ def search_kmer_index(
             f"(k={k}, score_thresh={kmer_score_thresh})"
         )
 
+    # Pre-compute IDF weights if enabled
+    if use_idf and not use_similar:
+        std_idf = np.log2(
+            np.maximum(
+                np.float32(nd)
+                / np.maximum(db_index.kmer_freqs.astype(np.float32), 1.0),
+                1.0,
+            )
+        ).astype(np.float32)
+        logger.info("  Using IDF-weighted Phase A scoring")
+
     with timer("Search Stage 1: K-mer index scoring"):
         if use_similar:
             _batch_score_queries_similar(
@@ -874,6 +1086,26 @@ def search_kmer_index(
                 int32(max_cands_per_query),
                 BLOSUM62,
                 int32(kmer_score_thresh),
+                out_targets,
+                out_counts,
+            )
+        elif use_idf:
+            _batch_score_queries_idf(
+                q_flat,
+                q_off.astype(np.int64),
+                q_lens.astype(np.int32),
+                k, alpha_size,
+                db_index.kmer_offsets,
+                db_index.kmer_entries,
+                db_index.kmer_freqs,
+                freq_thresh,
+                int32(nd),
+                int32(min_total_hits),
+                int32(min_diag_hits),
+                int32(diag_bin_width),
+                int32(max_cands_per_query),
+                int32(phase_a_topk),
+                std_idf,
                 out_targets,
                 out_counts,
             )
@@ -923,84 +1155,129 @@ def search_kmer_index(
 
     # ── Stage 1.5: Reduced alphabet candidates (optional) ────────────
     if reduced_alphabet and mode == "protein":
-        with timer("Search Stage 1.5: Reduced alphabet scoring"):
-            # Remap sequences to reduced alphabet
-            db_flat = db_index.dataset.flat_sequences
-            red_db_flat = _remap_flat(db_flat, REDUCED_ALPHA, len(db_flat))
-            red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
+        # Support single k or list of k values (triple/multi index)
+        rk_values = (
+            reduced_k if isinstance(reduced_k, list) else [reduced_k]
+        )
 
-            # Build reduced k-mer index (one-time cost per search)
-            red_offsets, red_entries, red_freqs = build_kmer_index(
-                red_db_flat,
-                db_index.dataset.offsets,
-                db_index.dataset.lengths,
-                reduced_k,
-                mode,
-                alpha_size=REDUCED_ALPHA_SIZE,
+        # Remap query sequences once (shared across all reduced indices)
+        red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
+        all_red_packed = []
+
+        for rk in rk_values:
+            with timer(f"Search Stage 1.5: Reduced alphabet k={rk}"):
+                # Use cached reduced index if available
+                _cache_key = f'_red_idx_k{rk}'
+                if hasattr(db_index, _cache_key):
+                    red_offsets, red_entries, red_freqs = getattr(
+                        db_index, _cache_key
+                    )
+                    logger.info(
+                        f"  Using cached reduced alphabet index (k={rk})"
+                    )
+                else:
+                    db_flat = db_index.dataset.flat_sequences
+                    red_db_flat = _remap_flat(
+                        db_flat, REDUCED_ALPHA, len(db_flat)
+                    )
+                    red_offsets, red_entries, red_freqs = build_kmer_index(
+                        red_db_flat,
+                        db_index.dataset.offsets,
+                        db_index.dataset.lengths,
+                        rk, mode,
+                        alpha_size=REDUCED_ALPHA_SIZE,
+                    )
+                    setattr(db_index, _cache_key, (
+                        red_offsets, red_entries, red_freqs,
+                    ))
+
+                red_freq_thresh = compute_freq_threshold(
+                    red_freqs, nd, freq_percentile,
+                )
+
+                red_mc = max_cands_per_query
+                red_out_targets = np.empty((nq, red_mc), dtype=np.int32)
+                red_out_counts = np.zeros(nq, dtype=np.int32)
+
+                # Use IDF scoring for reduced index too
+                if use_idf:
+                    red_idf = np.log2(
+                        np.maximum(
+                            np.float32(nd)
+                            / np.maximum(
+                                red_freqs.astype(np.float32), 1.0
+                            ),
+                            1.0,
+                        )
+                    ).astype(np.float32)
+                    _batch_score_queries_idf(
+                        red_q_flat,
+                        q_off.astype(np.int64),
+                        q_lens.astype(np.int32),
+                        int32(rk), int32(REDUCED_ALPHA_SIZE),
+                        red_offsets, red_entries, red_freqs,
+                        red_freq_thresh,
+                        int32(nd), int32(min_total_hits),
+                        int32(min_diag_hits), int32(diag_bin_width),
+                        int32(red_mc), int32(phase_a_topk),
+                        red_idf,
+                        red_out_targets, red_out_counts,
+                    )
+                else:
+                    _batch_score_queries(
+                        red_q_flat,
+                        q_off.astype(np.int64),
+                        q_lens.astype(np.int32),
+                        int32(rk), int32(REDUCED_ALPHA_SIZE),
+                        red_offsets, red_entries, red_freqs,
+                        red_freq_thresh,
+                        int32(nd), int32(min_total_hits),
+                        int32(min_diag_hits), int32(diag_bin_width),
+                        int32(red_mc), int32(phase_a_topk),
+                        red_out_targets, red_out_counts,
+                    )
+
+                # Flatten into packed pairs
+                red_total = int(red_out_counts.sum())
+                if red_total > 0:
+                    red_pairs = np.empty((red_total, 2), dtype=np.int32)
+                    rpos = 0
+                    for qi in range(nq):
+                        nc = int(red_out_counts[qi])
+                        if nc > 0:
+                            red_pairs[rpos:rpos + nc, 0] = qi
+                            red_pairs[rpos:rpos + nc, 1] = (
+                                red_out_targets[qi, :nc]
+                            )
+                            rpos += nc
+                    packed = (
+                        red_pairs[:, 0].astype(np.int64) * nd
+                        + red_pairs[:, 1].astype(np.int64)
+                    )
+                    all_red_packed.append(packed)
+                    logger.info(
+                        f"  Reduced k={rk}: {red_total} candidates"
+                    )
+
+        # Union all candidate sets (standard + all reduced)
+        if all_red_packed:
+            std_packed = (
+                candidate_pairs[:, 0].astype(np.int64) * nd
+                + candidate_pairs[:, 1].astype(np.int64)
             )
-            red_freq_thresh = compute_freq_threshold(
-                red_freqs, nd, freq_percentile,
+            all_packed_arrays = [std_packed] + all_red_packed
+            union_packed = np.unique(np.concatenate(all_packed_arrays))
+            n_before = len(candidate_pairs)
+            candidate_pairs = np.empty(
+                (len(union_packed), 2), dtype=np.int32
             )
-
-            # Score queries against reduced index
-            red_mc = max_cands_per_query
-            red_out_targets = np.empty((nq, red_mc), dtype=np.int32)
-            red_out_counts = np.zeros(nq, dtype=np.int32)
-
-            _batch_score_queries(
-                red_q_flat,
-                q_off.astype(np.int64),
-                q_lens.astype(np.int32),
-                int32(reduced_k),
-                int32(REDUCED_ALPHA_SIZE),
-                red_offsets, red_entries, red_freqs,
-                red_freq_thresh,
-                int32(nd),
-                int32(min_total_hits),
-                int32(min_diag_hits),
-                int32(diag_bin_width),
-                int32(red_mc),
-                int32(phase_a_topk),
-                red_out_targets,
-                red_out_counts,
+            candidate_pairs[:, 0] = (union_packed // nd).astype(np.int32)
+            candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
+            total_cands = len(candidate_pairs)
+            logger.info(
+                f"  Reduced alphabet union: {total_cands} total "
+                f"(was {n_before} from standard index)"
             )
-
-            # Flatten and union with standard candidates
-            red_total = int(red_out_counts.sum())
-            if red_total > 0:
-                red_pairs = np.empty((red_total, 2), dtype=np.int32)
-                rpos = 0
-                for qi in range(nq):
-                    nc = int(red_out_counts[qi])
-                    if nc > 0:
-                        red_pairs[rpos:rpos + nc, 0] = qi
-                        red_pairs[rpos:rpos + nc, 1] = red_out_targets[qi, :nc]
-                        rpos += nc
-
-                # Deduplicate via packed int64
-                std_packed = (
-                    candidate_pairs[:, 0].astype(np.int64) * nd
-                    + candidate_pairs[:, 1].astype(np.int64)
-                )
-                red_packed = (
-                    red_pairs[:, 0].astype(np.int64) * nd
-                    + red_pairs[:, 1].astype(np.int64)
-                )
-                all_packed = np.unique(
-                    np.concatenate([std_packed, red_packed])
-                )
-                n_before = len(candidate_pairs)
-                candidate_pairs = np.empty(
-                    (len(all_packed), 2), dtype=np.int32
-                )
-                candidate_pairs[:, 0] = (all_packed // nd).astype(np.int32)
-                candidate_pairs[:, 1] = (all_packed % nd).astype(np.int32)
-                total_cands = len(candidate_pairs)
-                logger.info(
-                    f"  Reduced alphabet (k={reduced_k}): "
-                    f"+{red_total} candidates, "
-                    f"{total_cands} after union (was {n_before})"
-                )
 
     # ── Merge sequences for alignment stages ─────────────────────────
     if band_width is None:

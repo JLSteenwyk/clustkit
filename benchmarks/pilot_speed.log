@@ -1,0 +1,260 @@
+Loading database index...
+12:58:04 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+12:58:04 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+12:58:05 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.86s)
+12:58:05 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.86s)
+12:58:05 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+12:58:05 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries
+
+========================================================================================================================
+Speed optimization: ungapped prefilter thresholds
+========================================================================================================================
+
+>>> Config 1/6: No prefilter (mc=8K)
+12:58:06 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+12:58:06 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+12:58:06 [INFO]   K-mer freq threshold: 63425
+12:58:06 [INFO]   K-mer freq threshold: 63425
+12:58:06 [INFO] Search Stage 1: K-mer index scoring...
+12:58:06 [INFO] Search Stage 1: K-mer index scoring...
+12:59:19 [INFO] Search Stage 1: K-mer index scoring done (73.58s)
+12:59:19 [INFO] Search Stage 1: K-mer index scoring done (73.58s)
+12:59:19 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+12:59:19 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+12:59:19 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+12:59:19 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+12:59:22 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+12:59:22 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+12:59:50 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+12:59:50 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+12:59:50 [INFO] Search Stage 1.5: Reduced alphabet scoring done (30.90s)
+12:59:50 [INFO] Search Stage 1.5: Reduced alphabet scoring done (30.90s)
+12:59:51 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+12:59:51 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+12:59:51 [INFO] Search Stage 2: SW local alignment...
+12:59:51 [INFO] Search Stage 2: SW local alignment...
+13:14:17 [INFO] Search Stage 2: SW local alignment done (865.39s)
+13:14:17 [INFO] Search Stage 2: SW local alignment done (865.39s)
+13:14:17 [INFO]   31185095 pairs above threshold 0.1
+13:14:17 [INFO]   31185095 pairs above threshold 0.1
+13:14:28 [INFO]   1000000 total hits for 2000/2000 queries
+13:14:28 [INFO]   1000000 total hits for 2000/2000 queries
+13:14:28 [INFO] Search completed in 982.41s
+13:14:28 [INFO] Search completed in 982.41s
+  RESULT: No prefilter (mc=8K)
+          ROC1=0.7948  aligned=  31185095  time=982.6s
+
+>>> Config 2/6: Ungapped >= 11 (mc=8K)
+    ETA: ~81.9 min remaining
+13:14:30 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:14:30 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:14:30 [INFO]   K-mer freq threshold: 63425
+13:14:30 [INFO]   K-mer freq threshold: 63425
+13:14:30 [INFO] Search Stage 1: K-mer index scoring...
+13:14:30 [INFO] Search Stage 1: K-mer index scoring...
+13:15:34 [INFO] Search Stage 1: K-mer index scoring done (63.82s)
+13:15:34 [INFO] Search Stage 1: K-mer index scoring done (63.82s)
+13:15:34 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:15:34 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:15:34 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:15:34 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:15:34 [INFO]   Using cached reduced alphabet index (k=5)
+13:15:34 [INFO]   Using cached reduced alphabet index (k=5)
+13:16:02 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:16:02 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:16:02 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+13:16:02 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+13:16:03 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:16:03 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:16:11 [INFO]   Ungapped pre-filter: 31185095 -> 25831591 pairs (5353504 removed, 17.2%)
+13:16:11 [INFO]   Ungapped pre-filter: 31185095 -> 25831591 pairs (5353504 removed, 17.2%)
+13:16:11 [INFO] Search Stage 1.5: Ungapped pre-filter done (7.53s)
+13:16:11 [INFO] Search Stage 1.5: Ungapped pre-filter done (7.53s)
+13:16:11 [INFO]   Alignment: 25831591 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:16:11 [INFO]   Alignment: 25831591 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:16:11 [INFO] Search Stage 2: SW local alignment...
+13:16:11 [INFO] Search Stage 2: SW local alignment...
+13:29:06 [INFO] Search Stage 2: SW local alignment done (775.01s)
+13:29:06 [INFO] Search Stage 2: SW local alignment done (775.01s)
+13:29:07 [INFO]   25831591 pairs above threshold 0.1
+13:29:07 [INFO]   25831591 pairs above threshold 0.1
+13:29:16 [INFO]   1000000 total hits for 2000/2000 queries
+13:29:16 [INFO]   1000000 total hits for 2000/2000 queries
+13:29:16 [INFO] Search completed in 885.54s
+13:29:16 [INFO] Search completed in 885.54s
+  RESULT: Ungapped >= 11 (mc=8K)
+          ROC1=0.7662  aligned=  25831591  time=885.6s
+
+>>> Config 3/6: Ungapped >= 15 (mc=8K)
+    ETA: ~62.3 min remaining
+13:29:18 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:29:18 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:29:18 [INFO]   K-mer freq threshold: 63425
+13:29:18 [INFO]   K-mer freq threshold: 63425
+13:29:18 [INFO] Search Stage 1: K-mer index scoring...
+13:29:18 [INFO] Search Stage 1: K-mer index scoring...
+13:30:21 [INFO] Search Stage 1: K-mer index scoring done (63.74s)
+13:30:21 [INFO] Search Stage 1: K-mer index scoring done (63.74s)
+13:30:21 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:30:21 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:30:21 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:30:21 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:30:21 [INFO]   Using cached reduced alphabet index (k=5)
+13:30:21 [INFO]   Using cached reduced alphabet index (k=5)
+13:30:50 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:30:50 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:30:50 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.38s)
+13:30:50 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.38s)
+13:30:51 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:30:51 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:30:57 [INFO]   Ungapped pre-filter: 31185095 -> 13505215 pairs (17679880 removed, 56.7%)
+13:30:57 [INFO]   Ungapped pre-filter: 31185095 -> 13505215 pairs (17679880 removed, 56.7%)
+13:30:57 [INFO] Search Stage 1.5: Ungapped pre-filter done (6.29s)
+13:30:57 [INFO] Search Stage 1.5: Ungapped pre-filter done (6.29s)
+13:30:57 [INFO]   Alignment: 13505215 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:30:57 [INFO]   Alignment: 13505215 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:30:57 [INFO] Search Stage 2: SW local alignment...
+13:30:57 [INFO] Search Stage 2: SW local alignment...
+13:38:31 [INFO] Search Stage 2: SW local alignment done (453.89s)
+13:38:31 [INFO] Search Stage 2: SW local alignment done (453.89s)
+13:38:31 [INFO]   13505215 pairs above threshold 0.1
+13:38:31 [INFO]   13505215 pairs above threshold 0.1
+13:38:37 [INFO]   1000000 total hits for 2000/2000 queries
+13:38:37 [INFO]   1000000 total hits for 2000/2000 queries
+13:38:37 [INFO] Search completed in 559.43s
+13:38:37 [INFO] Search completed in 559.43s
+  RESULT: Ungapped >= 15 (mc=8K)
+          ROC1=0.7066  aligned=  13505215  time=559.5s
+
+>>> Config 4/6: Ungapped >= 20 (mc=8K)
+    ETA: ~40.5 min remaining
+13:38:39 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:38:39 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:38:39 [INFO]   K-mer freq threshold: 63425
+13:38:39 [INFO]   K-mer freq threshold: 63425
+13:38:39 [INFO] Search Stage 1: K-mer index scoring...
+13:38:39 [INFO] Search Stage 1: K-mer index scoring...
+13:39:43 [INFO] Search Stage 1: K-mer index scoring done (64.25s)
+13:39:43 [INFO] Search Stage 1: K-mer index scoring done (64.25s)
+13:39:43 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:39:43 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+13:39:43 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:39:43 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:39:43 [INFO]   Using cached reduced alphabet index (k=5)
+13:39:43 [INFO]   Using cached reduced alphabet index (k=5)
+13:40:12 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:40:12 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+13:40:12 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+13:40:12 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+13:40:13 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:40:13 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:40:19 [INFO]   Ungapped pre-filter: 31185095 -> 3913502 pairs (27271593 removed, 87.5%)
+13:40:19 [INFO]   Ungapped pre-filter: 31185095 -> 3913502 pairs (27271593 removed, 87.5%)
+13:40:19 [INFO] Search Stage 1.5: Ungapped pre-filter done (5.94s)
+13:40:19 [INFO] Search Stage 1.5: Ungapped pre-filter done (5.94s)
+13:40:19 [INFO]   Alignment: 3913502 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:40:19 [INFO]   Alignment: 3913502 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:40:19 [INFO] Search Stage 2: SW local alignment...
+13:40:19 [INFO] Search Stage 2: SW local alignment...
+13:42:39 [INFO] Search Stage 2: SW local alignment done (140.31s)
+13:42:39 [INFO] Search Stage 2: SW local alignment done (140.31s)
+13:42:39 [INFO]   3913502 pairs above threshold 0.1
+13:42:39 [INFO]   3913502 pairs above threshold 0.1
+13:42:42 [INFO]   996611 total hits for 2000/2000 queries
+13:42:42 [INFO]   996611 total hits for 2000/2000 queries
+13:42:42 [INFO] Search completed in 243.44s
+13:42:42 [INFO] Search completed in 243.44s
+  RESULT: Ungapped >= 20 (mc=8K)
+          ROC1=0.6553  aligned=   3913502  time=243.5s
+
+>>> Config 5/6: Ungapped >= 11 (mc=15K)
+    ETA: ~22.3 min remaining
+13:42:44 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:42:44 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:42:44 [INFO]   K-mer freq threshold: 63425
+13:42:44 [INFO]   K-mer freq threshold: 63425
+13:42:44 [INFO] Search Stage 1: K-mer index scoring...
+13:42:44 [INFO] Search Stage 1: K-mer index scoring...
+13:43:48 [INFO] Search Stage 1: K-mer index scoring done (63.67s)
+13:43:48 [INFO] Search Stage 1: K-mer index scoring done (63.67s)
+13:43:48 [INFO]   K-mer scoring: 30000000 candidate pairs (avg 15000.0/query)
+13:43:48 [INFO]   K-mer scoring: 30000000 candidate pairs (avg 15000.0/query)
+13:43:48 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:43:48 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+13:43:48 [INFO]   Using cached reduced alphabet index (k=5)
+13:43:48 [INFO]   Using cached reduced alphabet index (k=5)
+13:44:20 [INFO]   Reduced alphabet (k=5): +29800468 candidates, 57627820 after union (was 30000000)
+13:44:20 [INFO]   Reduced alphabet (k=5): +29800468 candidates, 57627820 after union (was 30000000)
+13:44:20 [INFO] Search Stage 1.5: Reduced alphabet scoring done (32.39s)
+13:44:20 [INFO] Search Stage 1.5: Reduced alphabet scoring done (32.39s)
+13:44:22 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:44:22 [INFO] Search Stage 1.5: Ungapped pre-filter...
+13:44:35 [INFO]   Ungapped pre-filter: 57627820 -> 47736073 pairs (9891747 removed, 17.2%)
+13:44:35 [INFO]   Ungapped pre-filter: 57627820 -> 47736073 pairs (9891747 removed, 17.2%)
+13:44:35 [INFO] Search Stage 1.5: Ungapped pre-filter done (12.22s)
+13:44:35 [INFO] Search Stage 1.5: Ungapped pre-filter done (12.22s)
+13:44:35 [INFO]   Alignment: 47736073 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:44:35 [INFO]   Alignment: 47736073 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+13:44:35 [INFO] Search Stage 2: SW local alignment...
+13:44:35 [INFO] Search Stage 2: SW local alignment...
+14:08:19 [INFO] Search Stage 2: SW local alignment done (1424.59s)
+14:08:19 [INFO] Search Stage 2: SW local alignment done (1424.59s)
+14:08:20 [INFO]   47736073 pairs above threshold 0.1
+14:08:20 [INFO]   47736073 pairs above threshold 0.1
+14:08:35 [INFO]   1000000 total hits for 2000/2000 queries
+14:08:35 [INFO]   1000000 total hits for 2000/2000 queries
+14:08:35 [INFO] Search completed in 1551.19s
+14:08:35 [INFO] Search completed in 1551.19s
+  RESULT: Ungapped >= 11 (mc=15K)
+          ROC1=0.7727  aligned=  47736073  time=1551.3s
+
+>>> Config 6/6: Cached index: no prefilter (mc=8K)
+    ETA: ~14.1 min remaining
+14:08:37 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+14:08:37 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+14:08:37 [INFO]   K-mer freq threshold: 63425
+14:08:37 [INFO]   K-mer freq threshold: 63425
+14:08:37 [INFO] Search Stage 1: K-mer index scoring...
+14:08:37 [INFO] Search Stage 1: K-mer index scoring...
+14:09:41 [INFO] Search Stage 1: K-mer index scoring done (63.74s)
+14:09:41 [INFO] Search Stage 1: K-mer index scoring done (63.74s)
+14:09:41 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+14:09:41 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+14:09:41 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+14:09:41 [INFO] Search Stage 1.5: Reduced alphabet scoring...
+14:09:41 [INFO]   Using cached reduced alphabet index (k=5)
+14:09:41 [INFO]   Using cached reduced alphabet index (k=5)
+14:10:10 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+14:10:10 [INFO]   Reduced alphabet (k=5): +15952926 candidates, 31185095 after union (was 16000000)
+14:10:10 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+14:10:10 [INFO] Search Stage 1.5: Reduced alphabet scoring done (28.37s)
+14:10:11 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+14:10:11 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+14:10:11 [INFO] Search Stage 2: SW local alignment...
+14:10:11 [INFO] Search Stage 2: SW local alignment...
+14:24:34 [INFO] Search Stage 2: SW local alignment done (863.10s)
+14:24:34 [INFO] Search Stage 2: SW local alignment done (863.10s)
+14:24:34 [INFO]   31185095 pairs above threshold 0.1
+14:24:34 [INFO]   31185095 pairs above threshold 0.1
+14:24:45 [INFO]   1000000 total hits for 2000/2000 queries
+14:24:45 [INFO]   1000000 total hits for 2000/2000 queries
+14:24:45 [INFO] Search completed in 967.51s
+14:24:45 [INFO] Search completed in 967.51s
+  RESULT: Cached index: no prefilter (mc=8K)
+          ROC1=0.7948  aligned=  31185095  time=967.6s
+
+========================================================================================================================
+SUMMARY (sorted by ROC1)
+========================================================================================================================
+  Config                                                ROC1    Aligned     Time  Speedup
+  ------------------------------------------------------------------------------------------
+  No prefilter (mc=8K)                                0.7948   31185095   982.6s    1.00x
+  Cached index: no prefilter (mc=8K)                  0.7948   31185095   967.6s    1.02x
+  Ungapped >= 11 (mc=15K)                             0.7727   47736073  1551.3s    0.63x
+  Ungapped >= 11 (mc=8K)                              0.7662   25831591   885.6s    1.11x
+  Ungapped >= 15 (mc=8K)                              0.7066   13505215   559.5s    1.76x
+  Ungapped >= 20 (mc=8K)                              0.6553    3913502   243.5s    4.04x
+
+  Reference: MMseqs2=0.7942 (14s)  DIAMOND=0.7963 (13s)
+  Previous best: dual k=4 mc=15K ROC1=0.8014 (1900s)

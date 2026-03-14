@@ -1,0 +1,243 @@
+Loading database index...
+15:33:12 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+15:33:12 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+15:33:13 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.81s)
+15:33:13 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.81s)
+15:33:13 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+15:33:13 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries
+
+========================================================================================================================
+IDF-weighted Phase A + triple index
+========================================================================================================================
+
+Total configs to test: 5
+
+
+>>> Config 1/5: Dual k=5, no IDF (mc=8K)
+15:33:14 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+15:33:14 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+15:33:14 [INFO]   K-mer freq threshold: 63425
+15:33:14 [INFO]   K-mer freq threshold: 63425
+15:33:14 [INFO] Search Stage 1: K-mer index scoring...
+15:33:14 [INFO] Search Stage 1: K-mer index scoring...
+15:34:27 [INFO] Search Stage 1: K-mer index scoring done (73.24s)
+15:34:27 [INFO] Search Stage 1: K-mer index scoring done (73.24s)
+15:34:27 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+15:34:27 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+15:34:27 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+15:34:27 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+15:34:29 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+15:34:29 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+15:34:54 [INFO]   Reduced k=5: 15952926 candidates
+15:34:54 [INFO]   Reduced k=5: 15952926 candidates
+15:34:54 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (26.62s)
+15:34:54 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (26.62s)
+15:34:58 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
+15:34:58 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
+15:34:59 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+15:34:59 [INFO]   Alignment: 31185095 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+15:34:59 [INFO] Search Stage 2: SW local alignment...
+15:34:59 [INFO] Search Stage 2: SW local alignment...
+15:49:23 [INFO] Search Stage 2: SW local alignment done (864.44s)
+15:49:23 [INFO] Search Stage 2: SW local alignment done (864.44s)
+15:49:24 [INFO]   31185095 pairs above threshold 0.1
+15:49:24 [INFO]   31185095 pairs above threshold 0.1
+15:49:35 [INFO]   1000000 total hits for 2000/2000 queries
+15:49:35 [INFO]   1000000 total hits for 2000/2000 queries
+15:49:35 [INFO] Search completed in 981.02s
+15:49:35 [INFO] Search completed in 981.02s
+  RESULT: Dual k=5, no IDF (mc=8K)
+          ROC1=0.7948  aligned=  31185095  time=981.2s
+
+>>> Config 2/5: Dual k=5, IDF (mc=8K)
+    ETA: ~65.4 min remaining
+15:49:37 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+15:49:37 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+15:49:37 [INFO]   K-mer freq threshold: 63425
+15:49:37 [INFO]   K-mer freq threshold: 63425
+15:49:37 [INFO]   Using IDF-weighted Phase A scoring
+15:49:37 [INFO]   Using IDF-weighted Phase A scoring
+15:49:37 [INFO] Search Stage 1: K-mer index scoring...
+15:49:37 [INFO] Search Stage 1: K-mer index scoring...
+15:50:58 [INFO] Search Stage 1: K-mer index scoring done (80.99s)
+15:50:58 [INFO] Search Stage 1: K-mer index scoring done (80.99s)
+15:50:58 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+15:50:58 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+15:50:58 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+15:50:58 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+15:50:58 [INFO]   Using cached reduced alphabet index (k=5)
+15:50:58 [INFO]   Using cached reduced alphabet index (k=5)
+15:51:31 [INFO]   Reduced k=5: 15952926 candidates
+15:51:31 [INFO]   Reduced k=5: 15952926 candidates
+15:51:31 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (32.96s)
+15:51:31 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (32.96s)
+15:51:35 [INFO]   Reduced alphabet union: 31169559 total (was 16000000 from standard index)
+15:51:35 [INFO]   Reduced alphabet union: 31169559 total (was 16000000 from standard index)
+15:51:36 [INFO]   Alignment: 31169559 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+15:51:36 [INFO]   Alignment: 31169559 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+15:51:36 [INFO] Search Stage 2: SW local alignment...
+15:51:36 [INFO] Search Stage 2: SW local alignment...
+16:05:58 [INFO] Search Stage 2: SW local alignment done (862.34s)
+16:05:58 [INFO] Search Stage 2: SW local alignment done (862.34s)
+16:05:59 [INFO]   31169559 pairs above threshold 0.1
+16:05:59 [INFO]   31169559 pairs above threshold 0.1
+16:06:10 [INFO]   1000000 total hits for 2000/2000 queries
+16:06:10 [INFO]   1000000 total hits for 2000/2000 queries
+16:06:10 [INFO] Search completed in 992.90s
+16:06:10 [INFO] Search completed in 992.90s
+  RESULT: Dual k=5, IDF (mc=8K)
+          ROC1=0.7937  aligned=  31169559  time=992.9s
+
+>>> Config 3/5: Triple k=[4,5], no IDF (mc=8K)
+    ETA: ~49.4 min remaining
+16:06:11 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:06:11 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:06:11 [INFO]   K-mer freq threshold: 63425
+16:06:11 [INFO]   K-mer freq threshold: 63425
+16:06:11 [INFO] Search Stage 1: K-mer index scoring...
+16:06:11 [INFO] Search Stage 1: K-mer index scoring...
+16:07:16 [INFO] Search Stage 1: K-mer index scoring done (64.40s)
+16:07:16 [INFO] Search Stage 1: K-mer index scoring done (64.40s)
+16:07:16 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+16:07:16 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+16:07:16 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:07:16 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:07:17 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+16:07:17 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+16:09:59 [INFO]   Reduced k=4: 16000000 candidates
+16:09:59 [INFO]   Reduced k=4: 16000000 candidates
+16:09:59 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (163.29s)
+16:09:59 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (163.29s)
+16:09:59 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:09:59 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:09:59 [INFO]   Using cached reduced alphabet index (k=5)
+16:09:59 [INFO]   Using cached reduced alphabet index (k=5)
+16:10:23 [INFO]   Reduced k=5: 15952926 candidates
+16:10:23 [INFO]   Reduced k=5: 15952926 candidates
+16:10:23 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.22s)
+16:10:23 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.22s)
+16:10:29 [INFO]   Reduced alphabet union: 41467277 total (was 16000000 from standard index)
+16:10:29 [INFO]   Reduced alphabet union: 41467277 total (was 16000000 from standard index)
+16:10:31 [INFO]   Alignment: 41467277 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+16:10:31 [INFO]   Alignment: 41467277 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+16:10:31 [INFO] Search Stage 2: SW local alignment...
+16:10:31 [INFO] Search Stage 2: SW local alignment...
+16:30:09 [INFO] Search Stage 2: SW local alignment done (1177.95s)
+16:30:09 [INFO] Search Stage 2: SW local alignment done (1177.95s)
+16:30:10 [INFO]   41467277 pairs above threshold 0.1
+16:30:10 [INFO]   41467277 pairs above threshold 0.1
+16:30:23 [INFO]   1000000 total hits for 2000/2000 queries
+16:30:23 [INFO]   1000000 total hits for 2000/2000 queries
+16:30:23 [INFO] Search completed in 1451.89s
+16:30:23 [INFO] Search completed in 1451.89s
+  RESULT: Triple k=[4,5], no IDF (mc=8K)
+          ROC1=0.7998  aligned=  41467277  time=1452.0s
+
+>>> Config 4/5: Triple k=[4,5], IDF (mc=8K)
+    ETA: ~38.1 min remaining
+16:30:25 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:30:25 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:30:25 [INFO]   K-mer freq threshold: 63425
+16:30:25 [INFO]   K-mer freq threshold: 63425
+16:30:25 [INFO]   Using IDF-weighted Phase A scoring
+16:30:25 [INFO]   Using IDF-weighted Phase A scoring
+16:30:25 [INFO] Search Stage 1: K-mer index scoring...
+16:30:25 [INFO] Search Stage 1: K-mer index scoring...
+16:31:40 [INFO] Search Stage 1: K-mer index scoring done (75.02s)
+16:31:40 [INFO] Search Stage 1: K-mer index scoring done (75.02s)
+16:31:40 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+16:31:40 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+16:31:40 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:31:40 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:31:40 [INFO]   Using cached reduced alphabet index (k=4)
+16:31:40 [INFO]   Using cached reduced alphabet index (k=4)
+16:34:34 [INFO]   Reduced k=4: 16000000 candidates
+16:34:34 [INFO]   Reduced k=4: 16000000 candidates
+16:34:34 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (174.26s)
+16:34:34 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (174.26s)
+16:34:34 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:34:34 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:34:34 [INFO]   Using cached reduced alphabet index (k=5)
+16:34:34 [INFO]   Using cached reduced alphabet index (k=5)
+16:35:07 [INFO]   Reduced k=5: 15952926 candidates
+16:35:07 [INFO]   Reduced k=5: 15952926 candidates
+16:35:07 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (33.16s)
+16:35:07 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (33.16s)
+16:35:13 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+16:35:13 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+16:35:15 [INFO]   Alignment: 41390268 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+16:35:15 [INFO]   Alignment: 41390268 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+16:35:15 [INFO] Search Stage 2: SW local alignment...
+16:35:15 [INFO] Search Stage 2: SW local alignment...
+16:54:53 [INFO] Search Stage 2: SW local alignment done (1177.86s)
+16:54:53 [INFO] Search Stage 2: SW local alignment done (1177.86s)
+16:54:54 [INFO]   41390268 pairs above threshold 0.1
+16:54:54 [INFO]   41390268 pairs above threshold 0.1
+16:55:07 [INFO]   1000000 total hits for 2000/2000 queries
+16:55:07 [INFO]   1000000 total hits for 2000/2000 queries
+16:55:07 [INFO] Search completed in 1482.27s
+16:55:07 [INFO] Search completed in 1482.27s
+  RESULT: Triple k=[4,5], IDF (mc=8K)
+          ROC1=0.8000  aligned=  41390268  time=1482.3s
+
+>>> Config 5/5: Triple k=[4,5], IDF (mc=15K)
+    ETA: ~20.5 min remaining
+16:55:09 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:55:09 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+16:55:09 [INFO]   K-mer freq threshold: 63425
+16:55:09 [INFO]   K-mer freq threshold: 63425
+16:55:09 [INFO]   Using IDF-weighted Phase A scoring
+16:55:09 [INFO]   Using IDF-weighted Phase A scoring
+16:55:09 [INFO] Search Stage 1: K-mer index scoring...
+16:55:09 [INFO] Search Stage 1: K-mer index scoring...
+16:56:24 [INFO] Search Stage 1: K-mer index scoring done (74.99s)
+16:56:24 [INFO] Search Stage 1: K-mer index scoring done (74.99s)
+16:56:24 [INFO]   K-mer scoring: 30000000 candidate pairs (avg 15000.0/query)
+16:56:24 [INFO]   K-mer scoring: 30000000 candidate pairs (avg 15000.0/query)
+16:56:24 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:56:24 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+16:56:24 [INFO]   Using cached reduced alphabet index (k=4)
+16:56:24 [INFO]   Using cached reduced alphabet index (k=4)
+16:59:19 [INFO]   Reduced k=4: 30000000 candidates
+16:59:19 [INFO]   Reduced k=4: 30000000 candidates
+16:59:19 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (174.69s)
+16:59:19 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (174.69s)
+16:59:19 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:59:19 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+16:59:19 [INFO]   Using cached reduced alphabet index (k=5)
+16:59:19 [INFO]   Using cached reduced alphabet index (k=5)
+16:59:52 [INFO]   Reduced k=5: 29800468 candidates
+16:59:52 [INFO]   Reduced k=5: 29800468 candidates
+16:59:52 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (33.21s)
+16:59:52 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (33.21s)
+17:00:04 [INFO]   Reduced alphabet union: 75402190 total (was 30000000 from standard index)
+17:00:04 [INFO]   Reduced alphabet union: 75402190 total (was 30000000 from standard index)
+17:00:07 [INFO]   Alignment: 75402190 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+17:00:07 [INFO]   Alignment: 75402190 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+17:00:07 [INFO] Search Stage 2: SW local alignment...
+17:00:07 [INFO] Search Stage 2: SW local alignment...
+17:35:37 [INFO] Search Stage 2: SW local alignment done (2130.30s)
+17:35:37 [INFO] Search Stage 2: SW local alignment done (2130.30s)
+17:35:39 [INFO]   75402190 pairs above threshold 0.1
+17:35:39 [INFO]   75402190 pairs above threshold 0.1
+17:36:02 [INFO]   1000000 total hits for 2000/2000 queries
+17:36:02 [INFO]   1000000 total hits for 2000/2000 queries
+17:36:02 [INFO] Search completed in 2452.71s
+17:36:02 [INFO] Search completed in 2452.71s
+  RESULT: Triple k=[4,5], IDF (mc=15K)
+          ROC1=0.8082  aligned=  75402190  time=2452.8s
+
+========================================================================================================================
+SUMMARY (sorted by ROC1)
+========================================================================================================================
+  Config                                                ROC1    Aligned     Time
+  --------------------------------------------------------------------------------
+  Triple k=[4,5], IDF (mc=15K)                        0.8082   75402190  2452.8s
+  Triple k=[4,5], IDF (mc=8K)                         0.8000   41390268  1482.3s
+  Triple k=[4,5], no IDF (mc=8K)                      0.7998   41467277  1452.0s
+  Dual k=5, no IDF (mc=8K)                            0.7948   31185095   981.2s
+  Dual k=5, IDF (mc=8K)                               0.7937   31169559   992.9s
+
+  Reference: MMseqs2=0.7942  DIAMOND=0.7963
+  Previous best: dual k=4 mc=15K ROC1=0.8014
