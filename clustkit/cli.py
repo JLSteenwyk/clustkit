@@ -9,7 +9,7 @@ from clustkit import __version__
 
 app = typer.Typer(
     name="clustkit",
-    help="GPU-accelerated sequence clustering for bioinformatics.",
+    help="Sequence clustering and search for bioinformatics.",
     add_completion=False,
 )
 
@@ -31,7 +31,7 @@ def main(
         is_eager=True,
     ),
 ):
-    """ClustKIT: GPU-accelerated sequence clustering."""
+    """ClustKIT: Accurate sequence clustering and search via adaptive banded alignment."""
 
 
 @app.command()
@@ -97,7 +97,8 @@ def cluster(
     device: str = typer.Option(
         "cpu",
         "--device",
-        help="Device: 'cpu' or GPU device ID (e.g., '0').",
+        help="Device: 'cpu', 'auto', or GPU device ID (e.g., '0'). "
+             "'auto' benchmarks a sample to pick the fastest.",
     ),
     threads: int = typer.Option(
         1,
@@ -135,3 +136,204 @@ def cluster(
     }
 
     run_pipeline(config)
+
+
+@app.command()
+def search(
+    query: Path = typer.Option(
+        ...,
+        "-q",
+        "--query",
+        help="Query FASTA/FASTQ file.",
+        exists=True,
+        readable=True,
+    ),
+    db: Path = typer.Option(
+        ...,
+        "--db",
+        help="Database FASTA/FASTQ file or pre-built index directory.",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "-o",
+        "--output",
+        help="Output TSV file for search results.",
+    ),
+    threshold: float = typer.Option(
+        0.5,
+        "-t",
+        "--threshold",
+        help="Minimum sequence identity to report (0.0-1.0).",
+        min=0.0,
+        max=1.0,
+    ),
+    top_k: int = typer.Option(
+        10,
+        "--top-k",
+        help="Maximum number of hits per query.",
+        min=1,
+    ),
+    mode: str = typer.Option(
+        "protein",
+        "--mode",
+        help="Sequence type: 'protein' or 'nucleotide'.",
+    ),
+    sketch_size: int = typer.Option(
+        128,
+        "--sketch-size",
+        help="Number of minimizer hashes per sequence.",
+    ),
+    kmer_size: Optional[int] = typer.Option(
+        None,
+        "-k",
+        "--kmer-size",
+        help="K-mer size (default: 5 for protein, 11 for nucleotide).",
+    ),
+    sensitivity: str = typer.Option(
+        "high",
+        "--sensitivity",
+        help="LSH sensitivity: 'low', 'medium', or 'high'.",
+    ),
+    device: str = typer.Option(
+        "cpu",
+        "--device",
+        help="Device: 'cpu', 'auto', or GPU device ID.",
+    ),
+    threads: int = typer.Option(
+        1,
+        "--threads",
+        help="Number of CPU threads.",
+        min=1,
+    ),
+):
+    """Search query sequences against a database."""
+    import numba
+
+    from clustkit.io import read_sequences
+    from clustkit.database import load_database
+    from clustkit.search import search_sequences, write_search_results_tsv
+
+    numba.set_num_threads(threads)
+
+    # Resolve k-mer size default
+    if kmer_size is None:
+        kmer_size = 5 if mode == "protein" else 11
+
+    # Read query sequences
+    query_dataset = read_sequences(query, mode)
+
+    # Load database: either pre-built index dir or raw FASTA
+    db_path = Path(db)
+    if (db_path / "params.json").exists():
+        # Pre-built index
+        db_index = load_database(db_path)
+        db_dataset = db_index.dataset
+        db_sketches = db_index.sketches
+    else:
+        # Raw FASTA — sketch on the fly
+        db_dataset = read_sequences(db_path, mode)
+        db_sketches = None
+
+    results = search_sequences(
+        query_dataset=query_dataset,
+        db_dataset=db_dataset,
+        threshold=threshold,
+        top_k=top_k,
+        mode=mode,
+        kmer_size=kmer_size,
+        sketch_size=sketch_size,
+        sensitivity=sensitivity,
+        device=device,
+        db_sketches=db_sketches,
+    )
+
+    write_search_results_tsv(output, results)
+    typer.echo(
+        f"Search complete: {sum(len(h) for h in results.hits)} hits "
+        f"for {results.num_queries} queries in {results.runtime_seconds:.2f}s"
+    )
+
+
+@app.command()
+def makedb(
+    input: Path = typer.Option(
+        ...,
+        "-i",
+        "--input",
+        help="Input FASTA/FASTQ file.",
+        exists=True,
+        readable=True,
+    ),
+    output: Path = typer.Option(
+        ...,
+        "-o",
+        "--output",
+        help="Output directory for the database index.",
+    ),
+    mode: str = typer.Option(
+        "protein",
+        "--mode",
+        help="Sequence type: 'protein' or 'nucleotide'.",
+    ),
+    threshold: float = typer.Option(
+        0.5,
+        "-t",
+        "--threshold",
+        help="Target identity threshold for LSH parameter tuning.",
+        min=0.0,
+        max=1.0,
+    ),
+    sketch_size: int = typer.Option(
+        128,
+        "--sketch-size",
+        help="Number of minimizer hashes per sequence.",
+    ),
+    kmer_size: Optional[int] = typer.Option(
+        None,
+        "-k",
+        "--kmer-size",
+        help="K-mer size (default: 5 for protein, 11 for nucleotide).",
+    ),
+    sensitivity: str = typer.Option(
+        "high",
+        "--sensitivity",
+        help="LSH sensitivity: 'low', 'medium', or 'high'.",
+    ),
+    device: str = typer.Option(
+        "cpu",
+        "--device",
+        help="Device: 'cpu', 'auto', or GPU device ID.",
+    ),
+    threads: int = typer.Option(
+        1,
+        "--threads",
+        help="Number of CPU threads.",
+        min=1,
+    ),
+):
+    """Pre-build a database index for fast searching."""
+    import numba
+
+    from clustkit.database import build_database, save_database
+
+    numba.set_num_threads(threads)
+
+    # Resolve k-mer size default
+    if kmer_size is None:
+        kmer_size = 5 if mode == "protein" else 11
+
+    db_index = build_database(
+        input_path=input,
+        mode=mode,
+        kmer_size=kmer_size,
+        sketch_size=sketch_size,
+        threshold=threshold,
+        sensitivity=sensitivity,
+        device=device,
+    )
+
+    save_database(db_index, output)
+    typer.echo(
+        f"Database built: {db_index.params['num_sequences']} sequences, "
+        f"saved to {output}"
+    )

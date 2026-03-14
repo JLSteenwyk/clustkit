@@ -4,6 +4,7 @@ import json
 import time
 from pathlib import Path
 
+import numba
 import numpy as np
 
 from clustkit.io import (
@@ -29,6 +30,10 @@ def run_pipeline(config: dict):
     """
     start_time = time.perf_counter()
 
+    # Configure Numba thread count to match user request
+    numba.set_num_threads(config["threads"])
+    logger.info(f"Numba threads: {numba.get_num_threads()}")
+
     input_path = Path(config["input"])
     output_dir = Path(config["output"])
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -45,7 +50,7 @@ def run_pipeline(config: dict):
     device = config.get("device", "cpu")
 
     # --- Device selection ---
-    if device != "cpu":
+    if device not in ("cpu", "auto"):
         if gpu_available():
             logger.info(f"GPU mode enabled (device {device})")
         else:
@@ -53,6 +58,11 @@ def run_pipeline(config: dict):
                 f"GPU device '{device}' requested but CuPy/CUDA not available. "
                 "Falling back to CPU."
             )
+            device = "cpu"
+    elif device == "auto":
+        if gpu_available():
+            logger.info("Auto device selection enabled (will calibrate at alignment phase)")
+        else:
             device = "cpu"
 
     # --- Phase 0: Read sequences ---
@@ -93,6 +103,8 @@ def run_pipeline(config: dict):
             sketch_size,
             mode,
             device=device,
+            flat_sequences=dataset.flat_sequences,
+            offsets=dataset.offsets,
         )
 
     # --- Phase 2: LSH Bucketing ---
@@ -127,11 +139,14 @@ def run_pipeline(config: dict):
             )
     else:
         # Alignment mode (default): global alignment identity
-        band_width = max(20, int(dataset.max_length * 0.2))
+        # Use 95th percentile length (not max) to avoid outlier-driven over-wide bands.
+        p95_len = int(np.percentile(dataset.lengths, 95))
+        band_width = max(20, int(p95_len * 0.3))
         logger.info(
             f"  Mode: alignment | threshold {threshold} | "
             f"band_width {band_width}"
         )
+
         with timer("Phase 3: Pairwise similarity (alignment)"):
             filtered_pairs, similarities = compute_pairwise_alignment(
                 candidate_pairs,
@@ -141,6 +156,9 @@ def run_pipeline(config: dict):
                 band_width=band_width,
                 device=device,
                 mode=mode,
+                sketches=sketches,
+                flat_sequences=dataset.flat_sequences,
+                offsets=dataset.offsets,
             )
 
     logger.info(f"  {len(filtered_pairs)} pairs above threshold {threshold}")

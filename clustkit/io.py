@@ -34,13 +34,26 @@ class SequenceRecord:
 
 @dataclass
 class SequenceDataset:
-    """Collection of sequences ready for the clustering pipeline."""
+    """Collection of sequences ready for the clustering pipeline.
+
+    Supports two storage formats:
+    - **Padded matrix** (``encoded_sequences``): (N, max_len) uint8 — used by
+      GPU kernels and legacy code.  Created lazily from compact format when
+      first accessed if not stored explicitly.
+    - **Compact flat** (``flat_sequences`` + ``offsets``): concatenated 1D
+      uint8 array with per-sequence start offsets.  ~25x smaller than the
+      padded matrix when outlier sequences inflate max_len.
+    """
 
     records: list[SequenceRecord]
     mode: str  # "protein" or "nucleotide"
-    encoded_sequences: np.ndarray = field(default=None, repr=False)
+    # Padded (N, max_len) matrix — may be None if compact format is used
+    _encoded_sequences: np.ndarray = field(default=None, repr=False)
     lengths: np.ndarray = field(default=None, repr=False)
     ids: list[str] = field(default_factory=list)
+    # Compact storage: flat 1D array + offsets
+    flat_sequences: np.ndarray = field(default=None, repr=False)
+    offsets: np.ndarray = field(default=None, repr=False)
 
     @property
     def num_sequences(self) -> int:
@@ -49,6 +62,37 @@ class SequenceDataset:
     @property
     def max_length(self) -> int:
         return int(self.lengths.max()) if self.lengths is not None and len(self.lengths) > 0 else 0
+
+    @property
+    def encoded_sequences(self) -> np.ndarray:
+        """Return padded (N, max_len) matrix, building it lazily from compact format."""
+        if self._encoded_sequences is not None:
+            return self._encoded_sequences
+        if self.flat_sequences is not None and self.offsets is not None:
+            self._encoded_sequences = self._build_padded_matrix()
+            return self._encoded_sequences
+        return None
+
+    @encoded_sequences.setter
+    def encoded_sequences(self, value):
+        self._encoded_sequences = value
+
+    def _build_padded_matrix(self) -> np.ndarray:
+        """Reconstruct the padded (N, max_len) matrix from compact storage."""
+        n = len(self.lengths)
+        max_len = self.max_length
+        pad_value = PROTEIN_UNKNOWN if self.mode == "protein" else NUCLEOTIDE_UNKNOWN
+        matrix = np.full((n, max_len), pad_value, dtype=np.uint8)
+        for i in range(n):
+            start = int(self.offsets[i])
+            length = int(self.lengths[i])
+            matrix[i, :length] = self.flat_sequences[start:start + length]
+        return matrix
+
+    def drop_padded_matrix(self):
+        """Free the padded matrix to reclaim memory (compact format must exist)."""
+        if self.flat_sequences is not None:
+            self._encoded_sequences = None
 
 
 def encode_sequence(sequence: str, mode: str) -> np.ndarray:
@@ -182,9 +226,11 @@ def read_sequences(filepath: Path, mode: str) -> SequenceDataset:
         return SequenceDataset(
             records=[],
             mode=mode,
-            encoded_sequences=np.empty((0, 0), dtype=np.uint8),
+            _encoded_sequences=np.empty((0, 0), dtype=np.uint8),
             lengths=np.array([], dtype=np.int32),
             ids=[],
+            flat_sequences=np.empty(0, dtype=np.uint8),
+            offsets=np.array([], dtype=np.int64),
         )
 
     # Encode sequences
@@ -193,26 +239,26 @@ def read_sequences(filepath: Path, mode: str) -> SequenceDataset:
 
     lengths = np.array([rec.length for rec in records], dtype=np.int32)
     ids = [rec.id for rec in records]
-
-    # Pad to uniform length for batch processing
-    max_len = int(lengths.max())
     n = len(records)
 
-    if mode == "protein":
-        pad_value = PROTEIN_UNKNOWN
-    else:
-        pad_value = NUCLEOTIDE_UNKNOWN
-
-    encoded_matrix = np.full((n, max_len), pad_value, dtype=np.uint8)
+    # Build compact storage: flat 1D array + offsets
+    total_len = int(lengths.sum())
+    flat_sequences = np.empty(total_len, dtype=np.uint8)
+    offsets = np.empty(n, dtype=np.int64)
+    pos = 0
     for i, rec in enumerate(records):
-        encoded_matrix[i, : rec.length] = rec.encoded
+        offsets[i] = pos
+        flat_sequences[pos:pos + rec.length] = rec.encoded
+        pos += rec.length
 
     return SequenceDataset(
         records=records,
         mode=mode,
-        encoded_sequences=encoded_matrix,
+        _encoded_sequences=None,  # built lazily from compact format when needed
         lengths=lengths,
         ids=ids,
+        flat_sequences=flat_sequences,
+        offsets=offsets,
     )
 
 

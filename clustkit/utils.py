@@ -99,41 +99,43 @@ def auto_kmer_for_lsh(threshold: float, mode: str, user_k: int) -> int:
 def auto_lsh_params(threshold: float, sensitivity: str, k: int = 5) -> dict:
     """Choose LSH parameters (num_tables, num_bands) based on threshold and sensitivity.
 
-    LSH operates in k-mer Jaccard space, where the effective similarity is
-    approximately threshold^k. Lower identity thresholds produce much lower
-    k-mer Jaccard values, which are harder for LSH to detect and require
-    more aggressive parameters (more tables, fewer bands per table).
+    Uses collision probability theory to compute the minimum number of
+    tables needed to achieve a target recall probability.
+
+    For a pair with Jaccard similarity J, using b bands per table and L tables:
+        P(at least one collision) = 1 - (1 - J^b)^L
+
+    Given a target miss rate, we solve for L:
+        L = ceil(log(target_miss) / log(1 - J^b))
     """
-    # Effective similarity in sketch space
-    kmer_sim = threshold ** k
+    import math
 
-    base_tables = {
-        "low": 16,
-        "medium": 32,
-        "high": 64,
-    }
-    base_bands = {
-        "low": 4,
-        "medium": 2,
-        "high": 1,
-    }
+    # Target miss rate (1 - recall) per sensitivity level
+    target_miss = {
+        "low": 0.05,       # 95% recall
+        "medium": 0.01,    # 99% recall
+        "high": 0.001,     # 99.9% recall
+    }.get(sensitivity, 0.01)
 
-    L = base_tables.get(sensitivity, 32)
-    b = base_bands.get(sensitivity, 2)
+    # Effective Jaccard in sketch space
+    J = threshold ** k
+    J = max(J, 1e-9)  # avoid log(0)
 
-    # Scale tables up for low k-mer similarity (harder to detect)
-    if kmer_sim < 0.05:
-        # Very low J (e.g., 50% id with k=5): need many tables for recall
-        L = int(L * 5)
+    # Choose bands: b=1 for low J (only viable option), higher b for high J
+    # Higher b reduces false positives but needs more tables for same recall
+    if J < 0.15:
         b = 1
-    elif kmer_sim < 0.1:
-        L = int(L * 4)
-        b = 1
-    elif kmer_sim < 0.3:
-        L = int(L * 2.5)
-        b = max(1, b)
-    elif kmer_sim < 0.5:
-        L = int(L * 1.5)
-        b = max(1, b)
+    elif J < 0.5:
+        b = 2
+    else:
+        b = 3
+
+    # Compute minimum tables for target recall
+    collision_prob = J ** b
+    collision_prob = min(collision_prob, 1.0 - 1e-12)  # avoid log(0)
+    L = math.ceil(math.log(target_miss) / math.log(1.0 - collision_prob))
+
+    # Clamp to reasonable bounds
+    L = max(8, min(L, 512))
 
     return {"num_tables": L, "num_bands": b}

@@ -63,7 +63,7 @@ def _sketch_one(encoded_seq, seq_length, k, sketch_size, alphabet_size, seed):
 
 @njit(parallel=True, cache=True)
 def _compute_sketches_numba(encoded_sequences, lengths, k, sketch_size, alphabet_size, seed):
-    """Compute sketches for all sequences in parallel."""
+    """Compute sketches for all sequences in parallel (padded matrix input)."""
     n = lengths.shape[0]
     sketches = np.empty((n, sketch_size), dtype=np.uint64)
 
@@ -71,6 +71,21 @@ def _compute_sketches_numba(encoded_sequences, lengths, k, sketch_size, alphabet
         sketches[i] = _sketch_one(
             encoded_sequences[i], int32(lengths[i]), k, sketch_size, alphabet_size, seed
         )
+
+    return sketches
+
+
+@njit(parallel=True, cache=True)
+def _compute_sketches_compact(flat_sequences, offsets, lengths, k, sketch_size, alphabet_size, seed):
+    """Compute sketches for all sequences in parallel (compact flat storage)."""
+    n = lengths.shape[0]
+    sketches = np.empty((n, sketch_size), dtype=np.uint64)
+
+    for i in prange(n):
+        start = offsets[i]
+        length = int32(lengths[i])
+        seq = flat_sequences[start:start + length]
+        sketches[i] = _sketch_one(seq, length, k, sketch_size, alphabet_size, seed)
 
     return sketches
 
@@ -108,17 +123,22 @@ def compute_sketches(
     mode: str,
     seed: int = 42,
     device: str = "cpu",
+    flat_sequences: np.ndarray | None = None,
+    offsets: np.ndarray | None = None,
 ) -> np.ndarray:
     """Compute sketches for all sequences.
 
     Args:
         encoded_sequences: (N, max_len) uint8 matrix of encoded sequences.
+            May be None if flat_sequences and offsets are provided.
         lengths: (N,) int32 array of actual sequence lengths.
         k: K-mer size.
         sketch_size: Number of minimum hashes per sketch.
         mode: "protein" or "nucleotide".
         seed: Hash seed.
         device: "cpu" or GPU device ID (e.g., "0").
+        flat_sequences: 1D uint8 array of concatenated sequences (compact format).
+        offsets: (N,) int64 array of start positions in flat_sequences.
 
     Returns:
         (N, sketch_size) uint64 array of sketches (always on CPU).
@@ -126,9 +146,16 @@ def compute_sketches(
     alphabet_size = 20 if mode == "protein" else 4
 
     if device != "cpu" and _CUPY_AVAILABLE:
+        # GPU path requires padded matrix
         return _compute_sketches_gpu(
             encoded_sequences, lengths, k, sketch_size, alphabet_size, seed,
             int(device),
+        )
+
+    # Prefer compact format on CPU (better cache behaviour, less memory)
+    if flat_sequences is not None and offsets is not None:
+        return _compute_sketches_compact(
+            flat_sequences, offsets, lengths, k, sketch_size, alphabet_size, seed
         )
 
     return _compute_sketches_numba(
