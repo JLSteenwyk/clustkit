@@ -11,7 +11,7 @@ Only the surviving (query, target) pairs are passed to banded NW alignment.
 """
 
 import numpy as np
-from numba import njit, prange, int32, int64, int16
+from numba import njit, prange, int32, int64, int16, float32
 
 from clustkit.utils import logger, timer
 

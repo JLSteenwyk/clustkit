@@ -1,0 +1,43 @@
+13:36:14 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:36:14 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:36:16 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.76s)
+13:36:16 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.76s)
+13:36:16 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:36:16 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+==============================================================================================================
+ML Prefilter Model Comparison
+==============================================================================================================
+
+Step 1: Training data
+  Generating training data (this takes ~25 min)...
+13:36:16 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:36:16 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:36:17 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.56s)
+13:36:17 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.56s)
+13:36:17 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:36:17 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+  Standard k=3: 16000000 cands (74s)
+13:37:34 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+13:37:34 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+  Reduced k=5: 15952926 cands
+  Union: 31185095 total pairs
+  Features: (31185095, 4) (7s)
+  SW alignment: 31185095 pairs (865s)
+  Saved to benchmarks/data/speed_sensitivity_results/ml_cache
+  Train: 24,947,076  Test: 6,238,019
+  Baseline ROC1 (no prefilter): 0.7948
+
+Step 2: Model training and evaluation
+==============================================================================================================
+  Model                               Train(s) Infer(s)  Pearson r      MAE     RMSE
+  -------------------------------------------------------------------------------------
+  HistGBR (d=6, n=200)                    45.1     11.4     0.8928     5.33    23.08
+  HistGBR (d=4, n=100)                    24.7      7.2     0.8919     5.40    23.17
+  RandomForest (n=50)                     78.6      2.6     0.9661     4.89    13.25
+  RandomForest (n=100)                   116.7      4.8     0.9664     4.86    13.18
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/linear_model/_ridge.py:213: LinAlgWarning: Ill-conditioned matrix (rcond=5.37759e-08): result may not be accurate.
+  return linalg.solve(A, Xy, assume_a="pos", overwrite_a=True).T
+  Ridge (linear)                           1.0      0.0     0.6531    18.66    38.83
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/neural_network/_multilayer_perceptron.py:781: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (50) reached and the optimization hasn't converged yet.
+  warnings.warn(
+  MLP (64-32)                           2141.5      3.9     0.9674     4.87    13.05
