@@ -1,0 +1,335 @@
+Loading database index...
+22:34:09 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+22:34:09 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+22:34:10 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+22:34:10 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+22:34:10 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+22:34:10 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries
+
+========================================================================================================================
+New spaced seed patterns (added to triple index baseline)
+========================================================================================================================
+
+Total configs: 5
+
+
+>>> Config 1/5: + spaced 101011 (w=4, span=6)
+22:34:11 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+22:34:11 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+22:34:11 [INFO]   K-mer freq threshold: 63425
+22:34:11 [INFO]   K-mer freq threshold: 63425
+22:34:11 [INFO]   Using IDF-weighted Phase A scoring
+22:34:11 [INFO]   Using IDF-weighted Phase A scoring
+22:34:11 [INFO] Search Stage 1: K-mer index scoring...
+22:34:11 [INFO] Search Stage 1: K-mer index scoring...
+22:36:42 [INFO] Search Stage 1: K-mer index scoring done (151.38s)
+22:36:42 [INFO] Search Stage 1: K-mer index scoring done (151.38s)
+22:36:42 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+22:36:42 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+22:36:42 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+22:36:42 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+22:36:44 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+22:36:44 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+22:42:13 [INFO]   Reduced k=4: 16000000 candidates
+22:42:13 [INFO]   Reduced k=4: 16000000 candidates
+22:42:13 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (330.53s)
+22:42:13 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (330.53s)
+22:42:13 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+22:42:13 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+22:42:15 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+22:42:15 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+22:43:18 [INFO]   Reduced k=5: 15952926 candidates
+22:43:18 [INFO]   Reduced k=5: 15952926 candidates
+22:43:18 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (65.21s)
+22:43:18 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (65.21s)
+22:43:24 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+22:43:24 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+22:43:24 [INFO] Search Stage 1.6: Spaced seed 101011...
+22:43:24 [INFO] Search Stage 1.6: Spaced seed 101011...
+22:43:26 [INFO] Spaced seed index: pattern=101011, 6561 k-mers, 117,010,704 entries
+22:43:26 [INFO] Spaced seed index: pattern=101011, 6561 k-mers, 117,010,704 entries
+22:48:29 [INFO]   Spaced 101011: 16000000 candidates
+22:48:29 [INFO]   Spaced 101011: 16000000 candidates
+22:48:29 [INFO] Search Stage 1.6: Spaced seed 101011 done (305.50s)
+22:48:29 [INFO] Search Stage 1.6: Spaced seed 101011 done (305.50s)
+22:48:37 [INFO]   Spaced seed union: 54272341 total (was 41390268)
+22:48:37 [INFO]   Spaced seed union: 54272341 total (was 41390268)
+22:48:39 [INFO]   Alignment: 54272341 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+22:48:39 [INFO]   Alignment: 54272341 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+22:48:39 [INFO] Search Stage 2: SW local alignment...
+22:48:39 [INFO] Search Stage 2: SW local alignment...
+23:38:25 [INFO] Search Stage 2: SW local alignment done (2986.21s)
+23:38:25 [INFO] Search Stage 2: SW local alignment done (2986.21s)
+23:38:26 [INFO]   54272341 pairs above threshold 0.1
+23:38:26 [INFO]   54272341 pairs above threshold 0.1
+23:38:44 [INFO]   1000000 total hits for 2000/2000 queries
+23:38:44 [INFO]   1000000 total hits for 2000/2000 queries
+23:38:44 [INFO] Search completed in 3873.10s
+23:38:44 [INFO] Search completed in 3873.10s
+  RESULT: + spaced 101011 (w=4, span=6)
+          ROC1=0.8081  aligned=  54272341  time=3873.3s
+
+>>> Config 2/5: + spaced 1010101 (w=4, span=7)
+    ETA: ~258.2 min remaining
+23:38:45 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+23:38:45 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+23:38:45 [INFO]   K-mer freq threshold: 63425
+23:38:45 [INFO]   K-mer freq threshold: 63425
+23:38:45 [INFO]   Using IDF-weighted Phase A scoring
+23:38:45 [INFO]   Using IDF-weighted Phase A scoring
+23:38:45 [INFO] Search Stage 1: K-mer index scoring...
+23:38:45 [INFO] Search Stage 1: K-mer index scoring...
+23:41:08 [INFO] Search Stage 1: K-mer index scoring done (142.68s)
+23:41:08 [INFO] Search Stage 1: K-mer index scoring done (142.68s)
+23:41:08 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+23:41:08 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+23:41:08 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+23:41:08 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+23:41:08 [INFO]   Using cached reduced alphabet index (k=4)
+23:41:08 [INFO]   Using cached reduced alphabet index (k=4)
+23:46:37 [INFO]   Reduced k=4: 16000000 candidates
+23:46:37 [INFO]   Reduced k=4: 16000000 candidates
+23:46:37 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (328.35s)
+23:46:37 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (328.35s)
+23:46:37 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+23:46:37 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+23:46:37 [INFO]   Using cached reduced alphabet index (k=5)
+23:46:37 [INFO]   Using cached reduced alphabet index (k=5)
+23:47:40 [INFO]   Reduced k=5: 15952926 candidates
+23:47:40 [INFO]   Reduced k=5: 15952926 candidates
+23:47:40 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.46s)
+23:47:40 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.46s)
+23:47:46 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+23:47:46 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+23:47:46 [INFO] Search Stage 1.6: Spaced seed 1010101...
+23:47:46 [INFO] Search Stage 1.6: Spaced seed 1010101...
+23:47:48 [INFO] Spaced seed index: pattern=1010101, 6561 k-mers, 116,419,416 entries
+23:47:48 [INFO] Spaced seed index: pattern=1010101, 6561 k-mers, 116,419,416 entries
+23:52:47 [INFO]   Spaced 1010101: 16000000 candidates
+23:52:47 [INFO]   Spaced 1010101: 16000000 candidates
+23:52:47 [INFO] Search Stage 1.6: Spaced seed 1010101 done (301.23s)
+23:52:47 [INFO] Search Stage 1.6: Spaced seed 1010101 done (301.23s)
+23:52:55 [INFO]   Spaced seed union: 55546541 total (was 41390268)
+23:52:55 [INFO]   Spaced seed union: 55546541 total (was 41390268)
+23:52:57 [INFO]   Alignment: 55546541 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+23:52:57 [INFO]   Alignment: 55546541 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+23:52:57 [INFO] Search Stage 2: SW local alignment...
+23:52:57 [INFO] Search Stage 2: SW local alignment...
+00:43:28 [INFO] Search Stage 2: SW local alignment done (3031.42s)
+00:43:28 [INFO] Search Stage 2: SW local alignment done (3031.42s)
+00:43:29 [INFO]   55546541 pairs above threshold 0.1
+00:43:29 [INFO]   55546541 pairs above threshold 0.1
+00:43:47 [INFO]   1000000 total hits for 2000/2000 queries
+00:43:47 [INFO]   1000000 total hits for 2000/2000 queries
+00:43:47 [INFO] Search completed in 3901.44s
+00:43:47 [INFO] Search completed in 3901.44s
+  RESULT: + spaced 1010101 (w=4, span=7)
+          ROC1=0.8089  aligned=  55546541  time=3901.5s
+
+>>> Config 3/5: + spaced 1001011 (w=4, span=7)
+    ETA: ~194.4 min remaining
+00:43:49 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+00:43:49 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+00:43:49 [INFO]   K-mer freq threshold: 63425
+00:43:49 [INFO]   K-mer freq threshold: 63425
+00:43:49 [INFO]   Using IDF-weighted Phase A scoring
+00:43:49 [INFO]   Using IDF-weighted Phase A scoring
+00:43:49 [INFO] Search Stage 1: K-mer index scoring...
+00:43:49 [INFO] Search Stage 1: K-mer index scoring...
+00:46:12 [INFO] Search Stage 1: K-mer index scoring done (143.21s)
+00:46:12 [INFO] Search Stage 1: K-mer index scoring done (143.21s)
+00:46:12 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+00:46:12 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+00:46:12 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+00:46:12 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+00:46:12 [INFO]   Using cached reduced alphabet index (k=4)
+00:46:12 [INFO]   Using cached reduced alphabet index (k=4)
+00:51:41 [INFO]   Reduced k=4: 16000000 candidates
+00:51:41 [INFO]   Reduced k=4: 16000000 candidates
+00:51:41 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (328.69s)
+00:51:41 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (328.69s)
+00:51:41 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+00:51:41 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+00:51:41 [INFO]   Using cached reduced alphabet index (k=5)
+00:51:41 [INFO]   Using cached reduced alphabet index (k=5)
+00:52:45 [INFO]   Reduced k=5: 15952926 candidates
+00:52:45 [INFO]   Reduced k=5: 15952926 candidates
+00:52:45 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.69s)
+00:52:45 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.69s)
+00:52:51 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+00:52:51 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+00:52:51 [INFO] Search Stage 1.6: Spaced seed 1001011...
+00:52:51 [INFO] Search Stage 1.6: Spaced seed 1001011...
+00:52:52 [INFO] Spaced seed index: pattern=1001011, 6561 k-mers, 116,419,416 entries
+00:52:52 [INFO] Spaced seed index: pattern=1001011, 6561 k-mers, 116,419,416 entries
+00:57:49 [INFO]   Spaced 1001011: 16000000 candidates
+00:57:49 [INFO]   Spaced 1001011: 16000000 candidates
+00:57:49 [INFO] Search Stage 1.6: Spaced seed 1001011 done (298.16s)
+00:57:49 [INFO] Search Stage 1.6: Spaced seed 1001011 done (298.16s)
+00:57:56 [INFO]   Spaced seed union: 54994306 total (was 41390268)
+00:57:56 [INFO]   Spaced seed union: 54994306 total (was 41390268)
+00:57:58 [INFO]   Alignment: 54994306 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+00:57:58 [INFO]   Alignment: 54994306 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+00:57:58 [INFO] Search Stage 2: SW local alignment...
+00:57:58 [INFO] Search Stage 2: SW local alignment...
+01:48:19 [INFO] Search Stage 2: SW local alignment done (3020.55s)
+01:48:19 [INFO] Search Stage 2: SW local alignment done (3020.55s)
+01:48:20 [INFO]   54994306 pairs above threshold 0.1
+01:48:20 [INFO]   54994306 pairs above threshold 0.1
+01:48:37 [INFO]   1000000 total hits for 2000/2000 queries
+01:48:37 [INFO]   1000000 total hits for 2000/2000 queries
+01:48:37 [INFO] Search completed in 3888.23s
+01:48:37 [INFO] Search completed in 3888.23s
+  RESULT: + spaced 1001011 (w=4, span=7)
+          ROC1=0.8077  aligned=  54994306  time=3888.3s
+
+>>> Config 4/5: + spaced 11000011 (w=4, span=8)
+    ETA: ~129.6 min remaining
+01:48:39 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+01:48:39 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+01:48:39 [INFO]   K-mer freq threshold: 63425
+01:48:39 [INFO]   K-mer freq threshold: 63425
+01:48:39 [INFO]   Using IDF-weighted Phase A scoring
+01:48:39 [INFO]   Using IDF-weighted Phase A scoring
+01:48:39 [INFO] Search Stage 1: K-mer index scoring...
+01:48:39 [INFO] Search Stage 1: K-mer index scoring...
+01:51:02 [INFO] Search Stage 1: K-mer index scoring done (143.13s)
+01:51:02 [INFO] Search Stage 1: K-mer index scoring done (143.13s)
+01:51:02 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+01:51:02 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+01:51:02 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+01:51:02 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+01:51:02 [INFO]   Using cached reduced alphabet index (k=4)
+01:51:02 [INFO]   Using cached reduced alphabet index (k=4)
+01:56:32 [INFO]   Reduced k=4: 16000000 candidates
+01:56:32 [INFO]   Reduced k=4: 16000000 candidates
+01:56:32 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (329.36s)
+01:56:32 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (329.36s)
+01:56:32 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+01:56:32 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+01:56:32 [INFO]   Using cached reduced alphabet index (k=5)
+01:56:32 [INFO]   Using cached reduced alphabet index (k=5)
+01:57:35 [INFO]   Reduced k=5: 15952926 candidates
+01:57:35 [INFO]   Reduced k=5: 15952926 candidates
+01:57:35 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.71s)
+01:57:35 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (63.71s)
+01:57:41 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+01:57:41 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+01:57:41 [INFO] Search Stage 1.6: Spaced seed 11000011...
+01:57:41 [INFO] Search Stage 1.6: Spaced seed 11000011...
+01:57:43 [INFO] Spaced seed index: pattern=11000011, 6561 k-mers, 115,828,128 entries
+01:57:43 [INFO] Spaced seed index: pattern=11000011, 6561 k-mers, 115,828,128 entries
+02:02:37 [INFO]   Spaced 11000011: 16000000 candidates
+02:02:37 [INFO]   Spaced 11000011: 16000000 candidates
+02:02:37 [INFO] Search Stage 1.6: Spaced seed 11000011 done (295.56s)
+02:02:37 [INFO] Search Stage 1.6: Spaced seed 11000011 done (295.56s)
+02:02:44 [INFO]   Spaced seed union: 55536758 total (was 41390268)
+02:02:44 [INFO]   Spaced seed union: 55536758 total (was 41390268)
+02:02:46 [INFO]   Alignment: 55536758 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+02:02:46 [INFO]   Alignment: 55536758 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+02:02:46 [INFO] Search Stage 2: SW local alignment...
+02:02:46 [INFO] Search Stage 2: SW local alignment...
+02:53:34 [INFO] Search Stage 2: SW local alignment done (3047.34s)
+02:53:34 [INFO] Search Stage 2: SW local alignment done (3047.34s)
+02:53:35 [INFO]   55536758 pairs above threshold 0.1
+02:53:35 [INFO]   55536758 pairs above threshold 0.1
+02:53:52 [INFO]   1000000 total hits for 2000/2000 queries
+02:53:52 [INFO]   1000000 total hits for 2000/2000 queries
+02:53:52 [INFO] Search completed in 3913.36s
+02:53:52 [INFO] Search completed in 3913.36s
+  RESULT: + spaced 11000011 (w=4, span=8)
+          ROC1=0.8068  aligned=  55536758  time=3913.5s
+
+>>> Config 5/5: + all seeds [11011,110011,1010101,11000011]
+    ETA: ~64.9 min remaining
+02:53:54 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+02:53:54 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+02:53:54 [INFO]   K-mer freq threshold: 63425
+02:53:54 [INFO]   K-mer freq threshold: 63425
+02:53:54 [INFO]   Using IDF-weighted Phase A scoring
+02:53:54 [INFO]   Using IDF-weighted Phase A scoring
+02:53:54 [INFO] Search Stage 1: K-mer index scoring...
+02:53:54 [INFO] Search Stage 1: K-mer index scoring...
+02:56:17 [INFO] Search Stage 1: K-mer index scoring done (142.54s)
+02:56:17 [INFO] Search Stage 1: K-mer index scoring done (142.54s)
+02:56:17 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+02:56:17 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+02:56:17 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+02:56:17 [INFO] Search Stage 1.5: Reduced alphabet k=4...
+02:56:17 [INFO]   Using cached reduced alphabet index (k=4)
+02:56:17 [INFO]   Using cached reduced alphabet index (k=4)
+03:01:45 [INFO]   Reduced k=4: 16000000 candidates
+03:01:45 [INFO]   Reduced k=4: 16000000 candidates
+03:01:45 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (327.74s)
+03:01:45 [INFO] Search Stage 1.5: Reduced alphabet k=4 done (327.74s)
+03:01:45 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+03:01:45 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+03:01:45 [INFO]   Using cached reduced alphabet index (k=5)
+03:01:45 [INFO]   Using cached reduced alphabet index (k=5)
+03:02:49 [INFO]   Reduced k=5: 15952926 candidates
+03:02:49 [INFO]   Reduced k=5: 15952926 candidates
+03:02:49 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (64.02s)
+03:02:49 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (64.02s)
+03:02:55 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+03:02:55 [INFO]   Reduced alphabet union: 41390268 total (was 16000000 from standard index)
+03:02:55 [INFO] Search Stage 1.6: Spaced seed 11011...
+03:02:55 [INFO] Search Stage 1.6: Spaced seed 11011...
+03:02:56 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+03:02:56 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+03:07:58 [INFO]   Spaced 11011: 16000000 candidates
+03:07:58 [INFO]   Spaced 11011: 16000000 candidates
+03:07:58 [INFO] Search Stage 1.6: Spaced seed 11011 done (303.30s)
+03:07:58 [INFO] Search Stage 1.6: Spaced seed 11011 done (303.30s)
+03:07:58 [INFO] Search Stage 1.6: Spaced seed 110011...
+03:07:58 [INFO] Search Stage 1.6: Spaced seed 110011...
+03:08:00 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+03:08:00 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+03:12:56 [INFO]   Spaced 110011: 16000000 candidates
+03:12:56 [INFO]   Spaced 110011: 16000000 candidates
+03:12:56 [INFO] Search Stage 1.6: Spaced seed 110011 done (297.77s)
+03:12:56 [INFO] Search Stage 1.6: Spaced seed 110011 done (297.77s)
+03:12:56 [INFO] Search Stage 1.6: Spaced seed 1010101...
+03:12:56 [INFO] Search Stage 1.6: Spaced seed 1010101...
+03:12:56 [INFO]   Using cached spaced seed index (1010101)
+03:12:56 [INFO]   Using cached spaced seed index (1010101)
+03:17:55 [INFO]   Spaced 1010101: 16000000 candidates
+03:17:55 [INFO]   Spaced 1010101: 16000000 candidates
+03:17:55 [INFO] Search Stage 1.6: Spaced seed 1010101 done (299.53s)
+03:17:55 [INFO] Search Stage 1.6: Spaced seed 1010101 done (299.53s)
+03:17:55 [INFO] Search Stage 1.6: Spaced seed 11000011...
+03:17:55 [INFO] Search Stage 1.6: Spaced seed 11000011...
+03:17:55 [INFO]   Using cached spaced seed index (11000011)
+03:17:55 [INFO]   Using cached spaced seed index (11000011)
+03:22:48 [INFO]   Spaced 11000011: 16000000 candidates
+03:22:48 [INFO]   Spaced 11000011: 16000000 candidates
+03:22:48 [INFO] Search Stage 1.6: Spaced seed 11000011 done (292.49s)
+03:22:48 [INFO] Search Stage 1.6: Spaced seed 11000011 done (292.49s)
+03:23:02 [INFO]   Spaced seed union: 90418242 total (was 41390268)
+03:23:02 [INFO]   Spaced seed union: 90418242 total (was 41390268)
+03:23:05 [INFO]   Alignment: 90418242 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+03:23:05 [INFO]   Alignment: 90418242 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+03:23:05 [INFO] Search Stage 2: SW local alignment...
+03:23:05 [INFO] Search Stage 2: SW local alignment...
+04:45:45 [INFO] Search Stage 2: SW local alignment done (4959.77s)
+04:45:45 [INFO] Search Stage 2: SW local alignment done (4959.77s)
+04:45:47 [INFO]   90418242 pairs above threshold 0.1
+04:45:47 [INFO]   90418242 pairs above threshold 0.1
+04:46:14 [INFO]   1000000 total hits for 2000/2000 queries
+04:46:14 [INFO]   1000000 total hits for 2000/2000 queries
+04:46:14 [INFO] Search completed in 6739.97s
+04:46:14 [INFO] Search completed in 6739.97s
+  RESULT: + all seeds [11011,110011,1010101,11000011]
+          ROC1=0.8184  aligned=  90418242  time=6740.1s
+
+========================================================================================================================
+SUMMARY (sorted by ROC1)
+========================================================================================================================
+  + all seeds [11011,110011,1010101,11000011]             ROC1=0.8184 aligned=  90418242 time=6740.1s
+  + spaced 1010101 (w=4, span=7)                          ROC1=0.8089 aligned=  55546541 time=3901.5s
+  + spaced 101011 (w=4, span=6)                           ROC1=0.8081 aligned=  54272341 time=3873.3s
+  + spaced 1001011 (w=4, span=7)                          ROC1=0.8077 aligned=  54994306 time=3888.3s
+  + spaced 11000011 (w=4, span=8)                         ROC1=0.8068 aligned=  55536758 time=3913.5s
+
+  Reference: Triple+IDF+spaced[11011,110011] mc=8K = 0.8123
+  Previous best: Triple+IDF+spaced[11011,110011] mc=15K = 0.8178

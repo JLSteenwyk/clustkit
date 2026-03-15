@@ -31,6 +31,22 @@ REDUCED_ALPHA = np.array(
 )
 REDUCED_ALPHA_SIZE = 9
 
+# Dayhoff-6: classic evolutionary grouping (coarser, broader homology)
+# Groups: {A,G,P,S,T}=0 {D,E,N,Q}=1 {H,K,R}=2 {F,W,Y}=3 {I,L,M,V}=4 {C}=5
+DAYHOFF6_ALPHA = np.array(
+    [0, 5, 1, 1, 3, 0, 2, 4, 2, 4, 4, 1, 0, 1, 2, 0, 0, 4, 3, 3],
+    dtype=np.uint8,
+)
+DAYHOFF6_ALPHA_SIZE = 6
+
+# Hydrophobicity-8: groups by physical property conservation
+# Groups: {A,G,I,L,M,V}=0 {F,W,Y}=1 {D,E}=2 {H,K,R}=3 {N,Q}=4 {S,T}=5 {C}=6 {P}=7
+HYDRO8_ALPHA = np.array(
+    [0, 6, 2, 2, 1, 0, 3, 0, 3, 0, 0, 4, 7, 4, 3, 5, 5, 0, 1, 1],
+    dtype=np.uint8,
+)
+HYDRO8_ALPHA_SIZE = 8
+
 
 @njit(cache=True)
 def _remap_flat(src, mapping, n):
@@ -1261,6 +1277,7 @@ def search_kmer_index(
     reduced_k: int | list[int] = 5,
     use_idf: bool = False,
     spaced_seeds: list[str] | None = None,
+    extra_alphabets: list[tuple] | None = None,
 ):
     """Search queries against a pre-built k-mer inverted index.
 
@@ -1560,6 +1577,107 @@ def search_kmer_index(
             logger.info(
                 f"  Reduced alphabet union: {total_cands} total "
                 f"(was {n_before} from standard index)"
+            )
+
+    # ── Stage 1.55: Extra alphabet candidates (optional) ────────────
+    # Each entry: (name, alpha_map, alpha_size, k_values)
+    if extra_alphabets and mode == "protein":
+        extra_packed = []
+        for alpha_name, alpha_map, alpha_sz, alpha_k_vals in extra_alphabets:
+            ext_q_flat = _remap_flat(q_flat, alpha_map, len(q_flat))
+
+            for rk in alpha_k_vals:
+                with timer(
+                    f"Search Stage 1.55: {alpha_name} k={rk}"
+                ):
+                    _ecache = f'_ext_{alpha_name}_k{rk}'
+                    if hasattr(db_index, _ecache):
+                        ext_off, ext_ent, ext_freq = getattr(
+                            db_index, _ecache
+                        )
+                        logger.info(
+                            f"  Using cached {alpha_name} index (k={rk})"
+                        )
+                    else:
+                        db_flat = db_index.dataset.flat_sequences
+                        ext_db_flat = _remap_flat(
+                            db_flat, alpha_map, len(db_flat)
+                        )
+                        ext_off, ext_ent, ext_freq = build_kmer_index(
+                            ext_db_flat,
+                            db_index.dataset.offsets,
+                            db_index.dataset.lengths,
+                            rk, mode, alpha_size=alpha_sz,
+                        )
+                        setattr(db_index, _ecache, (
+                            ext_off, ext_ent, ext_freq,
+                        ))
+
+                    ext_freq_thresh = compute_freq_threshold(
+                        ext_freq, nd, freq_percentile,
+                    )
+                    ext_mc = max_cands_per_query
+                    ext_out_t = np.empty((nq, ext_mc), dtype=np.int32)
+                    ext_out_c = np.zeros(nq, dtype=np.int32)
+
+                    _batch_score_queries(
+                        ext_q_flat,
+                        q_off.astype(np.int64),
+                        q_lens.astype(np.int32),
+                        int32(rk), int32(alpha_sz),
+                        ext_off, ext_ent, ext_freq,
+                        ext_freq_thresh,
+                        int32(nd), int32(min_total_hits),
+                        int32(min_diag_hits), int32(diag_bin_width),
+                        int32(ext_mc), int32(phase_a_topk),
+                        ext_out_t, ext_out_c,
+                    )
+
+                    ext_total = int(ext_out_c.sum())
+                    if ext_total > 0:
+                        ext_pairs = np.empty(
+                            (ext_total, 2), dtype=np.int32
+                        )
+                        rpos = 0
+                        for qi in range(nq):
+                            nc = int(ext_out_c[qi])
+                            if nc > 0:
+                                ext_pairs[rpos:rpos + nc, 0] = qi
+                                ext_pairs[rpos:rpos + nc, 1] = (
+                                    ext_out_t[qi, :nc]
+                                )
+                                rpos += nc
+                        packed = (
+                            ext_pairs[:, 0].astype(np.int64) * nd
+                            + ext_pairs[:, 1].astype(np.int64)
+                        )
+                        extra_packed.append(packed)
+                        logger.info(
+                            f"  {alpha_name} k={rk}: "
+                            f"{ext_total} candidates"
+                        )
+
+        if extra_packed:
+            std_packed = (
+                candidate_pairs[:, 0].astype(np.int64) * nd
+                + candidate_pairs[:, 1].astype(np.int64)
+            )
+            all_arrays = [std_packed] + extra_packed
+            union_packed = np.unique(np.concatenate(all_arrays))
+            n_before = len(candidate_pairs)
+            candidate_pairs = np.empty(
+                (len(union_packed), 2), dtype=np.int32
+            )
+            candidate_pairs[:, 0] = (
+                union_packed // nd
+            ).astype(np.int32)
+            candidate_pairs[:, 1] = (
+                union_packed % nd
+            ).astype(np.int32)
+            total_cands = len(candidate_pairs)
+            logger.info(
+                f"  Extra alphabet union: {total_cands} total "
+                f"(was {n_before})"
             )
 
     # ── Stage 1.6: Spaced seed candidates (optional) ────────────────
