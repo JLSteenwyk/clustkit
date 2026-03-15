@@ -147,6 +147,288 @@ def build_kmer_index(flat_sequences, offsets, lengths, k, mode,
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Spaced seed index building
+# ──────────────────────────────────────────────────────────────────────────
+
+@njit(cache=True)
+def _count_kmers_spaced(flat_seqs, offsets, lengths, seed_offsets, weight,
+                        span, alpha_size, counts):
+    """Count k-mers using a spaced seed pattern."""
+    n = len(lengths)
+    for i in range(n):
+        start = int64(offsets[i])
+        length = int32(lengths[i])
+        if length < span:
+            continue
+        num_seeds = length - span + 1
+        for pos in range(num_seeds):
+            kmer_val = int64(0)
+            valid = True
+            for j in range(weight):
+                r = flat_seqs[start + pos + seed_offsets[j]]
+                if r >= alpha_size:
+                    valid = False
+                    break
+                kmer_val = kmer_val * int64(alpha_size) + int64(r)
+            if valid:
+                counts[kmer_val] += int64(1)
+
+
+@njit(cache=True)
+def _fill_entries_spaced(flat_seqs, offsets, lengths, seed_offsets, weight,
+                         span, alpha_size, kmer_offsets, entries, cursors):
+    """Fill CSR entries for a spaced seed index."""
+    n = len(lengths)
+    for i in range(n):
+        start = int64(offsets[i])
+        length = int32(lengths[i])
+        if length < span:
+            continue
+        num_seeds = length - span + 1
+        for pos in range(num_seeds):
+            kmer_val = int64(0)
+            valid = True
+            for j in range(weight):
+                r = flat_seqs[start + pos + seed_offsets[j]]
+                if r >= alpha_size:
+                    valid = False
+                    break
+                kmer_val = kmer_val * int64(alpha_size) + int64(r)
+            if valid:
+                idx = cursors[kmer_val]
+                entries[idx] = (int64(i) << 32) | int64(pos)
+                cursors[kmer_val] = idx + int64(1)
+
+
+def build_kmer_index_spaced(flat_sequences, offsets, lengths, seed_pattern,
+                            mode, alpha_size=None):
+    """Build a CSR-format k-mer index using a spaced seed pattern.
+
+    Args:
+        seed_pattern: string like ``"11011"`` where 1=match, 0=don't-care.
+        Other args same as :func:`build_kmer_index`.
+
+    Returns:
+        ``(kmer_offsets, kmer_entries, kmer_freqs, seed_offsets, weight, span)``
+    """
+    seed_offsets = np.array(
+        [i for i, c in enumerate(seed_pattern) if c == '1'], dtype=np.int32
+    )
+    weight = len(seed_offsets)
+    span = len(seed_pattern)
+
+    if alpha_size is None:
+        alpha_size = 20 if mode == "protein" else 4
+    num_possible = alpha_size ** weight
+
+    counts = np.zeros(num_possible, dtype=np.int64)
+    _count_kmers_spaced(flat_sequences, offsets, lengths, seed_offsets,
+                        int32(weight), int32(span), int32(alpha_size), counts)
+
+    kmer_freqs = counts.astype(np.int32)
+    kmer_offsets = np.zeros(num_possible + 1, dtype=np.int64)
+    np.cumsum(counts, out=kmer_offsets[1:])
+    total = int(kmer_offsets[-1])
+
+    kmer_entries = np.empty(total, dtype=np.int64)
+    cursors = kmer_offsets[:-1].copy()
+    _fill_entries_spaced(flat_sequences, offsets, lengths, seed_offsets,
+                         int32(weight), int32(span), int32(alpha_size),
+                         kmer_offsets, kmer_entries, cursors)
+
+    logger.info(
+        f"Spaced seed index: pattern={seed_pattern}, "
+        f"{num_possible} k-mers, {total:,} entries"
+    )
+    return kmer_offsets, kmer_entries, kmer_freqs, seed_offsets, weight, span
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Spaced seed scoring (Phase A + B)
+# ──────────────────────────────────────────────────────────────────────────
+
+@njit(cache=True)
+def _score_query_two_stage_spaced(
+    q_seq, q_len, seed_offsets, weight, span, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+    num_db, min_total_hits, min_diag_hits, diag_bin_width,
+    phase_a_topk,
+):
+    """Two-stage scoring using a spaced seed pattern."""
+    num_seeds = q_len - span + 1
+    if num_seeds <= 0:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+
+    # ── Phase A ──────────────────────────────────────────────────────
+    target_counts = np.zeros(num_db, dtype=np.int16)
+
+    for qpos in range(num_seeds):
+        kmer_val = int64(0)
+        valid = True
+        for j in range(weight):
+            r = q_seq[qpos + seed_offsets[j]]
+            if r >= alpha_size:
+                valid = False
+                break
+            kmer_val = kmer_val * int64(alpha_size) + int64(r)
+        if not valid:
+            continue
+        if kmer_freqs[kmer_val] > freq_thresh:
+            continue
+        s = kmer_offsets[kmer_val]
+        e = kmer_offsets[kmer_val + 1]
+        for h in range(s, e):
+            tid = int32(kmer_entries[h] >> 32)
+            if target_counts[tid] < 32767:
+                target_counts[tid] += int16(1)
+
+    # ── Top-K selection ──────────────────────────────────────────────
+    num_passing = int32(0)
+    for i in range(num_db):
+        if target_counts[i] >= min_total_hits:
+            num_passing += int32(1)
+    if num_passing == 0:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+
+    passing_ids = np.empty(num_passing, dtype=np.int32)
+    passing_scores = np.empty(num_passing, dtype=np.int16)
+    pos = int32(0)
+    for i in range(num_db):
+        if target_counts[i] >= min_total_hits:
+            passing_ids[pos] = int32(i)
+            passing_scores[pos] = target_counts[i]
+            pos += int32(1)
+
+    if min_diag_hits <= 1:
+        return passing_ids, passing_scores.astype(np.int32)
+
+    topk = min(int32(phase_a_topk), num_passing)
+    if topk < num_passing:
+        order = np.argsort(-passing_scores)
+        topk_ids = np.empty(topk, dtype=np.int32)
+        for i in range(topk):
+            topk_ids[i] = passing_ids[order[i]]
+    else:
+        topk_ids = passing_ids
+
+    # ── Phase B: diagonal scoring ────────────────────────────────────
+    survivor_mask = np.zeros(num_db, dtype=np.bool_)
+    for i in range(len(topk_ids)):
+        survivor_mask[topk_ids[i]] = True
+
+    n_surv_hits = int64(0)
+    for i in range(len(topk_ids)):
+        n_surv_hits += int64(target_counts[topk_ids[i]])
+
+    DIAG_MULT = int64(1000000)
+    max_diag_shift = int32(q_len)
+    surv_keys = np.empty(n_surv_hits, dtype=np.int64)
+    sw = int64(0)
+
+    for qpos in range(num_seeds):
+        kmer_val = int64(0)
+        valid = True
+        for j in range(weight):
+            r = q_seq[qpos + seed_offsets[j]]
+            if r >= alpha_size:
+                valid = False
+                break
+            kmer_val = kmer_val * int64(alpha_size) + int64(r)
+        if not valid:
+            continue
+        if kmer_freqs[kmer_val] > freq_thresh:
+            continue
+        s = kmer_offsets[kmer_val]
+        e = kmer_offsets[kmer_val + 1]
+        for h in range(s, e):
+            entry = kmer_entries[h]
+            tid = int32(entry >> 32)
+            if survivor_mask[tid]:
+                tpos = int32(entry & 0xFFFFFFFF)
+                diag = int32(tpos) - int32(qpos) + max_diag_shift
+                dbin = int32(diag // diag_bin_width)
+                surv_keys[sw] = int64(tid) * DIAG_MULT + int64(dbin)
+                sw += int64(1)
+
+    surv_keys = surv_keys[:sw]
+    surv_keys.sort()
+
+    final_ids = np.empty(len(topk_ids), dtype=np.int32)
+    final_scores = np.empty(len(topk_ids), dtype=np.int32)
+    num_final = int32(0)
+    prev_tid = int32(-1)
+    best_count = int32(0)
+    i = int64(0)
+    n = int64(len(surv_keys))
+
+    while i < n:
+        key = surv_keys[i]
+        tid = int32(key // DIAG_MULT)
+        dbin = int32(key % DIAG_MULT)
+        run = int32(0)
+        while i < n:
+            k2 = surv_keys[i]
+            if int32(k2 // DIAG_MULT) != tid or int32(k2 % DIAG_MULT) != dbin:
+                break
+            run += int32(1)
+            i += int64(1)
+        if tid != prev_tid:
+            if prev_tid >= 0 and best_count >= min_diag_hits:
+                final_ids[num_final] = prev_tid
+                final_scores[num_final] = best_count
+                num_final += int32(1)
+            prev_tid = tid
+            best_count = run
+        else:
+            if run > best_count:
+                best_count = run
+
+    if prev_tid >= 0 and best_count >= min_diag_hits:
+        final_ids[num_final] = prev_tid
+        final_scores[num_final] = best_count
+        num_final += int32(1)
+
+    return final_ids[:num_final], final_scores[:num_final]
+
+
+@njit(parallel=True, cache=True)
+def _batch_score_queries_spaced(
+    q_flat, q_offsets, q_lengths,
+    seed_offsets, weight, span, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs,
+    freq_thresh, num_db, min_total_hits,
+    min_diag_hits, diag_bin_width,
+    max_cands, phase_a_topk,
+    out_targets, out_counts,
+):
+    """Score all queries using a spaced seed pattern (parallel)."""
+    nq = len(q_lengths)
+    for qi in prange(nq):
+        qs = int64(q_offsets[qi])
+        ql = int32(q_lengths[qi])
+        q_seq = q_flat[qs:qs + ql]
+
+        cand_ids, cand_scores = _score_query_two_stage_spaced(
+            q_seq, ql,
+            seed_offsets, weight, span, alpha_size,
+            kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+            num_db, min_total_hits, min_diag_hits, diag_bin_width,
+            phase_a_topk,
+        )
+
+        nc = len(cand_ids)
+        if nc > max_cands:
+            order = np.argsort(-cand_scores)
+            for j in range(max_cands):
+                out_targets[qi, j] = cand_ids[order[j]]
+            out_counts[qi] = max_cands
+        else:
+            for j in range(nc):
+                out_targets[qi, j] = cand_ids[j]
+            out_counts[qi] = int32(nc)
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Frequency threshold
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -978,6 +1260,7 @@ def search_kmer_index(
     reduced_alphabet: bool = False,
     reduced_k: int | list[int] = 5,
     use_idf: bool = False,
+    spaced_seeds: list[str] | None = None,
 ):
     """Search queries against a pre-built k-mer inverted index.
 
@@ -1277,6 +1560,106 @@ def search_kmer_index(
             logger.info(
                 f"  Reduced alphabet union: {total_cands} total "
                 f"(was {n_before} from standard index)"
+            )
+
+    # ── Stage 1.6: Spaced seed candidates (optional) ────────────────
+    if spaced_seeds and mode == "protein":
+        # Remap to reduced alphabet (reuse if already done above)
+        if not (reduced_alphabet and mode == "protein"):
+            red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
+
+        spaced_packed = []
+        for pattern in spaced_seeds:
+            with timer(f"Search Stage 1.6: Spaced seed {pattern}"):
+                _sp_cache = f'_spaced_{pattern}'
+                if hasattr(db_index, _sp_cache):
+                    sp_data = getattr(db_index, _sp_cache)
+                    sp_off, sp_ent, sp_freq = sp_data[:3]
+                    sp_seed_off, sp_weight, sp_span = sp_data[3:]
+                    logger.info(
+                        f"  Using cached spaced seed index ({pattern})"
+                    )
+                else:
+                    db_flat = db_index.dataset.flat_sequences
+                    red_db_flat = _remap_flat(
+                        db_flat, REDUCED_ALPHA, len(db_flat)
+                    )
+                    (sp_off, sp_ent, sp_freq,
+                     sp_seed_off, sp_weight, sp_span) = (
+                        build_kmer_index_spaced(
+                            red_db_flat,
+                            db_index.dataset.offsets,
+                            db_index.dataset.lengths,
+                            pattern, mode,
+                            alpha_size=REDUCED_ALPHA_SIZE,
+                        )
+                    )
+                    setattr(db_index, _sp_cache, (
+                        sp_off, sp_ent, sp_freq,
+                        sp_seed_off, sp_weight, sp_span,
+                    ))
+
+                sp_freq_thresh = compute_freq_threshold(
+                    sp_freq, nd, freq_percentile,
+                )
+
+                sp_mc = max_cands_per_query
+                sp_out_targets = np.empty((nq, sp_mc), dtype=np.int32)
+                sp_out_counts = np.zeros(nq, dtype=np.int32)
+
+                _batch_score_queries_spaced(
+                    red_q_flat,
+                    q_off.astype(np.int64),
+                    q_lens.astype(np.int32),
+                    sp_seed_off, int32(sp_weight), int32(sp_span),
+                    int32(REDUCED_ALPHA_SIZE),
+                    sp_off, sp_ent, sp_freq,
+                    sp_freq_thresh,
+                    int32(nd), int32(min_total_hits),
+                    int32(min_diag_hits), int32(diag_bin_width),
+                    int32(sp_mc), int32(phase_a_topk),
+                    sp_out_targets, sp_out_counts,
+                )
+
+                sp_total = int(sp_out_counts.sum())
+                if sp_total > 0:
+                    sp_pairs = np.empty((sp_total, 2), dtype=np.int32)
+                    rpos = 0
+                    for qi in range(nq):
+                        nc = int(sp_out_counts[qi])
+                        if nc > 0:
+                            sp_pairs[rpos:rpos + nc, 0] = qi
+                            sp_pairs[rpos:rpos + nc, 1] = (
+                                sp_out_targets[qi, :nc]
+                            )
+                            rpos += nc
+                    packed = (
+                        sp_pairs[:, 0].astype(np.int64) * nd
+                        + sp_pairs[:, 1].astype(np.int64)
+                    )
+                    spaced_packed.append(packed)
+                    logger.info(
+                        f"  Spaced {pattern}: {sp_total} candidates"
+                    )
+
+        # Union spaced seed candidates with existing
+        if spaced_packed:
+            std_packed = (
+                candidate_pairs[:, 0].astype(np.int64) * nd
+                + candidate_pairs[:, 1].astype(np.int64)
+            )
+            all_arrays = [std_packed] + spaced_packed
+            union_packed = np.unique(np.concatenate(all_arrays))
+            n_before = len(candidate_pairs)
+            candidate_pairs = np.empty(
+                (len(union_packed), 2), dtype=np.int32
+            )
+            candidate_pairs[:, 0] = (union_packed // nd).astype(np.int32)
+            candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
+            total_cands = len(candidate_pairs)
+            logger.info(
+                f"  Spaced seed union: {total_cands} total "
+                f"(was {n_before})"
             )
 
     # ── Merge sequences for alignment stages ─────────────────────────
