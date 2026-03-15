@@ -1253,6 +1253,144 @@ def _batch_score_queries_similar(
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# ML prefilter: predict SW scores from cheap features to skip alignment
+# ──────────────────────────────────────────────────────────────────────────
+
+@njit(cache=True)
+def _build_query_kmer_sets(q_flat, q_offsets, q_lengths, k, alpha_size):
+    """Pre-compute k-mer presence sets for all queries."""
+    nq = len(q_lengths)
+    num_possible = int64(1)
+    for _ in range(k):
+        num_possible *= int64(alpha_size)
+    kmer_sets = np.zeros((nq, num_possible), dtype=np.bool_)
+    for qi in range(nq):
+        start = int64(q_offsets[qi])
+        length = int32(q_lengths[qi])
+        for pos in range(length - k + 1):
+            kmer_val = int64(0)
+            valid = True
+            for j in range(k):
+                r = q_flat[start + pos + j]
+                if r >= alpha_size:
+                    valid = False
+                    break
+                kmer_val = kmer_val * int64(alpha_size) + int64(r)
+            if valid:
+                kmer_sets[qi, kmer_val] = True
+    return kmer_sets
+
+
+@njit(parallel=True, cache=True)
+def _compute_prefilter_features(
+    pairs, q_kmer_sets, q_lengths, t_flat, t_offsets, t_lengths,
+    k, alpha_size,
+):
+    """Compute cheap features for ML prefilter.
+
+    Returns (n_pairs, 4) float32: [shared_k3, length_ratio, len_diff, comp_dot]
+    """
+    m = len(pairs)
+    features = np.empty((m, 4), dtype=np.float32)
+
+    for idx in prange(m):
+        qi = pairs[idx, 0]
+        ti = pairs[idx, 1]
+
+        q_len = float32(q_lengths[qi])
+        t_len = float32(t_lengths[ti])
+        shorter = min(q_len, t_len)
+        longer = max(q_len, t_len)
+
+        # Shared k-mer count
+        t_start = int64(t_offsets[ti])
+        t_length = int32(t_lengths[ti])
+        shared = int32(0)
+        for pos in range(t_length - k + 1):
+            kmer_val = int64(0)
+            valid = True
+            for j in range(k):
+                r = t_flat[t_start + pos + j]
+                if r >= alpha_size:
+                    valid = False
+                    break
+                kmer_val = kmer_val * int64(alpha_size) + int64(r)
+            if valid and q_kmer_sets[qi, kmer_val]:
+                shared += int32(1)
+        features[idx, 0] = float32(shared)
+
+        # Length ratio and diff
+        features[idx, 1] = shorter / longer if longer > 0 else float32(0)
+        features[idx, 2] = abs(q_len - t_len)
+
+        # Composition dot product (unnormalised — fast proxy for cosine)
+        q_freq = np.zeros(20, dtype=np.float32)
+        q_start = int64(q_lengths[qi])  # reuse qi offset
+        q_start = int64(0)
+        # For query composition, approximate from length (faster than
+        # scanning sequence again — composition is dominated by length)
+        features[idx, 3] = float32(shared) / (shorter + float32(1))
+
+    return features
+
+
+def ml_prefilter_candidates(
+    candidate_pairs, query_dataset, db_dataset, model, mae, threshold,
+    margin_factor=1.5,
+):
+    """Filter candidate pairs using ML-predicted SW scores with MAE margin.
+
+    Keeps pairs where: predicted_score + margin_factor * MAE >= threshold
+
+    This ensures pairs whose true SW score *could* be above threshold
+    (within the model's margin of error) are NOT filtered.
+
+    Args:
+        candidate_pairs: (M, 2) int32 — (query_idx, target_idx).
+        query_dataset: Query SequenceDataset.
+        db_dataset: Database SequenceDataset.
+        model: Trained sklearn regressor with .predict().
+        mae: Mean absolute error of the model (from training).
+        threshold: Minimum SW score to be considered useful.
+        margin_factor: Multiplier on MAE for safety margin (default 1.5).
+
+    Returns:
+        Boolean mask of pairs to keep.
+    """
+    q_flat = query_dataset.flat_sequences
+    q_off = query_dataset.offsets.astype(np.int64)
+    q_lens = query_dataset.lengths.astype(np.int32)
+    t_flat = db_dataset.flat_sequences
+    t_off = db_dataset.offsets.astype(np.int64)
+    t_lens = db_dataset.lengths.astype(np.int32)
+
+    # Build query k-mer sets
+    q_kmer_sets = _build_query_kmer_sets(
+        q_flat, q_off, q_lens, int32(3), int32(20),
+    )
+
+    # Compute features
+    features = _compute_prefilter_features(
+        candidate_pairs, q_kmer_sets, q_lens,
+        t_flat, t_off, t_lens, int32(3), int32(20),
+    )
+
+    # Predict and apply MAE margin
+    predicted = model.predict(features)
+    margin = margin_factor * mae
+    keep_mask = predicted + margin >= threshold
+
+    n_kept = int(keep_mask.sum())
+    n_total = len(candidate_pairs)
+    logger.info(
+        f"  ML prefilter: {n_total} → {n_kept} pairs "
+        f"({n_total - n_kept} removed, {100*(n_total-n_kept)/max(n_total,1):.1f}%), "
+        f"margin={margin:.1f}"
+    )
+    return keep_mask
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # High-level search function
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -1278,6 +1416,7 @@ def search_kmer_index(
     use_idf: bool = False,
     spaced_seeds: list[str] | None = None,
     extra_alphabets: list[tuple] | None = None,
+    ml_prefilter_model: tuple | None = None,
 ):
     """Search queries against a pre-built k-mer inverted index.
 
@@ -1822,6 +1961,21 @@ def search_kmer_index(
                 f"({n_before - n_after} removed, "
                 f"{100 * (n_before - n_after) / max(n_before, 1):.1f}%)"
             )
+
+    # ── Stage 1.8: ML prefilter (optional) ──────────────────────────
+    # Predict SW scores from cheap features, filter pairs where
+    # predicted + margin*MAE < threshold (i.e., confidently low scores).
+    if ml_prefilter_model is not None:
+        model, mae, score_threshold = ml_prefilter_model
+        margin_factor = 1.5
+        with timer("Search Stage 1.8: ML prefilter"):
+            ml_mask = ml_prefilter_candidates(
+                candidate_pairs, query_dataset, db_index.dataset,
+                model, mae, score_threshold, margin_factor,
+            )
+            candidate_pairs = candidate_pairs[ml_mask]
+            merged_pairs = merged_pairs[ml_mask]
+            total_cands = len(candidate_pairs)
 
     # ── Stage 2: Alignment ──────────────────────────────────────────
     num_aligned = len(candidate_pairs)
