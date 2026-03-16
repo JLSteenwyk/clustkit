@@ -279,6 +279,28 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.0 — C/OpenMP SW Alignment
+
+**Change:** Rewrote banded Smith-Waterman in C with GCC -O3 -march=native and OpenMP. Pre-allocated thread-local DP workspace eliminates per-pair malloc overhead.
+
+**Affects:** Search only (clustering uses NW path).
+
+| Config | Time (31M pairs) | Speedup vs Numba | Score Correlation |
+|--------|-------------------|-------------------|-------------------|
+| Numba SW (bw=126) | 863s | 1.0x | baseline |
+| **C SW (bw=126)** | **89s** | **9.7x** | **1.000 (exact)** |
+| **C SW (bw=50)** | **38s** | **22.5x** | 0.995 |
+
+**Key finding:** 100% exact score match at bw=126 confirms the C implementation is bit-identical to Numba. Band reduction to 50 gives additional 2.3x with r=0.995 score correlation.
+
+**Files:** `clustkit/csrc/sw_align.c`
+
+**Build:** `gcc -O3 -march=native -fopenmp -shared -fPIC -o sw_align.so sw_align.c`
+
+**Pilot file:** `pilot_c_sw.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
@@ -297,10 +319,18 @@ Spaced seed 110011 Phase A+B (Numba)     →  8K candidates/query
                   Rank by SW score → top-500 hits/query
 ```
 
-**Estimated end-to-end timing (with C extension + ML two-tier N=2000):**
-- Candidate gen: ~26s (C) + ~158s (Numba for 4 remaining indices) = ~184s
+**Estimated end-to-end timing (all C extensions + ML two-tier N=2000):**
+- Candidate gen (C extension): ~26s
 - ML features + inference: ~35s
-- SW alignment (4M pairs): ~126s
-- **Total: ~345s** (optimized: ~187s with all C)
-- vs MMseqs2: 14s (13-25x slower)
+- SW alignment (C, 4M pairs, bw=126): ~11s
+- SW alignment (C, 4M pairs, bw=50): ~5s
+- **Total (bw=126): ~72s** (5x vs MMseqs2)
+- **Total (bw=50): ~66s** (4.7x vs MMseqs2)
+- vs MMseqs2: 14s
 - ROC1: 0.802 (beats MMseqs2 0.794)
+
+**Without ML two-tier (full alignment, max sensitivity):**
+- Candidate gen (C): ~26s
+- SW alignment (C, 31M pairs, bw=126): ~89s
+- **Total: ~115s** (8x vs MMseqs2)
+- ROC1: 0.818

@@ -43,8 +43,11 @@
 | v2.0 | + SW (mc=8K) | ~980s | 70x |
 | v3.0 | + reduced alphabet | ~980s | 70x |
 | v4.0 | + spaced seeds | ~2500s | 179x |
-| v5.0 | + C extension | ~26s scoring | — |
+| v5.0 | + C extension (scoring) | ~26s scoring | — |
 | v6.2 | + ML two-tier N=2K | ~187s | 13x |
+| **v7.0** | **+ C SW alignment (bw=126)** | **~72s** | **5x** |
+| **v7.0** | **+ C SW alignment (bw=50)** | **~66s** | **4.7x** |
+| v7.0 | C scoring + C SW (no ML, full) | ~115s | 8x |
 
 ---
 
