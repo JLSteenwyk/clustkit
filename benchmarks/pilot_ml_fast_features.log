@@ -1,0 +1,71 @@
+Loading database...
+11:49:54 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+11:49:54 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+11:49:56 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.84s)
+11:49:56 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.84s)
+11:49:56 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+11:49:56 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries, 591288 database sequences
+
+====================================================================================================
+Step 1: Candidate generation with per-index scores
+====================================================================================================
+  Standard k=3: 16000000 candidates (74.0s)
+11:51:12 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+11:51:12 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+  Reduced k=4: 16000000 candidates (162.2s)
+11:53:56 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+11:53:56 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+  Reduced k=5: 15952926 candidates (24.3s)
+11:54:23 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+11:54:23 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+  Spaced 11011: 16000000 candidates (164.5s)
+11:57:09 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+11:57:09 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+  Spaced 110011: 16000000 candidates (157.6s)
+
+====================================================================================================
+Step 2: Build features from pre-computed scores
+====================================================================================================
+  64897698 pairs, 12 features in 31.62s
+  (Previous per-pair k-mer scanning: ~25s)
+
+====================================================================================================
+Step 3: SW alignment (ground truth)
+====================================================================================================
+  64897698 pairs in 1873.6s
+
+====================================================================================================
+Step 4: Train LightGBM on zero-cost features
+====================================================================================================
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+  Trained in 835.3s
+  Pearson r: 0.9833, MAE: 4.25
+  (Previous with per-pair k-mer features: r=0.9837, MAE=4.22)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+  Inference: 11.08s for 64897698 pairs
+
+  TOTAL ML overhead: 42.70s (was ~35s with k-mer scanning)
+
+====================================================================================================
+Step 5: Two-tier alignment with zero-cost features
+====================================================================================================
+  Baseline: ROC1=0.8117, align=1873.6s
+
+         N        Pairs   Align(s)   Total(s)  Speedup    ROC1
+  -----------------------------------------------------------------
+       500      1000000      30.6s     663.8s    3.71x  0.7903
+      1000      2000000      61.7s     694.9s    3.55x  0.7945
+      2000      4000000     124.5s     757.7s    3.25x  0.7982
+      3000      6000000     187.4s     820.6s    3.00x  0.8003
+      5000     10000000     313.6s     946.8s    2.60x  0.8033
+      8000     16000000     503.4s    1136.6s    2.17x  0.8065
+
+  Timing breakdown:
+    Candidate gen:  590.5s
+    ML features:    31.62s (was ~25s)
+    ML inference:   11.08s
+    Alignment (N=2000): ~126s
+  Reference: MMseqs2=0.7942 (14s)  DIAMOND=0.7963 (13s)
