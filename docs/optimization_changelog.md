@@ -326,6 +326,33 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.1 — Heuristic Selection + Reduced Indices (Negative Result)
+
+**Change:** Replace LightGBM two-tier (35s) with simple heuristic (`n_indices * 10 + max_score`). Also test reducing from 5 to 3 indices (std k=3 + red k=5 + spaced 110011).
+
+**Affects:** Search only.
+
+| Tier | Score | Union | SW | Total | ROC1 |
+|------|-------|-------|-----|-------|------|
+| 5idx + heuristic bw=126 | 582s | 121s | 13s | 716s | 0.778 |
+| 5idx + heuristic bw=50 | 567s | 121s | 5s | 694s | 0.775 |
+| 3idx + heuristic bw=126 | 245s | 84s | 13s | 341s | 0.782 |
+| 3idx + heuristic bw=50 N=5K | 245s | 84s | 13s | 343s | 0.786 |
+
+**Verdict: Negative result.** Two problems:
+1. **Union/heuristic step takes 84-121s** (Python per-query loop bottleneck) — worse than the 35s LightGBM it was supposed to replace
+2. **ROC1 below MMseqs2 (0.794) for all configs** — heuristic doesn't rank as well as LightGBM
+3. Scoring used Numba (245s for 3 indices) instead of C extension (~30s) — pilot didn't integrate C scoring
+
+**Lessons:**
+- The per-query Python loop for top-N selection must be in C/Numba, not pure numpy
+- LightGBM's ranking quality is better than a simple heuristic
+- Need C extension for ALL index scoring, not just standard k=3
+
+**Pilot file:** `pilot_speed_final.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
