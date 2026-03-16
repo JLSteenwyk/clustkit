@@ -353,6 +353,49 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.2 — All-C Scoring + Spaced Seed C Extension
+
+**Change:** Ported ALL index scoring (contiguous + spaced seeds) to C/OpenMP. Added `batch_score_queries_spaced_c` to kmer_score.c.
+
+| Index | Numba | C | Speedup |
+|-------|-------|---|---------|
+| Standard k=3 | 64s | 8s | 8x |
+| Reduced k=5 | 24s | 3s | 8x |
+| Spaced 110011 | 157s | 22s | 7x |
+| **3 indices total** | **245s** | **33s** | **7.4x** |
+
+**Files:** `clustkit/csrc/kmer_score.c` (added spaced seed functions)
+
+**Pilot file:** `pilot_all_c.py`
+
+---
+
+## v7.3 — All-C + LightGBM Two-Tier (Self-Calibrating)
+
+**Change:** Combined all-C scoring with self-calibrating LightGBM trained on 500-query calibration sample. Tested 4 model sizes × 2 buffer sizes.
+
+**Affects:** Search only.
+
+| Model | N | Total | ROC1 | vs MMseqs2 |
+|-------|---|-------|------|------------|
+| **LGB-50-d4** | **3000** | **65s** | **0.7959** | **+0.0017** |
+| LGB-100-d6 | 3000 | 66s | 0.7949 | +0.0007 |
+| LGB-200-d8 | 3000 | 69s | 0.7942 | +0.0000 |
+| LGB-50-d4 | 2000 | 62s | 0.7937 | -0.0005 |
+
+**Key finding:** Smallest model (50 trees, depth 4) generalizes BEST from the 500-query calibration sample. Bigger models overfit. LightGBM inference is just 1s at this size.
+
+**Pipeline breakdown:**
+- C scoring (3 indices): 33s
+- Union + features: 23s
+- LGB-50-d4 predict: 1s
+- C SW (bw=50): 8s
+- **Total: 65s** (4.6x vs MMseqs2)
+
+**Pilot files:** `pilot_all_c.py`, `pilot_all_c_lgbm.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
@@ -371,7 +414,15 @@ Spaced seed 110011 Phase A+B (Numba)     →  8K candidates/query
                   Rank by SW score → top-500 hits/query
 ```
 
-**Estimated end-to-end timing (all C extensions + ML two-tier N=2000):**
+**Estimated end-to-end timing (all C extensions + LGB-50-d4 N=3000):**
+- C scoring (3 indices): ~33s
+- Union + features: ~23s
+- LGB-50-d4 predict: ~1s
+- C SW (bw=50): ~8s
+- **Total: ~65s** (4.6x vs MMseqs2)
+- ROC1: 0.796 (beats MMseqs2 0.794)
+
+**Previous estimate (all C extensions + ML two-tier N=2000):**
 - Candidate gen (C extension): ~26s
 - ML features + inference: ~35s
 - SW alignment (C, 4M pairs, bw=126): ~11s

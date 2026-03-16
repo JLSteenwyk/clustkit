@@ -354,3 +354,244 @@ void batch_score_queries_c(
         free(row_scores);
     }
 }
+
+
+/* ─── Spaced seed Phase A ────────────────────────────────────────── */
+
+static void score_query_phase_a_spaced(
+    const uint8_t*  q_seq,
+    int32_t         q_len,
+    const int32_t*  seed_offsets,
+    int32_t         weight,
+    int32_t         span,
+    int32_t         alpha_size,
+    const int64_t*  kmer_offsets,
+    const int64_t*  kmer_entries,
+    const int32_t*  kmer_freqs,
+    int32_t         freq_thresh,
+    int32_t         num_db,
+    int16_t*        target_counts
+) {
+    int32_t num_seeds = q_len - span + 1;
+    if (num_seeds <= 0) return;
+
+    for (int32_t qpos = 0; qpos < num_seeds; qpos++) {
+        int64_t kmer_val = 0;
+        int valid = 1;
+        for (int32_t j = 0; j < weight; j++) {
+            uint8_t r = q_seq[qpos + seed_offsets[j]];
+            if (r >= (uint8_t)alpha_size) { valid = 0; break; }
+            kmer_val = kmer_val * alpha_size + r;
+        }
+        if (!valid) continue;
+        if (kmer_freqs[kmer_val] > freq_thresh) continue;
+
+        int64_t s = kmer_offsets[kmer_val];
+        int64_t e = kmer_offsets[kmer_val + 1];
+        for (int64_t h = s; h < e; h++) {
+            int32_t tid = (int32_t)(kmer_entries[h] >> 32);
+            if (target_counts[tid] < 32767)
+                target_counts[tid]++;
+        }
+    }
+}
+
+/* Spaced seed: full Phase A + top-K + Phase B */
+static int32_t score_query_full_spaced(
+    const uint8_t*  q_seq,
+    int32_t         q_len,
+    const int32_t*  seed_offsets,
+    int32_t         weight,
+    int32_t         span,
+    int32_t         alpha_size,
+    const int64_t*  kmer_offsets,
+    const int64_t*  kmer_entries,
+    const int32_t*  kmer_freqs,
+    int32_t         freq_thresh,
+    int32_t         num_db,
+    int32_t         min_total_hits,
+    int32_t         min_diag_hits,
+    int32_t         diag_bin_width,
+    int32_t         phase_a_topk,
+    int32_t         max_cands,
+    int32_t*        out_ids,
+    int32_t*        out_scores
+) {
+    int32_t num_seeds = q_len - span + 1;
+    if (num_seeds <= 0) return 0;
+
+    int16_t* counts = (int16_t*)calloc(num_db, sizeof(int16_t));
+    if (!counts) return 0;
+
+    score_query_phase_a_spaced(q_seq, q_len, seed_offsets, weight, span,
+                               alpha_size, kmer_offsets, kmer_entries,
+                               kmer_freqs, freq_thresh, num_db, counts);
+
+    int32_t num_passing = 0;
+    for (int32_t i = 0; i < num_db; i++)
+        if (counts[i] >= min_total_hits) num_passing++;
+    if (num_passing == 0) { free(counts); return 0; }
+
+    if (min_diag_hits <= 1) {
+        int32_t* all_ids = (int32_t*)malloc(num_passing * sizeof(int32_t));
+        int16_t* all_sc  = (int16_t*)malloc(num_passing * sizeof(int16_t));
+        int32_t p = 0;
+        for (int32_t i = 0; i < num_db; i++)
+            if (counts[i] >= min_total_hits) {
+                all_ids[p] = i; all_sc[p] = counts[i]; p++;
+            }
+        int32_t nc = topk_by_score(all_ids, all_sc, num_passing, max_cands,
+                                   out_ids, out_scores);
+        free(all_ids); free(all_sc); free(counts);
+        return nc;
+    }
+
+    /* Top-K for Phase B */
+    int32_t topk = phase_a_topk < num_passing ? phase_a_topk : num_passing;
+    int32_t* pass_ids = (int32_t*)malloc(num_passing * sizeof(int32_t));
+    int16_t* pass_sc  = (int16_t*)malloc(num_passing * sizeof(int16_t));
+    int32_t p = 0;
+    for (int32_t i = 0; i < num_db; i++)
+        if (counts[i] >= min_total_hits) {
+            pass_ids[p] = i; pass_sc[p] = counts[i]; p++;
+        }
+
+    if (topk < num_passing) {
+        int64_t* pk = (int64_t*)malloc(num_passing * sizeof(int64_t));
+        for (int32_t i = 0; i < num_passing; i++)
+            pk[i] = ((int64_t)(uint16_t)pass_sc[i] << 32) | (uint32_t)pass_ids[i];
+        qsort(pk, num_passing, sizeof(int64_t), cmp_score_desc);
+        for (int32_t i = 0; i < topk; i++) {
+            pass_ids[i] = (int32_t)(pk[i] & 0xFFFFFFFF);
+            pass_sc[i] = (int16_t)(pk[i] >> 32);
+        }
+        free(pk);
+    }
+
+    uint8_t* surv_mask = (uint8_t*)calloc(num_db, 1);
+    int64_t n_surv_hits = 0;
+    for (int32_t i = 0; i < topk; i++) {
+        surv_mask[pass_ids[i]] = 1;
+        n_surv_hits += counts[pass_ids[i]];
+    }
+
+    /* Phase B: diagonal scoring with spaced seed */
+    int64_t DIAG_MULT = 1000000LL;
+    int32_t max_diag_shift = q_len;
+    int64_t* surv_keys = (int64_t*)malloc(n_surv_hits * sizeof(int64_t));
+    int64_t sw = 0;
+
+    for (int32_t qpos = 0; qpos < num_seeds; qpos++) {
+        int64_t kmer_val = 0;
+        int valid = 1;
+        for (int32_t j = 0; j < weight; j++) {
+            uint8_t r = q_seq[qpos + seed_offsets[j]];
+            if (r >= (uint8_t)alpha_size) { valid = 0; break; }
+            kmer_val = kmer_val * alpha_size + r;
+        }
+        if (!valid) continue;
+        if (kmer_freqs[kmer_val] > freq_thresh) continue;
+        int64_t s = kmer_offsets[kmer_val];
+        int64_t e = kmer_offsets[kmer_val + 1];
+        for (int64_t h = s; h < e; h++) {
+            int64_t entry = kmer_entries[h];
+            int32_t tid = (int32_t)(entry >> 32);
+            if (surv_mask[tid]) {
+                int32_t tpos = (int32_t)(entry & 0xFFFFFFFF);
+                int32_t diag = tpos - qpos + max_diag_shift;
+                int32_t dbin = diag / diag_bin_width;
+                surv_keys[sw++] = (int64_t)tid * DIAG_MULT + dbin;
+            }
+        }
+    }
+
+    qsort(surv_keys, sw, sizeof(int64_t), cmp_int64);
+
+    int32_t* final_ids = (int32_t*)malloc(topk * sizeof(int32_t));
+    int32_t* final_sc  = (int32_t*)malloc(topk * sizeof(int32_t));
+    int32_t num_final = 0, prev_tid = -1, best_count = 0;
+
+    for (int64_t i = 0; i < sw; ) {
+        int64_t key = surv_keys[i];
+        int32_t tid = (int32_t)(key / DIAG_MULT);
+        int32_t dbin = (int32_t)(key % DIAG_MULT);
+        int32_t run = 0;
+        while (i < sw) {
+            int64_t k2 = surv_keys[i];
+            if ((int32_t)(k2 / DIAG_MULT) != tid ||
+                (int32_t)(k2 % DIAG_MULT) != dbin) break;
+            run++; i++;
+        }
+        if (tid != prev_tid) {
+            if (prev_tid >= 0 && best_count >= min_diag_hits) {
+                final_ids[num_final] = prev_tid;
+                final_sc[num_final] = best_count; num_final++;
+            }
+            prev_tid = tid; best_count = run;
+        } else {
+            if (run > best_count) best_count = run;
+        }
+    }
+    if (prev_tid >= 0 && best_count >= min_diag_hits) {
+        final_ids[num_final] = prev_tid;
+        final_sc[num_final] = best_count; num_final++;
+    }
+
+    int32_t nc = topk_by_score32(final_ids, final_sc, num_final, max_cands,
+                                  out_ids, out_scores);
+
+    free(counts); free(pass_ids); free(pass_sc);
+    free(surv_mask); free(surv_keys);
+    free(final_ids); free(final_sc);
+    return nc;
+}
+
+
+/* ─── Batch spaced seed entry point ──────────────────────────────── */
+
+void batch_score_queries_spaced_c(
+    const uint8_t*  q_flat,
+    const int64_t*  q_offsets,
+    const int32_t*  q_lengths,
+    int32_t         nq,
+    const int32_t*  seed_offsets,
+    int32_t         weight,
+    int32_t         span,
+    int32_t         alpha_size,
+    const int64_t*  kmer_offsets,
+    const int64_t*  kmer_entries,
+    const int32_t*  kmer_freqs,
+    int32_t         freq_thresh,
+    int32_t         num_db,
+    int32_t         min_total_hits,
+    int32_t         min_diag_hits,
+    int32_t         diag_bin_width,
+    int32_t         max_cands,
+    int32_t         phase_a_topk,
+    int32_t*        out_targets,
+    int32_t*        out_counts,
+    int32_t*        out_scores
+) {
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (int32_t qi = 0; qi < nq; qi++) {
+        const uint8_t* q_seq = q_flat + q_offsets[qi];
+        int32_t q_len = q_lengths[qi];
+        int32_t* row_targets = out_targets + (int64_t)qi * max_cands;
+        int32_t* row_scores  = (int32_t*)malloc(max_cands * sizeof(int32_t));
+
+        int32_t nc = score_query_full_spaced(
+            q_seq, q_len, seed_offsets, weight, span, alpha_size,
+            kmer_offsets, kmer_entries, kmer_freqs,
+            freq_thresh, num_db, min_total_hits,
+            min_diag_hits, diag_bin_width, phase_a_topk,
+            max_cands, row_targets, row_scores
+        );
+
+        out_counts[qi] = nc;
+        if (out_scores) {
+            int32_t* row_out_sc = out_scores + (int64_t)qi * max_cands;
+            memcpy(row_out_sc, row_scores, nc * sizeof(int32_t));
+        }
+        free(row_scores);
+    }
+}
