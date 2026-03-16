@@ -48,7 +48,8 @@
 | **v7.0** | **+ C SW alignment (bw=126)** | **~72s** | **5x** |
 | **v7.0** | **+ C SW alignment (bw=50)** | **~66s** | **4.7x** |
 | v7.0 | C scoring + C SW (no ML, full) | ~115s | 8x |
-| **v7.3** | **All-C + LGB-50 N=3000 bw=50** | **~65s** | **4.6x** |
+| v7.3 | All-C + LGB-50 N=3000 bw=50 | ~65s | 4.6x |
+| **v7.4** | **5idx All-C + LGB-50 N=5000 bw=50** | **~129s** | **9.2x** |
 
 ---
 

@@ -396,6 +396,32 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.4 — 5 Indices + N=5000 + 1000-Query Calibration
+
+**Change:** Use all 5 C-scored indices, increase buffer to N=5000, train LightGBM on 1000 calibration queries.
+
+**Affects:** Search only.
+
+| Config | Score | Union | LGB | SW | Total | ROC1 | vs MMseqs2 |
+|--------|-------|-------|-----|-----|-------|------|------------|
+| 5idx N=3000 | 77s | 37s | 1s | 8s | 124s | 0.8003 | +0.006 |
+| **5idx N=5000** | **77s** | **37s** | **1s** | **13s** | **129s** | **0.8023** | **+0.008** |
+| 5idx N=8000 | 77s | 37s | 1s | 21s | 137s | 0.8040 | +0.010 |
+
+**C scoring breakdown (5 indices):**
+- std k=3: 8s
+- red k=4: 20s
+- red k=5: 3s
+- sp 11011: 22s
+- sp 110011: 22s
+- Total: 77s (scoring is now 60% of pipeline)
+
+**Calibration:** 1000 queries, LGB-50-d4, r=0.979.
+
+**Pilot file:** `pilot_all_c_5idx.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
@@ -414,13 +440,19 @@ Spaced seed 110011 Phase A+B (Numba)     →  8K candidates/query
                   Rank by SW score → top-500 hits/query
 ```
 
-**Estimated end-to-end timing (all C extensions + LGB-50-d4 N=3000):**
+**Best speed config (v7.3): 3 indices + LGB-50 + N=3000 + bw=50:**
 - C scoring (3 indices): ~33s
 - Union + features: ~23s
 - LGB-50-d4 predict: ~1s
 - C SW (bw=50): ~8s
-- **Total: ~65s** (4.6x vs MMseqs2)
-- ROC1: 0.796 (beats MMseqs2 0.794)
+- **Total: ~65s** (4.6x vs MMseqs2), ROC1=0.796
+
+**Best balanced config (v7.4): 5 indices + LGB-50 + N=5000 + bw=50:**
+- C scoring (5 indices): ~77s
+- Union + features: ~37s
+- LGB-50-d4 predict: ~1s
+- C SW (bw=50): ~13s
+- **Total: ~129s** (9.2x vs MMseqs2), ROC1=0.802
 
 **Previous estimate (all C extensions + ML two-tier N=2000):**
 - Candidate gen (C extension): ~26s
