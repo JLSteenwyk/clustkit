@@ -902,6 +902,84 @@ def _batch_score_queries(
             out_counts[qi] = int32(nc)
 
 
+@njit(parallel=True, cache=True)
+def _batch_score_queries_with_scores(
+    q_flat, q_offsets, q_lengths,
+    k, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs,
+    freq_thresh, num_db, min_total_hits,
+    min_diag_hits, diag_bin_width,
+    max_cands, phase_a_topk,
+    out_targets, out_counts, out_scores,
+):
+    """Like _batch_score_queries but also outputs Phase A/B scores."""
+    nq = len(q_lengths)
+    for qi in prange(nq):
+        qs = int64(q_offsets[qi])
+        ql = int32(q_lengths[qi])
+        q_seq = q_flat[qs:qs + ql]
+
+        cand_ids, cand_scores = _score_single_query(
+            q_seq, ql,
+            k, alpha_size,
+            kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+            num_db, min_total_hits, min_diag_hits, diag_bin_width,
+            phase_a_topk,
+        )
+
+        nc = len(cand_ids)
+        if nc > max_cands:
+            order = np.argsort(-cand_scores)
+            for j in range(max_cands):
+                out_targets[qi, j] = cand_ids[order[j]]
+                out_scores[qi, j] = cand_scores[order[j]]
+            out_counts[qi] = max_cands
+        else:
+            for j in range(nc):
+                out_targets[qi, j] = cand_ids[j]
+                out_scores[qi, j] = cand_scores[j]
+            out_counts[qi] = int32(nc)
+
+
+@njit(parallel=True, cache=True)
+def _batch_score_queries_spaced_with_scores(
+    q_flat, q_offsets, q_lengths,
+    seed_offsets, weight, span, alpha_size,
+    kmer_offsets, kmer_entries, kmer_freqs,
+    freq_thresh, num_db, min_total_hits,
+    min_diag_hits, diag_bin_width,
+    max_cands, phase_a_topk,
+    out_targets, out_counts, out_scores,
+):
+    """Like _batch_score_queries_spaced but also outputs scores."""
+    nq = len(q_lengths)
+    for qi in prange(nq):
+        qs = int64(q_offsets[qi])
+        ql = int32(q_lengths[qi])
+        q_seq = q_flat[qs:qs + ql]
+
+        cand_ids, cand_scores = _score_query_two_stage_spaced(
+            q_seq, ql,
+            seed_offsets, weight, span, alpha_size,
+            kmer_offsets, kmer_entries, kmer_freqs, freq_thresh,
+            num_db, min_total_hits, min_diag_hits, diag_bin_width,
+            phase_a_topk,
+        )
+
+        nc = len(cand_ids)
+        if nc > max_cands:
+            order = np.argsort(-cand_scores)
+            for j in range(max_cands):
+                out_targets[qi, j] = cand_ids[order[j]]
+                out_scores[qi, j] = cand_scores[order[j]]
+            out_counts[qi] = max_cands
+        else:
+            for j in range(nc):
+                out_targets[qi, j] = cand_ids[j]
+                out_scores[qi, j] = cand_scores[j]
+            out_counts[qi] = int32(nc)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # IDF-weighted Phase A scoring
 # ──────────────────────────────────────────────────────────────────────────
