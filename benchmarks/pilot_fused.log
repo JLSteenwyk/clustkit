@@ -1,0 +1,50 @@
+Loading database...
+19:27:34 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+19:27:34 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+19:27:36 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+19:27:36 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+19:27:36 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+19:27:36 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Building indices...
+19:27:38 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+19:27:38 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+19:27:40 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+19:27:40 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+19:27:42 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+19:27:42 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+19:27:44 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+19:27:44 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+  Done
+
+================================================================================
+Fused 5-index scoring (ONE pass per query)
+================================================================================
+  Fused scoring: 16000000 candidates in 3.9s
+  (Previous separate: 77s scoring + 37s union = 114s)
+
+================================================================================
+Build features from fused output
+================================================================================
+  Features: (16000000, 12) in 0.4s
+
+================================================================================
+Calibration (1000 queries) + LightGBM
+================================================================================
+  Calibration SW: 8000000 pairs in 11.1s
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+  LGB-50-d4: r=0.9480
+
+================================================================================
+Two-tier: LGB select + C SW alignment
+================================================================================
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+  LGB inference: 0.4s
+
+  N=3000: fused=4s feat=0s lgb=0s sw=9s → total=13s  ROC1=0.6645 (vs MMseqs2: -0.1297)
+  N=5000: fused=4s feat=0s lgb=0s sw=14s → total=19s  ROC1=0.6651 (vs MMseqs2: -0.1291)
+  N=8000: fused=4s feat=0s lgb=0s sw=23s → total=27s  ROC1=0.6652 (vs MMseqs2: -0.1290)
+
+  Previous (separate 5idx): score=77s + union=37s = 114s
+  Reference: MMseqs2=0.7942 (14s)  DIAMOND=0.7963 (13s)

@@ -422,6 +422,23 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.5 — Fused Multi-Index Scoring (Negative Result)
+
+**Change:** All 5 indices scored in ONE C function per query. Eliminates union step (37s) and OpenMP launch overhead. Phase A only (no Phase B).
+
+| Config | Scoring | Union | Total | ROC1 |
+|--------|---------|-------|-------|------|
+| Fused (no Phase B) N=5000 | **4s** | **0s** | **19s** | 0.665 |
+| Separate v7.4 (with Phase B) N=5000 | 77s | 37s | 129s | 0.802 |
+
+**Verdict: Negative result.** Scoring is 19x faster (4s vs 77s) but ROC1 collapses by -0.14. Phase B diagonal coherence is essential — without it, candidates with scattered random k-mer matches dominate the top-mc, drowning out true homologs.
+
+**Lesson:** Phase B cannot be skipped. Any fused approach must include per-index Phase B, which would negate most of the speed benefit. Reverting to v7.4 separate approach.
+
+**Pilot file:** `pilot_fused.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
