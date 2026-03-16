@@ -1,0 +1,77 @@
+Loading database...
+20:17:07 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+20:17:07 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+20:17:08 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.78s)
+20:17:08 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.78s)
+20:17:08 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+20:17:08 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+Loaded 2000 queries, 591288 database sequences
+
+====================================================================================================
+Step 1: Candidate generation (tracking per-index membership)
+====================================================================================================
+  Standard k=3 IDF: 16000000 candidates (84s)
+20:18:34 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+20:18:34 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+  Reduced k=4: 16000000 candidates (171s)
+20:21:27 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+20:21:27 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+  Reduced k=5: 15952926 candidates (24s)
+20:21:53 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+20:21:53 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+  Spaced 11011: 16000000 candidates (166s)
+20:24:41 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+20:24:41 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+  Spaced 110011: 16000000 candidates (157s)
+
+  Computing n_indices_found per pair...
+  Total: 64896219 unique pairs
+  Index distribution: 1=53687365 2=8214248 3=2287996 4=559973 5=146637
+
+====================================================================================================
+Step 2: Rich feature computation (8 features)
+====================================================================================================
+  Query k-mer sets (std k=3): (2000, 8000) (0.3s)
+  Query k-mer sets (red k=5): (2000, 59049) (0.1s)
+  Features computed: (64896219, 8) (25.3s)
+
+====================================================================================================
+Step 3: SW alignment (ground truth)
+====================================================================================================
+  Aligned 64896219 pairs in 1872.6s
+
+====================================================================================================
+Step 4: Train RandomForest on rich features
+====================================================================================================
+  Trained in 457.1s
+  Pearson r: 0.9775  MAE: 4.32  RMSE: 7.57
+
+  Feature importance:
+    n_indices      : 0.8461
+    shared_red_k5  : 0.3945
+    target_len     : 0.0887
+    len_ratio      : 0.0823
+    len_diff       : 0.0114
+    comp_cosine    : 0.0029
+    query_len      : -0.0000
+    shared_k3      : -0.0004
+
+====================================================================================================
+Step 5: Two-tier ML alignment
+====================================================================================================
+
+  Baseline: ROC1=0.8117, align_time=1872.6s
+
+    Buffer N        Pairs   Align(s)  Speedup    ROC1 vs MMseqs2
+  -----------------------------------------------------------------
+         500      1000000      30.7s   61.07x  0.7762    -0.0180
+        1000      2000000      62.1s   30.16x  0.7810    -0.0132
+        2000      4000000     125.8s   14.88x  0.7850    -0.0092
+        3000      6000000     189.8s    9.87x  0.7869    -0.0073
+        5000     10000000     318.0s    5.89x  0.7894    -0.0048
+        8000     16000000     507.0s    3.69x  0.7951    +0.0009
+       12000     24000000     755.9s    2.48x  0.8020    +0.0078
+
+  Feature computation: 25.3s
+  Reference: MMseqs2=0.7942  DIAMOND=0.7963
+  Previous model (4 features): r=0.966
