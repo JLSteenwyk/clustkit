@@ -279,6 +279,31 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v6.3 — Fast Feature Union + Ensemble Scoring
+
+**Change (Speed):** Replaced 5× `np.searchsorted` with single sort-merge pass for building per-pair feature matrix during candidate union.
+
+**Change (Sensitivity):** Tested self-calibrating ensemble scoring — LightGBM trained on (SW_score + index_features) for reranking after alignment. Also tested classifier and regressor for no-alignment ranking.
+
+**Affects:** Search only.
+
+**Ensemble scoring results (full alignment, 65M pairs):**
+
+| Ranking Method | ROC1 | vs SW Baseline |
+|----------------|------|----------------|
+| SW score (baseline) | 0.8117 | — |
+| **Ensemble rerank (SW + index features)** | **0.8117** | **-0.0001** |
+| Classifier P(high SW) | 0.7489 | -0.063 |
+| Regressor predicted SW (no alignment) | 0.7604 | -0.051 |
+
+**Small-sample calibration:** 100 queries → r=0.971 (vs r=0.983 full training). Viable for database-agnostic deployment.
+
+**Verdict:** Ensemble reranking gives **zero ROC1 improvement**. SW scores are already optimal for ranking. Index features add no new signal. No-alignment approaches (classifier/regressor) are 5-6% worse. **SW alignment is irreplaceable for ranking quality.**
+
+**Pilot file:** `pilot_fast_ensemble.py`
+
+---
+
 ## v7.0 — C/OpenMP SW Alignment
 
 **Change:** Rewrote banded Smith-Waterman in C with GCC -O3 -march=native and OpenMP. Pre-allocated thread-local DP workspace eliminates per-pair malloc overhead.
