@@ -439,6 +439,35 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.6 — Diagonal-Hint Alignment Banding
+
+**Change:** Pass Phase B's best diagonal offset to SW alignment, centering the band on the correct diagonal instead of the main diagonal. Uses free information already computed during candidate scoring.
+
+**Affects:** Search only (clustering uses NW path).
+
+| Config | Time (16M pairs) | ROC1 | vs bw=126 baseline |
+|--------|-------------------|------|---------------------|
+| No hint, bw=126 | 48.5s | 0.7710 | baseline |
+| No hint, bw=50 | 20.6s | 0.7685 | -0.003 |
+| No hint, bw=20 | 7.5s | 0.7547 | -0.016 |
+| **Diag hint, bw=50** | **19.0s** | **0.7702** | **-0.001** |
+| **Diag hint, bw=30** | **10.5s** | **0.7692** | **-0.002** |
+| **Diag hint, bw=20** | **6.7s** | **0.7686** | **-0.002** |
+| **Diag hint, bw=15** | **5.0s** | **0.7684** | **-0.003** |
+
+**Key finding:** Diagonal hints reduce ROC1 loss by 8x at the same band width. At bw=20 with hint: only -0.002 ROC1 (vs -0.016 without hint). This gives 7.2x SW speedup with negligible quality loss.
+
+**Implementation:**
+- `kmer_score.c`: `score_query_full` now tracks best diagonal bin per candidate and outputs it via `out_diags`
+- `sw_align.c`: `sw_align_one` accepts `diag_hint` parameter, centers band on `j = i + diag_hint`
+- Diagonal offset computed as: `best_dbin * diag_bin_width - max_diag_shift + diag_bin_width/2`
+
+**Files:** `clustkit/csrc/kmer_score.c`, `clustkit/csrc/sw_align.c`
+
+**Pilot file:** `pilot_diag_hint.py`
+
+---
+
 ## Current Best Pipeline
 
 ```

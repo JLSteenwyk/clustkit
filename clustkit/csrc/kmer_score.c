@@ -150,7 +150,8 @@ static int32_t score_query_full(
     int32_t         phase_a_topk,
     int32_t         max_cands,
     int32_t*        out_ids,
-    int32_t*        out_scores
+    int32_t*        out_scores,
+    int32_t*        out_diags     /* may be NULL */
 ) {
     int32_t num_kmers = q_len - k + 1;
     if (num_kmers <= 0) return 0;
@@ -259,12 +260,14 @@ static int32_t score_query_full(
     /* Sort keys */
     qsort(surv_keys, sw, sizeof(int64_t), cmp_int64);
 
-    /* Count runs → final candidates */
-    int32_t* final_ids = (int32_t*)malloc(topk * sizeof(int32_t));
-    int32_t* final_sc  = (int32_t*)malloc(topk * sizeof(int32_t));
+    /* Count runs → final candidates (track best diagonal bin) */
+    int32_t* final_ids  = (int32_t*)malloc(topk * sizeof(int32_t));
+    int32_t* final_sc   = (int32_t*)malloc(topk * sizeof(int32_t));
+    int32_t* final_diag = (int32_t*)malloc(topk * sizeof(int32_t));
     int32_t num_final = 0;
     int32_t prev_tid = -1;
     int32_t best_count = 0;
+    int32_t best_dbin = 0;
 
     for (int64_t i = 0; i < sw; ) {
         int64_t key = surv_keys[i];
@@ -282,27 +285,56 @@ static int32_t score_query_full(
             if (prev_tid >= 0 && best_count >= min_diag_hits) {
                 final_ids[num_final] = prev_tid;
                 final_sc[num_final] = best_count;
+                /* Convert dbin back to diagonal offset: tpos - qpos */
+                final_diag[num_final] = best_dbin * diag_bin_width
+                                        - max_diag_shift
+                                        + diag_bin_width / 2;
                 num_final++;
             }
             prev_tid = tid;
             best_count = run;
+            best_dbin = dbin;
         } else {
-            if (run > best_count) best_count = run;
+            if (run > best_count) {
+                best_count = run;
+                best_dbin = dbin;
+            }
         }
     }
     if (prev_tid >= 0 && best_count >= min_diag_hits) {
         final_ids[num_final] = prev_tid;
         final_sc[num_final] = best_count;
+        final_diag[num_final] = best_dbin * diag_bin_width
+                                - max_diag_shift
+                                + diag_bin_width / 2;
         num_final++;
     }
 
     /* Select top max_cands from final (O(n log n) sort) */
     int32_t nc = topk_by_score32(final_ids, final_sc, num_final, max_cands,
                                   out_ids, out_scores);
+    /* Copy diagonal hints for the selected top-mc */
+    /* topk_by_score32 reorders final_ids/final_sc — diags must follow */
+    /* Re-derive: out_ids has the selected target IDs, find their diags */
+    /* Simpler: output diags in the same order as topk_by_score32 output */
+    /* Since topk_by_score32 uses packed sort, we need diags in that order */
+    /* For now, just map from final arrays (nc <= num_final) */
+    if (out_diags) {
+        for (int32_t c = 0; c < nc; c++) {
+            int32_t tid = out_ids[c];
+            /* Linear scan to find this tid's diagonal in final arrays */
+            for (int32_t f = 0; f < num_final; f++) {
+                if (final_ids[f] == tid) {
+                    out_diags[c] = final_diag[f];
+                    break;
+                }
+            }
+        }
+    }
 
     free(counts); free(pass_ids); free(pass_sc);
     free(surv_mask); free(surv_keys);
-    free(final_ids); free(final_sc);
+    free(final_ids); free(final_sc); free(final_diag);
     return nc;
 }
 
@@ -328,7 +360,8 @@ void batch_score_queries_c(
     int32_t         phase_a_topk,
     int32_t*        out_targets,    /* [nq * max_cands] */
     int32_t*        out_counts,     /* [nq] */
-    int32_t*        out_scores      /* [nq * max_cands], or NULL */
+    int32_t*        out_scores,     /* [nq * max_cands], or NULL */
+    int32_t*        out_diags       /* [nq * max_cands], or NULL */
 ) {
     #pragma omp parallel for schedule(dynamic, 1)
     for (int32_t qi = 0; qi < nq; qi++) {
@@ -337,13 +370,14 @@ void batch_score_queries_c(
 
         int32_t* row_targets = out_targets + (int64_t)qi * max_cands;
         int32_t* row_scores  = (int32_t*)malloc(max_cands * sizeof(int32_t));
+        int32_t* row_diags   = (int32_t*)malloc(max_cands * sizeof(int32_t));
 
         int32_t nc = score_query_full(
             q_seq, q_len, k, alpha_size,
             kmer_offsets, kmer_entries, kmer_freqs,
             freq_thresh, num_db, min_total_hits,
             min_diag_hits, diag_bin_width, phase_a_topk,
-            max_cands, row_targets, row_scores
+            max_cands, row_targets, row_scores, row_diags
         );
 
         out_counts[qi] = nc;
@@ -351,7 +385,12 @@ void batch_score_queries_c(
             int32_t* row_out_sc = out_scores + (int64_t)qi * max_cands;
             memcpy(row_out_sc, row_scores, nc * sizeof(int32_t));
         }
+        if (out_diags) {
+            int32_t* row_out_dg = out_diags + (int64_t)qi * max_cands;
+            memcpy(row_out_dg, row_diags, nc * sizeof(int32_t));
+        }
         free(row_scores);
+        free(row_diags);
     }
 }
 

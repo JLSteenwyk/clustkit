@@ -22,6 +22,7 @@ static void sw_align_one(
     const uint8_t*  seq_b,
     int32_t         len_b,
     int32_t         band_width,
+    int32_t         diag_hint,    /* offset from main diagonal (0 = main) */
     const int8_t*   sub_matrix,   /* 20x20 row-major */
     /* workspace: caller provides pre-allocated arrays of size (cols) */
     int32_t*        H0,           /* H previous row */
@@ -69,22 +70,28 @@ static void sw_align_one(
     int32_t *Emp = Em0, *Emc = Em1;
 
     for (int32_t i = 1; i <= len_a; i++) {
-        int32_t j_start = 1;
-        if (i - bw > j_start) j_start = i - bw;
-        int32_t j_end = cols;
-        if (i + bw + 1 < j_end) j_end = i + bw + 1;
+        /* Center band on hinted diagonal: j = i + diag_hint */
+        int32_t j_center = i + diag_hint;
+        int32_t j_start = j_center - bw;
+        if (j_start < 1) j_start = 1;
+        int32_t j_end = j_center + bw + 1;
+        if (j_end > cols) j_end = cols;
 
-        /* Boundary: left of band */
+        /* Skip row entirely if band is outside matrix */
+        if (j_start >= cols || j_end <= 1) continue;
+
+        /* Boundary: left of band (must be within array bounds) */
         if (j_start == 1) {
             Hc[0] = 0; Hmc[0] = 0;
-        } else {
+        } else if (j_start - 1 < cols) {
             Hc[j_start - 1] = 0; Hmc[j_start - 1] = 0;
         }
 
         /* Boundary: right of previous row's band */
-        int32_t prev_j_end = cols;
-        if (i + bw < prev_j_end) prev_j_end = i + bw;
-        if (j_end > prev_j_end && prev_j_end < cols) {
+        int32_t prev_j_center = (i - 1) + diag_hint;
+        int32_t prev_j_end = prev_j_center + bw + 1;
+        if (prev_j_end > cols) prev_j_end = cols;
+        if (j_end > prev_j_end && prev_j_end > 0 && prev_j_end < cols) {
             Hp[prev_j_end] = 0; Ep[prev_j_end] = NEG_INF;
             Hmp[prev_j_end] = 0; Emp[prev_j_end] = 0;
         }
@@ -175,6 +182,7 @@ void batch_sw_align_c(
     int32_t         band_width,
     const int8_t*   sub_matrix,     /* 20*20 = 400 int8 */
     float           threshold,
+    const int32_t*  diag_hints,     /* [M] diagonal offsets, or NULL for main diag */
     float*          out_sims,       /* [M] */
     int32_t*        out_scores,     /* [M] */
     uint8_t*        out_mask        /* [M] */
@@ -220,16 +228,18 @@ void batch_sw_align_c(
             const uint8_t* seq_i = flat_sequences + offsets[i];
             const uint8_t* seq_j = flat_sequences + offsets[j];
 
+            int32_t hint = diag_hints ? diag_hints[idx] : 0;
             float identity;
             int32_t score;
 
-            /* Ensure shorter sequence is seq_a (fewer DP rows) */
+            /* Ensure shorter sequence is seq_a (fewer DP rows).
+               When swapping, negate the diagonal hint. */
             if (len_i <= len_j) {
-                sw_align_one(seq_i, len_i, seq_j, len_j, band_width,
+                sw_align_one(seq_i, len_i, seq_j, len_j, band_width, hint,
                              sub_matrix, H0, H1, E0, E1, Hm0, Hm1, Em0, Em1,
                              &identity, &score);
             } else {
-                sw_align_one(seq_j, len_j, seq_i, len_i, band_width,
+                sw_align_one(seq_j, len_j, seq_i, len_i, band_width, -hint,
                              sub_matrix, H0, H1, E0, E1, Hm0, Hm1, Em0, Em1,
                              &identity, &score);
             }
