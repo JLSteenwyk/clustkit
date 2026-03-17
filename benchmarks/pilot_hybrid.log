@@ -1,0 +1,44 @@
+Loading database...
+21:24:36 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+21:24:36 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+21:24:37 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+21:24:37 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.80s)
+21:24:37 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+21:24:37 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+21:24:40 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+21:24:40 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+21:24:42 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+21:24:42 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+21:24:44 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+21:24:44 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+21:24:45 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+21:24:45 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+Loaded 2000 queries, 591288 db
+
+================================================================================
+Numba scoring (5 indices) + C union + LGB + C SW diag bw=20
+================================================================================
+    std k=3: 16000000 (73.7s)
+    red k=4: 16000000 (162.3s)
+    red k=5: 15952926 (24.2s)
+    sp 11011: 16000000 (166.1s)
+    sp 110011: 16000000 (157.9s)
+    Total scoring: 584.2s
+
+    C union: 64897698 pairs in 17.8s
+    Cal SW: 32542555 pairs in 15.4s
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+    LGB r=0.9782
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/utils/validation.py:2749: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+    LGB inference: 1.6s
+
+  Config                     Score  Union   LGB    SW  Total    ROC1 vs MMseqs2
+  ---------------------------------------------------------------------------
+  N= 3000                     584s    18s    2s    3s   607s  0.7896    -0.0046
+  N= 5000                     584s    18s    2s    5s   609s  0.7908    -0.0034
+  N= 8000                     584s    18s    2s    8s   612s  0.7917    -0.0025
+
+  Reference: MMseqs2=0.7942 (14s)  DIAMOND=0.7963 (13s)
+  v7.4 (Numba scoring + numpy union): 129s, ROC1=0.802
