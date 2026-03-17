@@ -487,6 +487,22 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.8 — 2-Index + LightGBM + Diagonal Hints
+
+**Change:** Combined 2-index fast path with LightGBM two-tier and diagonal-hinted SW.
+
+| Config | Score | Union | LGB | SW | Total | ROC1 | vs MMseqs2 |
+|--------|-------|-------|-----|-----|-------|------|------------|
+| N=3000 bw=20 | 34s | 32s | 1s | 2s | 69s | 0.777 | -0.017 |
+| N=5000 bw=20 | 34s | 32s | 1s | 4s | 71s | 0.782 | -0.013 |
+| N=8000 bw=20 | 34s | 32s | 1s | 6s | 73s | 0.784 | -0.010 |
+
+**Verdict:** 2x faster than v7.4 (73s vs 129s) but ROC1 below MMseqs2 (0.794). The 2-index approach loses too much sensitivity vs 5-index. Union step (32s) is now the main bottleneck.
+
+**Pilot file:** `pilot_2idx_lgbm.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
