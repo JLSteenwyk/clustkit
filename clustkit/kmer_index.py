@@ -1495,6 +1495,9 @@ def search_kmer_index(
     spaced_seeds: list[str] | None = None,
     extra_alphabets: list[tuple] | None = None,
     ml_prefilter_model: tuple | None = None,
+    use_c_sw: bool = False,
+    c_sw_band_width: int = 20,
+    use_c_scoring: bool = False,
 ):
     """Search queries against a pre-built k-mer inverted index.
 
@@ -1588,8 +1591,60 @@ def search_kmer_index(
         ).astype(np.float32)
         logger.info("  Using IDF-weighted Phase A scoring")
 
+    # Load C scoring library once (used for all stages when enabled)
+    _klib = None
+    if use_c_scoring:
+        import ctypes
+        from pathlib import Path as _Path
+        _kmer_so = _Path(__file__).resolve().parent / "csrc" / "kmer_score.so"
+        _klib = ctypes.cdll.LoadLibrary(str(_kmer_so))
+        _klib.batch_score_queries_c.restype = None
+        _klib.batch_score_queries_c.argtypes = [
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        _klib.batch_score_queries_spaced_c.restype = None
+        _klib.batch_score_queries_spaced_c.argtypes = [
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+        ]
+        logger.info("  C/OpenMP scoring enabled")
+
     with timer("Search Stage 1: K-mer index scoring"):
-        if use_similar:
+        if use_c_scoring and not use_similar and not use_idf:
+            out_scores_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
+            out_diags_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
+            _klib.batch_score_queries_c(
+                q_flat.ctypes.data,
+                q_off.astype(np.int64).ctypes.data,
+                q_lens.astype(np.int32).ctypes.data,
+                nq, int(k), int(alpha_size),
+                db_index.kmer_offsets.ctypes.data,
+                db_index.kmer_entries.ctypes.data,
+                db_index.kmer_freqs.ctypes.data,
+                int(freq_thresh), nd,
+                int(min_total_hits), int(min_diag_hits),
+                int(diag_bin_width), int(max_cands_per_query),
+                int(phase_a_topk),
+                out_targets.ctypes.data,
+                out_counts.ctypes.data,
+                out_scores_c.ctypes.data,
+                out_diags_c.ctypes.data,
+            )
+            logger.info("  Using C/OpenMP scoring")
+        elif use_similar:
             _batch_score_queries_similar(
                 q_flat,
                 q_off.astype(np.int64),
@@ -1677,17 +1732,30 @@ def search_kmer_index(
             reduced_k if isinstance(reduced_k, list) else [reduced_k]
         )
 
-        # Remap query sequences once (shared across all reduced indices)
-        red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
+        # Use pre-built reduced flat sequences if available
+        if db_index.reduced_flat is not None:
+            red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
+        else:
+            red_q_flat = _remap_flat(q_flat, REDUCED_ALPHA, len(q_flat))
         all_red_packed = []
 
         for rk in rk_values:
             with timer(f"Search Stage 1.5: Reduced alphabet k={rk}"):
-                # Use cached reduced index if available
-                _cache_key = f'_red_idx_k{rk}'
-                if hasattr(db_index, _cache_key):
+                # Check pre-built indices first
+                _prebuilt_key = f'red_k{rk}'
+                if (db_index.reduced_indices
+                        and _prebuilt_key in db_index.reduced_indices):
+                    red_data = db_index.reduced_indices[_prebuilt_key]
+                    red_offsets, red_entries, red_freqs = (
+                        red_data[0], red_data[1], red_data[2]
+                    )
+                    logger.info(
+                        f"  Using pre-built reduced index (k={rk})"
+                    )
+                # Fall back to cached on db_index object
+                elif hasattr(db_index, f'_red_idx_k{rk}'):
                     red_offsets, red_entries, red_freqs = getattr(
-                        db_index, _cache_key
+                        db_index, f'_red_idx_k{rk}'
                     )
                     logger.info(
                         f"  Using cached reduced alphabet index (k={rk})"
@@ -1716,8 +1784,28 @@ def search_kmer_index(
                 red_out_targets = np.empty((nq, red_mc), dtype=np.int32)
                 red_out_counts = np.zeros(nq, dtype=np.int32)
 
-                # Use IDF scoring for reduced index too
-                if use_idf:
+                # Use C scoring for reduced index when available
+                if use_c_scoring and not use_idf:
+                    _red_sc = np.zeros((nq, red_mc), dtype=np.int32)
+                    _red_dg = np.zeros((nq, red_mc), dtype=np.int32)
+                    _klib.batch_score_queries_c(
+                        red_q_flat.ctypes.data,
+                        q_off.astype(np.int64).ctypes.data,
+                        q_lens.astype(np.int32).ctypes.data,
+                        nq, rk, REDUCED_ALPHA_SIZE,
+                        red_offsets.ctypes.data,
+                        red_entries.ctypes.data,
+                        red_freqs.ctypes.data,
+                        int(red_freq_thresh), nd,
+                        int(min_total_hits), int(min_diag_hits),
+                        int(diag_bin_width), int(red_mc),
+                        int(phase_a_topk),
+                        red_out_targets.ctypes.data,
+                        red_out_counts.ctypes.data,
+                        _red_sc.ctypes.data,
+                        _red_dg.ctypes.data,
+                    )
+                elif use_idf:
                     red_idf = np.log2(
                         np.maximum(
                             np.float32(nd)
@@ -1906,8 +1994,17 @@ def search_kmer_index(
         spaced_packed = []
         for pattern in spaced_seeds:
             with timer(f"Search Stage 1.6: Spaced seed {pattern}"):
+                _prebuilt_sp = f'sp_{pattern}'
                 _sp_cache = f'_spaced_{pattern}'
-                if hasattr(db_index, _sp_cache):
+                if (db_index.reduced_indices
+                        and _prebuilt_sp in db_index.reduced_indices):
+                    sp_data = db_index.reduced_indices[_prebuilt_sp]
+                    sp_off, sp_ent, sp_freq = sp_data[:3]
+                    sp_seed_off, sp_weight, sp_span = sp_data[3:]
+                    logger.info(
+                        f"  Using pre-built spaced seed index ({pattern})"
+                    )
+                elif hasattr(db_index, _sp_cache):
                     sp_data = getattr(db_index, _sp_cache)
                     sp_off, sp_ent, sp_freq = sp_data[:3]
                     sp_seed_off, sp_weight, sp_span = sp_data[3:]
@@ -1942,19 +2039,40 @@ def search_kmer_index(
                 sp_out_targets = np.empty((nq, sp_mc), dtype=np.int32)
                 sp_out_counts = np.zeros(nq, dtype=np.int32)
 
-                _batch_score_queries_spaced(
-                    red_q_flat,
-                    q_off.astype(np.int64),
-                    q_lens.astype(np.int32),
-                    sp_seed_off, int32(sp_weight), int32(sp_span),
-                    int32(REDUCED_ALPHA_SIZE),
-                    sp_off, sp_ent, sp_freq,
-                    sp_freq_thresh,
-                    int32(nd), int32(min_total_hits),
-                    int32(min_diag_hits), int32(diag_bin_width),
-                    int32(sp_mc), int32(phase_a_topk),
-                    sp_out_targets, sp_out_counts,
-                )
+                if use_c_scoring:
+                    _sp_sc = np.zeros((nq, sp_mc), dtype=np.int32)
+                    _klib.batch_score_queries_spaced_c(
+                        red_q_flat.ctypes.data,
+                        q_off.astype(np.int64).ctypes.data,
+                        q_lens.astype(np.int32).ctypes.data,
+                        nq,
+                        sp_seed_off.ctypes.data,
+                        int(sp_weight), int(sp_span),
+                        REDUCED_ALPHA_SIZE,
+                        sp_off.ctypes.data, sp_ent.ctypes.data,
+                        sp_freq.ctypes.data,
+                        int(sp_freq_thresh), nd,
+                        int(min_total_hits), int(min_diag_hits),
+                        int(diag_bin_width), int(sp_mc),
+                        int(phase_a_topk),
+                        sp_out_targets.ctypes.data,
+                        sp_out_counts.ctypes.data,
+                        _sp_sc.ctypes.data,
+                    )
+                else:
+                    _batch_score_queries_spaced(
+                        red_q_flat,
+                        q_off.astype(np.int64),
+                        q_lens.astype(np.int32),
+                        sp_seed_off, int32(sp_weight), int32(sp_span),
+                        int32(REDUCED_ALPHA_SIZE),
+                        sp_off, sp_ent, sp_freq,
+                        sp_freq_thresh,
+                        int32(nd), int32(min_total_hits),
+                        int32(min_diag_hits), int32(diag_bin_width),
+                        int32(sp_mc), int32(phase_a_topk),
+                        sp_out_targets, sp_out_counts,
+                    )
 
                 sp_total = int(sp_out_counts.sum())
                 if sp_total > 0:
@@ -2058,14 +2176,51 @@ def search_kmer_index(
     # ── Stage 2: Alignment ──────────────────────────────────────────
     num_aligned = len(candidate_pairs)
     use_sw = local_alignment and use_blosum
-    aln_label = "SW local alignment" if use_sw else "Banded NW alignment"
+    if use_c_sw and use_sw:
+        aln_label = f"C SW local alignment (bw={c_sw_band_width}, diag hints)"
+    elif use_sw:
+        aln_label = "SW local alignment"
+    else:
+        aln_label = "Banded NW alignment"
     logger.info(
         f"  Alignment: {num_aligned} pairs, band_width={band_width}, "
         f"threshold={threshold}, mode={aln_label}"
     )
 
     with timer(f"Search Stage 2: {aln_label}"):
-        if use_sw:
+        if use_c_sw and use_sw:
+            # C/OpenMP SW with diagonal hints from Phase B
+            import ctypes
+            from pathlib import Path as _Path
+            _sw_so = _Path(__file__).resolve().parent / "csrc" / "sw_align.so"
+            _swlib = ctypes.cdll.LoadLibrary(str(_sw_so))
+            _swlib.batch_sw_align_c.restype = None
+            _swlib.batch_sw_align_c.argtypes = [
+                ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+                ctypes.c_void_p, ctypes.c_int32, ctypes.c_int32,
+                ctypes.c_void_p, ctypes.c_float, ctypes.c_void_p,
+                ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ]
+            M = len(merged_pairs)
+            pf = np.ascontiguousarray(merged_pairs.flatten())
+            c_sims = np.empty(M, dtype=np.float32)
+            c_scores = np.empty(M, dtype=np.int32)
+            c_mask = np.empty(M, dtype=np.uint8)
+            sm = BLOSUM62.astype(np.int8)
+            _swlib.batch_sw_align_c(
+                pf.ctypes.data,
+                merged["flat_sequences"].ctypes.data,
+                merged["offsets"].astype(np.int64).ctypes.data,
+                merged_lengths.ctypes.data,
+                M, c_sw_band_width, sm.ctypes.data,
+                np.float32(threshold),
+                None,  # no diag hints for now (TODO: thread from Phase B)
+                c_sims.ctypes.data, c_scores.ctypes.data, c_mask.ctypes.data,
+            )
+            sims = c_sims
+            raw_scores = c_scores
+            aln_mask = c_mask.astype(np.bool_)
+        elif use_sw:
             sims, raw_scores, aln_mask = _batch_sw_compact_scored(
                 merged_pairs,
                 merged["flat_sequences"],

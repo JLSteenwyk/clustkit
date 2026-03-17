@@ -30,6 +30,9 @@ class DatabaseIndex:
     kmer_offsets: np.ndarray | None = None   # (num_possible_kmers+1,) int64
     kmer_entries: np.ndarray | None = None   # (total_occurrences,) int64
     kmer_freqs: np.ndarray | None = None     # (num_possible_kmers,) int32
+    # Pre-built reduced alphabet + spaced seed indices (optional)
+    reduced_indices: dict | None = None      # {name: (offsets, entries, freqs, ...)}
+    reduced_flat: np.ndarray | None = None   # reduced-alphabet encoded sequences
 
 
 def build_database(
@@ -119,7 +122,50 @@ def build_database(
             mode,
         )
 
-    # 8. Bundle everything into a DatabaseIndex
+    # 8. Pre-build reduced alphabet + spaced seed indices (protein only)
+    reduced_indices = {}
+    reduced_flat = None
+    if mode == "protein":
+        from clustkit.kmer_index import (
+            REDUCED_ALPHA, REDUCED_ALPHA_SIZE, _remap_flat,
+            build_kmer_index_spaced,
+        )
+        with timer("Building reduced alphabet indices"):
+            reduced_flat = _remap_flat(
+                dataset.flat_sequences, REDUCED_ALPHA,
+                len(dataset.flat_sequences),
+            )
+            # Reduced k=4
+            r4_off, r4_ent, r4_freq = build_kmer_index(
+                reduced_flat, dataset.offsets, dataset.lengths,
+                4, mode, alpha_size=REDUCED_ALPHA_SIZE,
+            )
+            reduced_indices["red_k4"] = (r4_off, r4_ent, r4_freq)
+
+            # Reduced k=5
+            r5_off, r5_ent, r5_freq = build_kmer_index(
+                reduced_flat, dataset.offsets, dataset.lengths,
+                5, mode, alpha_size=REDUCED_ALPHA_SIZE,
+            )
+            reduced_indices["red_k5"] = (r5_off, r5_ent, r5_freq)
+
+            # Spaced seeds
+            for pattern in ["11011", "110011"]:
+                sp_off, sp_ent, sp_freq, sp_so, sp_w, sp_span = (
+                    build_kmer_index_spaced(
+                        reduced_flat, dataset.offsets, dataset.lengths,
+                        pattern, mode, alpha_size=REDUCED_ALPHA_SIZE,
+                    )
+                )
+                reduced_indices[f"sp_{pattern}"] = (
+                    sp_off, sp_ent, sp_freq, sp_so, sp_w, sp_span,
+                )
+
+        logger.info(
+            f"  Built {len(reduced_indices)} reduced/spaced indices"
+        )
+
+    # 9. Bundle everything into a DatabaseIndex
     params = {
         "input_path": str(input_path),
         "mode": mode,
@@ -147,6 +193,8 @@ def build_database(
         kmer_offsets=kmer_offsets,
         kmer_entries=kmer_entries,
         kmer_freqs=kmer_freqs,
+        reduced_indices=reduced_indices if reduced_indices else None,
+        reduced_flat=reduced_flat,
     )
 
 
@@ -183,6 +231,25 @@ def save_database(db_index: DatabaseIndex, output_dir: str | Path):
             np.save(output_dir / "kmer_offsets.npy", db_index.kmer_offsets)
             np.save(output_dir / "kmer_entries.npy", db_index.kmer_entries)
             np.save(output_dir / "kmer_freqs.npy", db_index.kmer_freqs)
+
+        # Reduced alphabet + spaced seed indices
+        if db_index.reduced_indices:
+            red_dir = output_dir / "reduced"
+            red_dir.mkdir(exist_ok=True)
+            if db_index.reduced_flat is not None:
+                np.save(red_dir / "flat_sequences.npy", db_index.reduced_flat)
+            for name, arrays in db_index.reduced_indices.items():
+                np.save(red_dir / f"{name}_offsets.npy", arrays[0])
+                np.save(red_dir / f"{name}_entries.npy", arrays[1])
+                np.save(red_dir / f"{name}_freqs.npy", arrays[2])
+                if len(arrays) > 3:
+                    # Spaced seed: also save seed_offsets, weight, span
+                    np.save(red_dir / f"{name}_seed_offsets.npy", arrays[3])
+                    np.save(red_dir / f"{name}_meta.npy",
+                            np.array([arrays[4], arrays[5]], dtype=np.int32))
+            # Save index names for loading
+            with open(red_dir / "index_names.json", "w") as f:
+                json.dump(list(db_index.reduced_indices.keys()), f)
 
         # Sequence IDs as JSON
         with open(output_dir / "ids.json", "w") as f:
@@ -246,6 +313,35 @@ def load_database(db_dir: str | Path) -> DatabaseIndex:
             kmer_entries = np.load(db_dir / "kmer_entries.npy")
             kmer_freqs = np.load(db_dir / "kmer_freqs.npy")
 
+        # Load reduced alphabet + spaced seed indices (optional)
+        reduced_indices = None
+        reduced_flat = None
+        red_dir = db_dir / "reduced"
+        if red_dir.exists() and (red_dir / "index_names.json").exists():
+            with open(red_dir / "index_names.json") as f:
+                index_names = json.load(f)
+            red_flat_path = red_dir / "flat_sequences.npy"
+            if red_flat_path.exists():
+                reduced_flat = np.load(red_flat_path)
+            reduced_indices = {}
+            for name in index_names:
+                off = np.load(red_dir / f"{name}_offsets.npy")
+                ent = np.load(red_dir / f"{name}_entries.npy")
+                freq = np.load(red_dir / f"{name}_freqs.npy")
+                seed_off_path = red_dir / f"{name}_seed_offsets.npy"
+                if seed_off_path.exists():
+                    # Spaced seed index
+                    seed_off = np.load(seed_off_path)
+                    meta = np.load(red_dir / f"{name}_meta.npy")
+                    reduced_indices[name] = (
+                        off, ent, freq, seed_off, int(meta[0]), int(meta[1]),
+                    )
+                else:
+                    reduced_indices[name] = (off, ent, freq)
+            logger.info(
+                f"  Loaded {len(reduced_indices)} pre-built reduced indices"
+            )
+
         # Load sequence IDs
         with open(db_dir / "ids.json") as f:
             ids = json.load(f)
@@ -291,4 +387,6 @@ def load_database(db_dir: str | Path) -> DatabaseIndex:
         kmer_offsets=kmer_offsets,
         kmer_entries=kmer_entries,
         kmer_freqs=kmer_freqs,
+        reduced_indices=reduced_indices,
+        reduced_flat=reduced_flat,
     )
