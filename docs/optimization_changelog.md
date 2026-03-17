@@ -468,6 +468,25 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v7.7 — Early Termination / 2-Index Fast Path
+
+**Change:** Tested skipping slow indices (red k=4 + two spaced seeds: 76s) for queries where fast indices (std k=3 + red k=5: 33s) already find high-confidence candidates.
+
+**Affects:** Search only.
+
+**Finding:** ALL 2000 queries have max fast-index score >= 20. Every query is "easy." The slow indices contribute only -0.001 ROC1 (0.7686 → 0.7677).
+
+| Config | Score | Union | SW | Total | ROC1 |
+|--------|-------|-------|-----|-------|------|
+| All 5 indices | 109s | 38s | 5s | 152s | 0.7686 |
+| **2 indices (std k=3 + red k=5)** | **33s** | **15s** | **5s** | **53s** | **0.7677** |
+
+**Verdict:** The slow indices are redundant with heuristic selection. Dropping to 2 indices gives 2.9x speedup with -0.001 ROC1 loss. Still needs LightGBM testing for actual ROC1 vs MMseqs2.
+
+**Pilot file:** `pilot_early_term.py`
+
+---
+
 ## Current Best Pipeline
 
 ```
