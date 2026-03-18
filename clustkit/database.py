@@ -112,7 +112,7 @@ def build_database(
 
     # 7. Build k-mer inverted index for fast search
     from clustkit.kmer_index import build_kmer_index
-    kmer_index_k = 5 if mode == "protein" else k
+    kmer_index_k = 3 if mode == "protein" else k
     with timer("Building k-mer inverted index"):
         kmer_offsets, kmer_entries, kmer_freqs = build_kmer_index(
             dataset.flat_sequences,
