@@ -1,0 +1,244 @@
+====================================================================================================
+  ClustKIT Phase 3 Profiler
+====================================================================================================
+  Input:       benchmarks/data/pfam_mixed.fasta
+  Threshold:   0.7
+  Mode:        protein
+  Sensitivity: medium
+  Max threads: 192
+
+
+----------------------------------------------------------------------------------------------------
+  PHASE 0: Reading Sequences
+----------------------------------------------------------------------------------------------------
+
+  Loaded 22,343 sequences (max length 35213) in 2.08s
+
+
+----------------------------------------------------------------------------------------------------
+  PHASE 1: Computing Sketches
+----------------------------------------------------------------------------------------------------
+
+  k-mer size for LSH: 5 (user k=5)
+  Computed 22,343 sketches in 0.57s
+
+
+----------------------------------------------------------------------------------------------------
+  PHASE 2: LSH Candidate Generation
+----------------------------------------------------------------------------------------------------
+
+  LSH params: 161 tables, 2 bands/table
+  Found 633,121 candidate pairs in 1.60s
+
+  Band width: 458 (from p95 length = 1529)
+
+
+====================================================================================================
+  PRE-FILTER EFFECTIVENESS
+====================================================================================================
+
+  Total candidate pairs:          633,121
+  Rejected by length-ratio filter:      153,748  (24.28%)
+  Rejected by length-diff filter:            12  (0.00%)
+  Entering DP alignment:                479,361  (75.71%)
+
+  Length-ratio rejected pairs:
+    min ratio:  0.1797
+    mean ratio: 0.5750
+    max ratio:  0.6992
+
+  Length-diff rejected pairs:
+    min diff:   562
+    mean diff:  1064.4
+    max diff:   1924
+    band_width: 458
+
+
+====================================================================================================
+  ADAPTIVE BAND WIDTH DISTRIBUTION
+====================================================================================================
+
+  Pairs analyzed: 633,121
+  Configured band_width (max): 458
+
+  Adaptive band width statistics:
+    min:         10
+    p25:         16
+    median:      28
+    p75:         43
+    p95:         68
+    max:        458
+    mean:         32.2
+
+  Short-sequence pairs (full DP, max_len <= 50): 253 (0.04%)
+
+  Band Width Range          Count        %  Bar
+  -------------------- ---------- --------  --------------------------------------------------
+    0-9                         0    0.00%  
+    10-14                  128491   20.29%  #################################
+    15-19                   73950   11.68%  ###################
+    20-29                  128388   20.28%  #################################
+    30-49                  189952   30.00%  ##################################################
+    50-74                   90527   14.30%  #######################
+    75-99                   18923    2.99%  ####
+    100-149                  1985    0.31%  
+    150-199                   360    0.06%  
+    200-458                   545    0.09%  
+
+
+====================================================================================================
+  EARLY TERMINATION RATE
+====================================================================================================
+
+  Running alignment on 633,121 pairs (threshold=0.7)...
+  (This measures the _batch_align kernel directly)
+
+  Alignment completed in 2.037s (310,813 pairs/s)
+
+  Category                                      Count        %
+  ---------------------------------------- ---------- --------
+  Identity = 0.0 (pre-filtered)               153,760   24.29%
+  Identity = 0.0 (DP early termination)       417,153   65.89%
+  Identity 0.0 < id < threshold                    88    0.01%
+  Identity >= threshold (kept)                 62,120    9.81%
+
+  Summary:
+    Total pairs returning 0.0:      570,913 (90.17%)
+    DP early termination rate:      87.02% of DP-entered pairs
+    Useful pairs (>= threshold):    62,120 (9.81%)
+
+  Non-zero identity distribution (62,208 pairs):
+    min:     0.6765
+    p25:     0.8538
+    median:  0.9308
+    p75:     0.9707
+    max:     1.0000
+
+
+====================================================================================================
+  PER-PAIR TIME DISTRIBUTION
+====================================================================================================
+
+  Sampling 2,000 pairs from 633,121 total
+  (Timing each pair individually with perf_counter)
+
+  Per-pair time statistics (microseconds):
+    min:           15.3 us
+    p25:           22.3 us
+    median:        26.1 us
+    p75:           31.3 us
+    p95:          100.3 us
+    max:        15044.7 us
+    mean:         121.0 us
+
+  Time vs work estimate (work = min_len * adaptive_band):
+  Work Range                  Pairs    Mean Time  Median Time     P95 Time
+  ------------------------- ------- ------------ ------------ ------------
+           620 -      1280      200       20.3us       18.7us       28.5us
+          1280 -      1736      294       91.6us       20.9us       43.2us
+          1736 -      2594      506      130.5us       23.9us       48.6us
+          2594 -      3526      500      100.8us       27.4us       34.2us
+          3526 -      4393      300      115.0us       31.9us       99.7us
+          4393 -     72590      200      300.6us       34.6us      480.2us
+
+  Timing by outcome:
+    Early term / pre-filtered (id=0.0): mean=109.9us, median=25.4us (1810 pairs)
+    Computed fully (id>0.0):             mean=226.8us, median=92.8us (190 pairs)
+
+
+====================================================================================================
+  THREAD SCALING CURVE
+====================================================================================================
+
+  Total candidate pairs: 633,121
+  System max threads (NUMBA_NUM_THREADS): 192
+  Testing thread counts: [1, 2, 4, 8, 16, 32, 64, 128, 192]
+
+   Threads   Time (s)        Pairs/s    Speedup   Efficiency
+  -------- ---------- -------------- ---------- ------------
+         1     18.135         34,911      1.00x      100.0%
+         2      9.985         63,407      1.82x       90.8%
+         4      7.139         88,689      2.54x       63.5%
+         8      4.078        155,257      4.45x       55.6%
+        16      3.660        172,987      4.96x       31.0%
+        32      2.223        284,857      8.16x       25.5%
+        64      1.552        407,941     11.69x       18.3%
+       128      0.949        666,965     19.10x       14.9%
+       192      0.838        755,931     21.65x       11.3%
+
+  Thread scaling (speedup relative to 1 thread):
+
+     1T  |##                                                | 1.00x
+     2T  |####                                              | 1.82x
+     4T  |#####                                             | 2.54x
+     8T  |##########                                        | 4.45x
+    16T  |###########                                       | 4.96x
+    32T  |##################                                | 8.16x
+    64T  |##########################                        | 11.69x
+   128T  |############################################      | 19.10x
+   192T  |##################################################| 21.65x
+
+
+====================================================================================================
+  MEMORY ANALYSIS
+====================================================================================================
+
+  Encoded sequence matrix:
+    Shape:       22343 x 35213
+    Dtype:       uint8
+    Total size:  750.32 MB (786,764,059 bytes)
+
+  Utilization:
+    Actual residues:   13,525,770
+    Padded cells:      786,764,059
+    Padding waste:     98.3% (737.42 MB)
+
+  Sequence length distribution:
+    min:         23
+    p25:        288
+    median:     408
+    p75:        685
+    p95:       1529
+    max:      35213
+    mean:        605.4
+    std:         832.4
+
+  Compact storage options:
+
+    1. Concatenated array + offsets (CSR-style):
+       Data:      12.90 MB (concatenated residues)
+       Offsets:   0.0852 MB (22344 int32)
+       Total:     12.98 MB
+       Savings:   737.33 MB (98.3%)
+
+    2. Bucketed by length (bucket size = 50):
+       143 buckets, each padded to local max length
+       Total:     13.41 MB
+       Savings:   736.90 MB (98.2%)
+
+    3. 4-bit packed + concatenated (2 residues per byte):
+       Total:     6.53 MB
+       Savings:   743.78 MB (99.1%)
+       Note: Requires unpack in alignment kernel; may reduce SIMD throughput
+
+
+====================================================================================================
+  SUMMARY
+====================================================================================================
+
+  Dataset:     22,343 sequences, max length 35213
+  Candidates:  633,121 pairs
+  Threshold:   0.7
+  Band width:  458
+
+  Pre-filter rejection:    24.29% of pairs never enter DP
+  DP early termination:    417,153 pairs
+  Useful pairs:            62,120 (9.81%)
+  Alignment throughput:    310,813 pairs/s (all threads)
+  Matrix memory:           750.32 MB (98.3% padding)
+  Compact estimate:        12.98 MB (concatenated)
+
+====================================================================================================
+  Profiling complete.
+====================================================================================================
+

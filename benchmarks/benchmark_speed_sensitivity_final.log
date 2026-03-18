@@ -1,0 +1,331 @@
+13:41:41 [INFO] Using 2000 queries (subsampled from 10000)
+13:41:41 [INFO] Wrote 2000 queries to benchmarks/data/speed_sensitivity_results/queries_subset.fasta
+13:41:41 [INFO] Building MMseqs2 query db for subset...
+13:41:41 [INFO] Loading existing ClustKIT index...
+13:41:42 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:41:42 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:41:44 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.88s)
+13:41:44 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.88s)
+13:41:44 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:41:44 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:41:44 [INFO] Running ClustKIT (fast)...
+13:41:44 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:41:44 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:41:44 [INFO]   K-mer freq threshold: 39656
+13:41:44 [INFO]   K-mer freq threshold: 39656
+13:41:44 [INFO] Search Stage 1: K-mer index scoring...
+13:41:44 [INFO] Search Stage 1: K-mer index scoring...
+13:41:54 [INFO] Search Stage 1: K-mer index scoring done (9.50s)
+13:41:54 [INFO] Search Stage 1: K-mer index scoring done (9.50s)
+13:41:54 [INFO]   K-mer scoring: 600000 candidate pairs (avg 300.0/query)
+13:41:54 [INFO]   K-mer scoring: 600000 candidate pairs (avg 300.0/query)
+13:41:54 [INFO]   Alignment: 600000 pairs, band_width=126, threshold=0.1
+13:41:54 [INFO]   Alignment: 600000 pairs, band_width=126, threshold=0.1
+13:41:54 [INFO] Search Stage 2: Banded NW alignment...
+13:41:54 [INFO] Search Stage 2: Banded NW alignment...
+13:41:58 [INFO] Search Stage 2: Banded NW alignment done (3.99s)
+13:41:58 [INFO] Search Stage 2: Banded NW alignment done (3.99s)
+13:41:58 [INFO]   110876 pairs above threshold 0.1
+13:41:58 [INFO]   110876 pairs above threshold 0.1
+13:41:58 [INFO]   110876 total hits for 2000/2000 queries
+13:41:58 [INFO]   110876 total hits for 2000/2000 queries
+13:41:58 [INFO] Search completed in 13.95s
+13:41:58 [INFO] Search completed in 13.95s
+13:41:58 [INFO]   ClustKIT (fast): ROC1=0.6585 MAP=0.6586 Time=14.0s
+13:41:58 [INFO] Running ClustKIT (default)...
+13:41:58 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:41:58 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:41:58 [INFO]   K-mer freq threshold: 39656
+13:41:58 [INFO]   K-mer freq threshold: 39656
+13:41:58 [INFO] Search Stage 1: K-mer index scoring...
+13:41:58 [INFO] Search Stage 1: K-mer index scoring...
+13:42:10 [INFO] Search Stage 1: K-mer index scoring done (11.78s)
+13:42:10 [INFO] Search Stage 1: K-mer index scoring done (11.78s)
+13:42:10 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:42:10 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:42:10 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:42:10 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:42:10 [INFO] Search Stage 2: Banded NW alignment...
+13:42:10 [INFO] Search Stage 2: Banded NW alignment...
+13:42:27 [INFO] Search Stage 2: Banded NW alignment done (16.98s)
+13:42:27 [INFO] Search Stage 2: Banded NW alignment done (16.98s)
+13:42:27 [INFO]   343276 pairs above threshold 0.1
+13:42:27 [INFO]   343276 pairs above threshold 0.1
+13:42:28 [INFO]   328971 total hits for 2000/2000 queries
+13:42:28 [INFO]   328971 total hits for 2000/2000 queries
+13:42:28 [INFO] Search completed in 29.91s
+13:42:28 [INFO] Search completed in 29.91s
+13:42:29 [INFO]   ClustKIT (default): ROC1=0.6920 MAP=0.6925 Time=29.9s
+13:42:29 [INFO] Running ClustKIT (sensitive)...
+13:42:29 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:42:29 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:42:29 [INFO]   K-mer freq threshold: 39656
+13:42:29 [INFO]   K-mer freq threshold: 39656
+13:42:29 [INFO] Search Stage 1: K-mer index scoring...
+13:42:29 [INFO] Search Stage 1: K-mer index scoring...
+13:42:44 [INFO] Search Stage 1: K-mer index scoring done (14.87s)
+13:42:44 [INFO] Search Stage 1: K-mer index scoring done (14.87s)
+13:42:44 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:42:44 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:42:44 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:42:44 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:42:44 [INFO] Search Stage 2: Banded NW alignment...
+13:42:44 [INFO] Search Stage 2: Banded NW alignment...
+13:43:10 [INFO] Search Stage 2: Banded NW alignment done (25.84s)
+13:43:10 [INFO] Search Stage 2: Banded NW alignment done (25.84s)
+13:43:10 [INFO]   564912 pairs above threshold 0.1
+13:43:10 [INFO]   564912 pairs above threshold 0.1
+13:43:11 [INFO]   510601 total hits for 2000/2000 queries
+13:43:11 [INFO]   510601 total hits for 2000/2000 queries
+13:43:11 [INFO] Search completed in 42.22s
+13:43:11 [INFO] Search completed in 42.22s
+13:43:12 [INFO]   ClustKIT (sensitive): ROC1=0.7093 MAP=0.7096 Time=42.2s
+13:43:12 [INFO] Running ClustKIT (very-sensitive)...
+13:43:12 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:43:12 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:43:12 [INFO]   K-mer freq threshold: 39656
+13:43:12 [INFO]   K-mer freq threshold: 39656
+13:43:12 [INFO] Search Stage 1: K-mer index scoring...
+13:43:12 [INFO] Search Stage 1: K-mer index scoring...
+13:43:35 [INFO] Search Stage 1: K-mer index scoring done (22.74s)
+13:43:35 [INFO] Search Stage 1: K-mer index scoring done (22.74s)
+13:43:35 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:43:35 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:43:35 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:43:35 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:43:35 [INFO] Search Stage 2: Banded NW alignment...
+13:43:35 [INFO] Search Stage 2: Banded NW alignment...
+13:44:20 [INFO] Search Stage 2: Banded NW alignment done (44.84s)
+13:44:20 [INFO] Search Stage 2: Banded NW alignment done (44.84s)
+13:44:20 [INFO]   1159397 pairs above threshold 0.1
+13:44:20 [INFO]   1159397 pairs above threshold 0.1
+13:44:22 [INFO]   830918 total hits for 2000/2000 queries
+13:44:22 [INFO]   830918 total hits for 2000/2000 queries
+13:44:22 [INFO] Search completed in 70.04s
+13:44:22 [INFO] Search completed in 70.04s
+13:44:24 [INFO]   ClustKIT (very-sensitive): ROC1=0.7355 MAP=0.7360 Time=70.0s
+13:44:24 [INFO] Running MMseqs2 (s=1)...
+13:44:30 [INFO]   MMseqs2 (s=1): ROC1=0.6452 MAP=0.6454 Time=5.8s
+13:44:30 [INFO] Running MMseqs2 (s=4)...
+13:44:39 [INFO]   MMseqs2 (s=4): ROC1=0.7311 MAP=0.7318 Time=8.4s
+13:44:39 [INFO] Running MMseqs2 (s=5.7)...
+13:44:49 [INFO]   MMseqs2 (s=5.7): ROC1=0.7692 MAP=0.7698 Time=9.7s
+13:44:49 [INFO] Running MMseqs2 (s=7.5)...
+13:45:03 [INFO]   MMseqs2 (s=7.5): ROC1=0.7942 MAP=0.7949 Time=13.9s
+13:45:03 [INFO] Running DIAMOND (faster)...
+13:45:09 [INFO]   DIAMOND (faster): ROC1=0.5932 MAP=0.5932 Time=5.3s
+13:45:09 [INFO] Running DIAMOND (fast)...
+13:45:13 [INFO]   DIAMOND (fast): ROC1=0.6383 MAP=0.6383 Time=4.2s
+13:45:13 [INFO] Running DIAMOND (default)...
+13:45:20 [INFO]   DIAMOND (default): ROC1=0.6934 MAP=0.6934 Time=6.2s
+13:45:20 [INFO] Running DIAMOND (sensitive)...
+13:45:48 [INFO]   DIAMOND (sensitive): ROC1=0.7776 MAP=0.7782 Time=28.3s
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+13:45:48 [INFO] Running DIAMOND (more-sensitive)...
+13:46:15 [INFO]   DIAMOND (more-sensitive): ROC1=0.7776 MAP=0.7782 Time=26.5s
+13:46:15 [INFO] Running DIAMOND (very-sensitive)...
+13:46:28 [INFO]   DIAMOND (very-sensitive): ROC1=0.7964 MAP=0.7970 Time=13.2s
+13:46:28 [INFO] Running DIAMOND (ultra-sensitive)...
+13:47:24 [INFO]   DIAMOND (ultra-sensitive): ROC1=0.8017 MAP=0.8023 Time=55.0s
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+DIAMOND (sensitive)                  0.7776  0.7782  0.7782   0.7776     28.3     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+DIAMOND (sensitive)                  0.7776  0.7782  0.7782   0.7776     28.3     2000
+DIAMOND (more-sensitive)             0.7776  0.7782  0.7782   0.7776     26.5     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+DIAMOND (sensitive)                  0.7776  0.7782  0.7782   0.7776     28.3     2000
+DIAMOND (more-sensitive)             0.7776  0.7782  0.7782   0.7776     26.5     2000
+DIAMOND (very-sensitive)             0.7964  0.7970  0.7970   0.7964     13.2     2000
+
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+DIAMOND (sensitive)                  0.7776  0.7782  0.7782   0.7776     28.3     2000
+DIAMOND (more-sensitive)             0.7776  0.7782  0.7782   0.7776     26.5     2000
+DIAMOND (very-sensitive)             0.7964  0.7970  0.7970   0.7964     13.2     2000
+DIAMOND (ultra-sensitive)            0.8017  0.8023  0.8023   0.8017     55.0     2000
+
+
+====================================================================================================
+SPEED-SENSITIVITY TRADE-OFF RESULTS
+====================================================================================================
+
+Label                                  ROC1    ROC5     MAP  S@1%FDR  Time(s)  Queries
+----------------------------------------------------------------------------------------------------
+ClustKIT (fast)                      0.6585  0.6585  0.6586   0.6585     14.0     2000
+ClustKIT (default)                   0.6920  0.6925  0.6925   0.6920     29.9     2000
+ClustKIT (sensitive)                 0.7093  0.7094  0.7096   0.7093     42.2     2000
+ClustKIT (very-sensitive)            0.7355  0.7357  0.7360   0.7355     70.0     2000
+MMseqs2 (s=1)                        0.6452  0.6454  0.6454   0.6452      5.8     2000
+MMseqs2 (s=4)                        0.7311  0.7318  0.7318   0.7311      8.4     2000
+MMseqs2 (s=5.7)                      0.7692  0.7698  0.7698   0.7692      9.7     2000
+MMseqs2 (s=7.5)                      0.7942  0.7949  0.7949   0.7942     13.9     2000
+DIAMOND (faster)                     0.5932  0.5932  0.5932   0.5932      5.3     2000
+DIAMOND (fast)                       0.6383  0.6383  0.6383   0.6383      4.2     2000
+DIAMOND (default)                    0.6934  0.6934  0.6934   0.6934      6.2     2000
+DIAMOND (sensitive)                  0.7776  0.7782  0.7782   0.7776     28.3     2000
+DIAMOND (more-sensitive)             0.7776  0.7782  0.7782   0.7776     26.5     2000
+DIAMOND (very-sensitive)             0.7964  0.7970  0.7970   0.7964     13.2     2000
+DIAMOND (ultra-sensitive)            0.8017  0.8023  0.8023   0.8017     55.0     2000
+

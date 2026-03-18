@@ -12,5 +12,5 @@ venv/
 
 # Benchmark data (generated/downloaded — re-create by running benchmarks)
 benchmarks/data/
-
+papers/*
 claude_resume.sh

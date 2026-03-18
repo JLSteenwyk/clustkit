@@ -1,0 +1,55 @@
+17:51:54 [INFO] Loading sequences from benchmarks/data/pfam_mixed.fasta ...
+17:51:55 [INFO]   Loaded 22343 sequences (max length 35213)
+17:51:55 [INFO]   k_lsh = 5, sketch_size = 128, num_bands = 2
+17:51:55 [INFO] Computing sketches ...
+17:51:56 [INFO]   Sketches computed in 0.46s
+17:51:56 [INFO] Sampling 50000 random pairs for ground truth ...
+17:51:56 [INFO]   Sampled 50000 unique pairs
+17:51:56 [INFO] Computing ground truth identities (full NW) ...
+17:55:45 [INFO]   Ground truth computed in 228.88s: 26 true pairs (full NW), 23 pipeline-realistic true pairs (pass length pre-filters) out of 50000 sampled
+
+========================================================================================================================
+LSH RECALL BENCHMARK (C8) | threshold=0.7 | n=22343 | true_pairs=26 (pipeline-realistic: 23) / 50000
+========================================================================================================================
+  Tables  Bands   Candidates    Cand_Rate   True_Found     Recall  PipeFound PipeRecall   LSH_Time
+------------------------------------------------------------------------------------------------------------------------
+17:55:45 [INFO] Running LSH with num_tables=8 ...
+       8      2       524261     0.002100            2     0.0769          2     0.0870       0.14s
+17:55:46 [INFO] Running LSH with num_tables=16 ...
+      16      2       530285     0.002125            3     0.1154          3     0.1304       0.13s
+17:55:46 [INFO] Running LSH with num_tables=32 ...
+      32      2       585445     0.002346            5     0.1923          5     0.2174       0.30s
+17:55:47 [INFO] Running LSH with num_tables=64 ...
+      64      2       602057     0.002412            8     0.3077          7     0.3043       0.59s
+17:55:48 [INFO] Running LSH with num_tables=105 ...
+     105      2       610819     0.002447            9     0.3462          8     0.3478       0.79s
+17:55:49 [INFO] Running LSH with num_tables=128 ...
+     128      2       630489     0.002526            9     0.3462          8     0.3478       0.98s
+17:55:51 [INFO] Running LSH with num_tables=200 ...
+     200      2       636069     0.002548           10     0.3846          9     0.3913       1.76s
+17:55:53 [INFO] Running LSH with num_tables=256 ...
+     256      2       687071     0.002753           10     0.3846          9     0.3913       2.12s
+
+========================================================================================================================
+
+GROUND TRUTH IDENTITY DISTRIBUTION
+------------------------------------------------------------
+  P  0: 0.0448
+  P 10: 0.1378
+  P 25: 0.1597
+  P 50: 0.1886
+  P 75: 0.2210
+  P 90: 0.2551
+  P 95: 0.2771
+  P 99: 0.3333
+  P100: 0.9760
+  Mean: 0.1941
+  Non-zero: 50000/50000 (100.0%)
+  >= threshold (0.7): 26/50000 (0.1%)
+
+TRUE PAIRS: found vs missed (at max tables=256)
+------------------------------------------------------------
+  Found (10): mean=0.9103, min=0.8697, max=0.9584
+  Missed (16): mean=0.8508, min=0.7215, max=0.9760
+
+17:55:59 [INFO] Results saved to /mnt/ca1e2e99-718e-417c-9ba6-62421455971a/ClustKIT/benchmarks/data/lsh_recall_results.json

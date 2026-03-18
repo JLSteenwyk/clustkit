@@ -1,0 +1,70 @@
+22:18:46 [INFO] Loaded existing metadata (10000 queries)
+22:18:46 [INFO] Phase 3: SEARCH
+22:18:46 [INFO]   Running ClustKIT search (pre-indexed)...
+22:18:47 [INFO] Loading database index from benchmarks/data/scop_search_results/clustkit_db...
+22:18:47 [INFO] Loading database index from benchmarks/data/scop_search_results/clustkit_db...
+22:18:48 [INFO] Loading database index from benchmarks/data/scop_search_results/clustkit_db done (1.48s)
+22:18:48 [INFO] Loading database index from benchmarks/data/scop_search_results/clustkit_db done (1.48s)
+22:18:48 [INFO] Loaded index: 591288 sequences, 253 LSH tables, k=3, sketch_size=128
+22:18:48 [INFO] Loaded index: 591288 sequences, 253 LSH tables, k=3, sketch_size=128
+22:18:48 [INFO] Search: 10000 queries against 591288 database sequences (pre-indexed)
+22:18:48 [INFO] Search: 10000 queries against 591288 database sequences (pre-indexed)
+22:18:48 [INFO] Search Stage 0: Sketching queries...
+22:18:48 [INFO] Search Stage 0: Sketching queries...
+22:18:49 [INFO] Search Stage 0: Sketching queries done (0.05s)
+22:18:49 [INFO] Search Stage 0: Sketching queries done (0.05s)
+22:18:49 [INFO]   LSH params (from index): 253 tables, 1 bands/table
+22:18:49 [INFO]   LSH params (from index): 253 tables, 1 bands/table
+22:18:49 [INFO] Search Stage 1: LSH candidate generation (pre-indexed)...
+22:18:49 [INFO] Search Stage 1: LSH candidate generation (pre-indexed)...
+22:22:56 [INFO] Search Stage 1: LSH candidate generation (pre-indexed) done (247.35s)
+22:22:56 [INFO] Search Stage 1: LSH candidate generation (pre-indexed) done (247.35s)
+22:22:56 [INFO]   Found 448456762 query->db candidate pairs
+22:22:56 [INFO]   Found 448456762 query->db candidate pairs
+22:22:56 [INFO] Search Stage 2: Jaccard pre-filter...
+22:22:56 [INFO] Search Stage 2: Jaccard pre-filter...
+22:23:46 [INFO]   Jaccard pre-filter: 448456762 -> 362453495 pairs (86003267 removed, 19.2%)
+22:23:46 [INFO]   Jaccard pre-filter: 448456762 -> 362453495 pairs (86003267 removed, 19.2%)
+22:23:46 [INFO] Search Stage 2: Jaccard pre-filter done (50.12s)
+22:23:46 [INFO] Search Stage 2: Jaccard pre-filter done (50.12s)
+22:23:46 [INFO]   Alignment: 362453495 pairs, band_width=126, threshold=0.3
+22:23:46 [INFO]   Alignment: 362453495 pairs, band_width=126, threshold=0.3
+22:23:46 [INFO] Search Stage 3: Banded NW alignment...
+22:23:46 [INFO] Search Stage 3: Banded NW alignment...
+23:46:41 [INFO] Search Stage 3: Banded NW alignment done (4975.17s)
+23:46:41 [INFO] Search Stage 3: Banded NW alignment done (4975.17s)
+23:46:42 [INFO]   575501 pairs above threshold 0.3
+23:46:42 [INFO]   575501 pairs above threshold 0.3
+23:47:58 [INFO]   523645 total hits for 10000/10000 queries
+23:47:58 [INFO]   523645 total hits for 10000/10000 queries
+23:47:58 [INFO] Search completed in 5350.00s
+23:47:58 [INFO] Search completed in 5350.00s
+23:48:20 [INFO]   ClustKIT search completed in 5373.5s
+23:48:20 [INFO]   ClustKIT: 523645 total hits
+23:48:23 [INFO]   Saved clustkit raw hits to benchmarks/data/scop_search_results/clustkit_raw_hits.json
+23:48:23 [INFO]   Loading cached mmseqs2 results from benchmarks/data/scop_search_results/mmseqs2_raw_hits.json
+23:48:24 [INFO]   Loading cached diamond results from benchmarks/data/scop_search_results/diamond_raw_hits.json
+23:48:25 [INFO]   Loading cached blast results from benchmarks/data/scop_search_results/blast_raw_hits.json
+23:48:36 [INFO] Phase 4: EVALUATE
+23:48:36 [INFO]   Evaluating clustkit (523645 hits)...
+23:48:37 [INFO]     clustkit: ROC1=0.6473 ROC5=0.6529 MAP=0.6535 Sens@1%FDR=0.6474 Time=5373.5s (10000 queries, 261389 TP, 151679 FP)
+23:48:37 [INFO]   Evaluating mmseqs2 (569781 hits)...
+23:48:39 [INFO]     mmseqs2: ROC1=0.7902 ROC5=0.7907 MAP=0.7907 Sens@1%FDR=0.7902 Time=74.7s (10000 queries, 349116 TP, 947 FP)
+23:48:39 [INFO]   Evaluating diamond (545266 hits)...
+23:48:41 [INFO]     diamond: ROC1=0.7742 ROC5=0.7746 MAP=0.7746 Sens@1%FDR=0.7742 Time=63.1s (10000 queries, 340194 TP, 953 FP)
+23:48:41 [INFO]   Evaluating blast (789587 hits)...
+23:48:43 [INFO]     blast: ROC1=0.8395 ROC5=0.8419 MAP=0.8429 Sens@1%FDR=0.8396 Time=962.7s (10000 queries, 384763 TP, 100419 FP)
+23:48:43 [INFO]   Summary saved to benchmarks/data/scop_search_results/scop_search_results.json
+23:48:44 [INFO]   Full results saved to benchmarks/data/scop_search_results/scop_search_results_full.json
+
+==============================================================================================================
+SCOPe SEARCH BENCHMARK RESULTS (search time excludes database indexing)
+==============================================================================================================
+Tool             ROC1     ROC5      MAP  S@1%FDR       TP       FP  Queries  Search(s)     Seqs/s
+--------------------------------------------------------------------------------------------------------------
+clustkit       0.6473   0.6529   0.6535   0.6474   261389   151679    10000     5373.5        1.9
+diamond        0.7742   0.7746   0.7746   0.7742   340194      953    10000       63.1      158.5
+mmseqs2        0.7902   0.7907   0.7907   0.7902   349116      947    10000       74.7      133.8
+blast          0.8395   0.8419   0.8429   0.8396   384763   100419    10000      962.7       10.4
+==============================================================================================================
+

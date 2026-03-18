@@ -1,0 +1,349 @@
+13:27:23 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:27:23 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db...
+13:27:25 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.91s)
+13:27:25 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db done (1.91s)
+13:27:25 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:27:25 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+13:27:25 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:27:25 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:27:25 [INFO]   K-mer freq threshold: 39656
+13:27:25 [INFO]   K-mer freq threshold: 39656
+13:27:25 [INFO] Search Stage 1: K-mer index scoring...
+13:27:25 [INFO] Search Stage 1: K-mer index scoring...
+13:27:44 [INFO] Search Stage 1: K-mer index scoring done (19.14s)
+13:27:44 [INFO] Search Stage 1: K-mer index scoring done (19.14s)
+13:27:44 [INFO]   K-mer scoring: 400000 candidate pairs (avg 200.0/query)
+13:27:44 [INFO]   K-mer scoring: 400000 candidate pairs (avg 200.0/query)
+13:27:45 [INFO]   Alignment: 400000 pairs, band_width=126, threshold=0.1
+13:27:45 [INFO]   Alignment: 400000 pairs, band_width=126, threshold=0.1
+13:27:45 [INFO] Search Stage 2: Banded NW alignment...
+13:27:45 [INFO] Search Stage 2: Banded NW alignment...
+13:27:47 [INFO] Search Stage 2: Banded NW alignment done (2.26s)
+13:27:47 [INFO] Search Stage 2: Banded NW alignment done (2.26s)
+13:27:47 [INFO]   82144 pairs above threshold 0.1
+13:27:47 [INFO]   82144 pairs above threshold 0.1
+13:27:47 [INFO]   82144 total hits for 2000/2000 queries
+13:27:47 [INFO]   82144 total hits for 2000/2000 queries
+13:27:47 [INFO] Search completed in 21.84s
+13:27:47 [INFO] Search completed in 21.84s
+13:27:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:27:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:27:47 [INFO]   K-mer freq threshold: 39656
+13:27:47 [INFO]   K-mer freq threshold: 39656
+13:27:47 [INFO] Search Stage 1: K-mer index scoring...
+13:27:47 [INFO] Search Stage 1: K-mer index scoring...
+13:27:57 [INFO] Search Stage 1: K-mer index scoring done (9.25s)
+13:27:57 [INFO] Search Stage 1: K-mer index scoring done (9.25s)
+13:27:57 [INFO]   K-mer scoring: 600000 candidate pairs (avg 300.0/query)
+13:27:57 [INFO]   K-mer scoring: 600000 candidate pairs (avg 300.0/query)
+13:27:57 [INFO]   Alignment: 600000 pairs, band_width=126, threshold=0.1
+13:27:57 [INFO]   Alignment: 600000 pairs, band_width=126, threshold=0.1
+13:27:57 [INFO] Search Stage 2: Banded NW alignment...
+13:27:57 [INFO] Search Stage 2: Banded NW alignment...
+13:28:01 [INFO] Search Stage 2: Banded NW alignment done (4.02s)
+13:28:01 [INFO] Search Stage 2: Banded NW alignment done (4.02s)
+13:28:01 [INFO]   110876 pairs above threshold 0.1
+13:28:01 [INFO]   110876 pairs above threshold 0.1
+13:28:01 [INFO]   110876 total hits for 2000/2000 queries
+13:28:01 [INFO]   110876 total hits for 2000/2000 queries
+13:28:01 [INFO] Search completed in 13.57s
+13:28:01 [INFO] Search completed in 13.57s
+13:28:01 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:01 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:01 [INFO]   K-mer freq threshold: 39656
+13:28:01 [INFO]   K-mer freq threshold: 39656
+13:28:01 [INFO] Search Stage 1: K-mer index scoring...
+13:28:01 [INFO] Search Stage 1: K-mer index scoring...
+13:28:11 [INFO] Search Stage 1: K-mer index scoring done (9.38s)
+13:28:11 [INFO] Search Stage 1: K-mer index scoring done (9.38s)
+13:28:11 [INFO]   K-mer scoring: 1000000 candidate pairs (avg 500.0/query)
+13:28:11 [INFO]   K-mer scoring: 1000000 candidate pairs (avg 500.0/query)
+13:28:11 [INFO]   Alignment: 1000000 pairs, band_width=126, threshold=0.1
+13:28:11 [INFO]   Alignment: 1000000 pairs, band_width=126, threshold=0.1
+13:28:11 [INFO] Search Stage 2: Banded NW alignment...
+13:28:11 [INFO] Search Stage 2: Banded NW alignment...
+13:28:16 [INFO] Search Stage 2: Banded NW alignment done (5.88s)
+13:28:16 [INFO] Search Stage 2: Banded NW alignment done (5.88s)
+13:28:17 [INFO]   139082 pairs above threshold 0.1
+13:28:17 [INFO]   139082 pairs above threshold 0.1
+13:28:17 [INFO]   139082 total hits for 2000/2000 queries
+13:28:17 [INFO]   139082 total hits for 2000/2000 queries
+13:28:17 [INFO] Search completed in 15.76s
+13:28:17 [INFO] Search completed in 15.76s
+13:28:17 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:17 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:17 [INFO]   K-mer freq threshold: 39656
+13:28:17 [INFO]   K-mer freq threshold: 39656
+13:28:17 [INFO] Search Stage 1: K-mer index scoring...
+13:28:17 [INFO] Search Stage 1: K-mer index scoring...
+13:28:27 [INFO] Search Stage 1: K-mer index scoring done (10.14s)
+13:28:27 [INFO] Search Stage 1: K-mer index scoring done (10.14s)
+13:28:27 [INFO]   K-mer scoring: 1000000 candidate pairs (avg 500.0/query)
+13:28:27 [INFO]   K-mer scoring: 1000000 candidate pairs (avg 500.0/query)
+13:28:27 [INFO]   Alignment: 1000000 pairs, band_width=126, threshold=0.1
+13:28:27 [INFO]   Alignment: 1000000 pairs, band_width=126, threshold=0.1
+13:28:27 [INFO] Search Stage 2: Banded NW alignment...
+13:28:27 [INFO] Search Stage 2: Banded NW alignment...
+13:28:35 [INFO] Search Stage 2: Banded NW alignment done (8.01s)
+13:28:35 [INFO] Search Stage 2: Banded NW alignment done (8.01s)
+13:28:35 [INFO]   180883 pairs above threshold 0.1
+13:28:35 [INFO]   180883 pairs above threshold 0.1
+13:28:36 [INFO]   180883 total hits for 2000/2000 queries
+13:28:36 [INFO]   180883 total hits for 2000/2000 queries
+13:28:36 [INFO] Search completed in 18.76s
+13:28:36 [INFO] Search completed in 18.76s
+13:28:36 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:36 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:36 [INFO]   K-mer freq threshold: 39656
+13:28:36 [INFO]   K-mer freq threshold: 39656
+13:28:36 [INFO] Search Stage 1: K-mer index scoring...
+13:28:36 [INFO] Search Stage 1: K-mer index scoring...
+13:28:46 [INFO] Search Stage 1: K-mer index scoring done (9.91s)
+13:28:46 [INFO] Search Stage 1: K-mer index scoring done (9.91s)
+13:28:46 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:28:46 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:28:46 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:28:46 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:28:46 [INFO] Search Stage 2: Banded NW alignment...
+13:28:46 [INFO] Search Stage 2: Banded NW alignment...
+13:28:58 [INFO] Search Stage 2: Banded NW alignment done (11.87s)
+13:28:58 [INFO] Search Stage 2: Banded NW alignment done (11.87s)
+13:28:58 [INFO]   231665 pairs above threshold 0.1
+13:28:58 [INFO]   231665 pairs above threshold 0.1
+13:28:59 [INFO]   225070 total hits for 2000/2000 queries
+13:28:59 [INFO]   225070 total hits for 2000/2000 queries
+13:28:59 [INFO] Search completed in 22.56s
+13:28:59 [INFO] Search completed in 22.56s
+13:28:59 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:59 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:28:59 [INFO]   K-mer freq threshold: 39656
+13:28:59 [INFO]   K-mer freq threshold: 39656
+13:28:59 [INFO] Search Stage 1: K-mer index scoring...
+13:28:59 [INFO] Search Stage 1: K-mer index scoring...
+13:29:11 [INFO] Search Stage 1: K-mer index scoring done (11.73s)
+13:29:11 [INFO] Search Stage 1: K-mer index scoring done (11.73s)
+13:29:11 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:29:11 [INFO]   K-mer scoring: 1600000 candidate pairs (avg 800.0/query)
+13:29:11 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:29:11 [INFO]   Alignment: 1600000 pairs, band_width=126, threshold=0.1
+13:29:11 [INFO] Search Stage 2: Banded NW alignment...
+13:29:11 [INFO] Search Stage 2: Banded NW alignment...
+13:29:28 [INFO] Search Stage 2: Banded NW alignment done (16.89s)
+13:29:28 [INFO] Search Stage 2: Banded NW alignment done (16.89s)
+13:29:28 [INFO]   343276 pairs above threshold 0.1
+13:29:28 [INFO]   343276 pairs above threshold 0.1
+13:29:29 [INFO]   328971 total hits for 2000/2000 queries
+13:29:29 [INFO]   328971 total hits for 2000/2000 queries
+13:29:29 [INFO] Search completed in 29.73s
+13:29:29 [INFO] Search completed in 29.73s
+13:29:30 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:29:30 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:29:30 [INFO]   K-mer freq threshold: 39656
+13:29:30 [INFO]   K-mer freq threshold: 39656
+13:29:30 [INFO] Search Stage 1: K-mer index scoring...
+13:29:30 [INFO] Search Stage 1: K-mer index scoring...
+13:29:41 [INFO] Search Stage 1: K-mer index scoring done (11.64s)
+13:29:41 [INFO] Search Stage 1: K-mer index scoring done (11.64s)
+13:29:41 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:29:41 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:29:42 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:29:42 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:29:42 [INFO] Search Stage 2: Banded NW alignment...
+13:29:42 [INFO] Search Stage 2: Banded NW alignment...
+13:30:02 [INFO] Search Stage 2: Banded NW alignment done (20.42s)
+13:30:02 [INFO] Search Stage 2: Banded NW alignment done (20.42s)
+13:30:02 [INFO]   400275 pairs above threshold 0.1
+13:30:02 [INFO]   400275 pairs above threshold 0.1
+13:30:03 [INFO]   367454 total hits for 2000/2000 queries
+13:30:03 [INFO]   367454 total hits for 2000/2000 queries
+13:30:03 [INFO] Search completed in 33.20s
+13:30:03 [INFO] Search completed in 33.20s
+13:30:04 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:30:04 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:30:04 [INFO]   K-mer freq threshold: 39656
+13:30:04 [INFO]   K-mer freq threshold: 39656
+13:30:04 [INFO] Search Stage 1: K-mer index scoring...
+13:30:04 [INFO] Search Stage 1: K-mer index scoring...
+13:30:19 [INFO] Search Stage 1: K-mer index scoring done (14.66s)
+13:30:19 [INFO] Search Stage 1: K-mer index scoring done (14.66s)
+13:30:19 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:30:19 [INFO]   K-mer scoring: 2000000 candidate pairs (avg 1000.0/query)
+13:30:19 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:30:19 [INFO]   Alignment: 2000000 pairs, band_width=126, threshold=0.1
+13:30:19 [INFO] Search Stage 2: Banded NW alignment...
+13:30:19 [INFO] Search Stage 2: Banded NW alignment...
+13:30:44 [INFO] Search Stage 2: Banded NW alignment done (25.48s)
+13:30:44 [INFO] Search Stage 2: Banded NW alignment done (25.48s)
+13:30:44 [INFO]   564912 pairs above threshold 0.1
+13:30:44 [INFO]   564912 pairs above threshold 0.1
+13:30:46 [INFO]   510601 total hits for 2000/2000 queries
+13:30:46 [INFO]   510601 total hits for 2000/2000 queries
+13:30:46 [INFO] Search completed in 41.78s
+13:30:46 [INFO] Search completed in 41.78s
+13:30:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:30:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:30:47 [INFO]   K-mer freq threshold: 39656
+13:30:47 [INFO]   K-mer freq threshold: 39656
+13:30:47 [INFO] Search Stage 1: K-mer index scoring...
+13:30:47 [INFO] Search Stage 1: K-mer index scoring...
+13:31:01 [INFO] Search Stage 1: K-mer index scoring done (14.66s)
+13:31:01 [INFO] Search Stage 1: K-mer index scoring done (14.66s)
+13:31:01 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:31:01 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:31:02 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:31:02 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:31:02 [INFO] Search Stage 2: Banded NW alignment...
+13:31:02 [INFO] Search Stage 2: Banded NW alignment...
+13:31:40 [INFO] Search Stage 2: Banded NW alignment done (38.10s)
+13:31:40 [INFO] Search Stage 2: Banded NW alignment done (38.10s)
+13:31:40 [INFO]   786676 pairs above threshold 0.1
+13:31:40 [INFO]   786676 pairs above threshold 0.1
+13:31:42 [INFO]   617109 total hits for 2000/2000 queries
+13:31:42 [INFO]   617109 total hits for 2000/2000 queries
+13:31:42 [INFO] Search completed in 54.93s
+13:31:42 [INFO] Search completed in 54.93s
+13:31:43 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:31:43 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:31:43 [INFO]   K-mer freq threshold: 39656
+13:31:43 [INFO]   K-mer freq threshold: 39656
+13:31:43 [INFO] Search Stage 1: K-mer index scoring...
+13:31:43 [INFO] Search Stage 1: K-mer index scoring...
+13:32:05 [INFO] Search Stage 1: K-mer index scoring done (22.22s)
+13:32:05 [INFO] Search Stage 1: K-mer index scoring done (22.22s)
+13:32:05 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:32:05 [INFO]   K-mer scoring: 3000000 candidate pairs (avg 1500.0/query)
+13:32:05 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:32:05 [INFO]   Alignment: 3000000 pairs, band_width=126, threshold=0.1
+13:32:05 [INFO] Search Stage 2: Banded NW alignment...
+13:32:05 [INFO] Search Stage 2: Banded NW alignment...
+13:32:50 [INFO] Search Stage 2: Banded NW alignment done (44.24s)
+13:32:50 [INFO] Search Stage 2: Banded NW alignment done (44.24s)
+13:32:50 [INFO]   1159397 pairs above threshold 0.1
+13:32:50 [INFO]   1159397 pairs above threshold 0.1
+13:32:52 [INFO]   830918 total hits for 2000/2000 queries
+13:32:52 [INFO]   830918 total hits for 2000/2000 queries
+13:32:52 [INFO] Search completed in 69.18s
+13:32:52 [INFO] Search completed in 69.18s
+13:32:54 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:32:54 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:32:54 [INFO]   K-mer freq threshold: 39656
+13:32:54 [INFO]   K-mer freq threshold: 39656
+13:32:54 [INFO] Search Stage 1: K-mer index scoring...
+13:32:54 [INFO] Search Stage 1: K-mer index scoring...
+13:33:16 [INFO] Search Stage 1: K-mer index scoring done (22.04s)
+13:33:16 [INFO] Search Stage 1: K-mer index scoring done (22.04s)
+13:33:16 [INFO]   K-mer scoring: 4000000 candidate pairs (avg 2000.0/query)
+13:33:16 [INFO]   K-mer scoring: 4000000 candidate pairs (avg 2000.0/query)
+13:33:16 [INFO]   Alignment: 4000000 pairs, band_width=126, threshold=0.1
+13:33:16 [INFO]   Alignment: 4000000 pairs, band_width=126, threshold=0.1
+13:33:16 [INFO] Search Stage 2: Banded NW alignment...
+13:33:16 [INFO] Search Stage 2: Banded NW alignment...
+13:34:15 [INFO] Search Stage 2: Banded NW alignment done (58.95s)
+13:34:15 [INFO] Search Stage 2: Banded NW alignment done (58.95s)
+13:34:15 [INFO]   1498950 pairs above threshold 0.1
+13:34:15 [INFO]   1498950 pairs above threshold 0.1
+13:34:18 [INFO]   901899 total hits for 2000/2000 queries
+13:34:18 [INFO]   901899 total hits for 2000/2000 queries
+13:34:18 [INFO] Search completed in 83.77s
+13:34:18 [INFO] Search completed in 83.77s
+13:34:20 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:34:20 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:34:20 [INFO]   K-mer freq threshold: 39656
+13:34:20 [INFO]   K-mer freq threshold: 39656
+13:34:20 [INFO] Search Stage 1: K-mer index scoring...
+13:34:20 [INFO] Search Stage 1: K-mer index scoring...
+13:34:29 [INFO] Search Stage 1: K-mer index scoring done (9.01s)
+13:34:29 [INFO] Search Stage 1: K-mer index scoring done (9.01s)
+13:34:29 [INFO]   K-mer scoring: 3994834 candidate pairs (avg 1997.4/query)
+13:34:29 [INFO]   K-mer scoring: 3994834 candidate pairs (avg 1997.4/query)
+13:34:29 [INFO]   Alignment: 3994834 pairs, band_width=126, threshold=0.1
+13:34:29 [INFO]   Alignment: 3994834 pairs, band_width=126, threshold=0.1
+13:34:29 [INFO] Search Stage 2: Banded NW alignment...
+13:34:29 [INFO] Search Stage 2: Banded NW alignment...
+13:34:48 [INFO] Search Stage 2: Banded NW alignment done (19.31s)
+13:34:48 [INFO] Search Stage 2: Banded NW alignment done (19.31s)
+13:34:48 [INFO]   275783 pairs above threshold 0.1
+13:34:48 [INFO]   275783 pairs above threshold 0.1
+13:34:49 [INFO]   233779 total hits for 2000/2000 queries
+13:34:49 [INFO]   233779 total hits for 2000/2000 queries
+13:34:49 [INFO] Search completed in 29.03s
+13:34:49 [INFO] Search completed in 29.03s
+13:34:49 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:34:49 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+13:34:49 [INFO]   K-mer freq threshold: 39656
+13:34:49 [INFO]   K-mer freq threshold: 39656
+13:34:49 [INFO] Search Stage 1: K-mer index scoring...
+13:34:49 [INFO] Search Stage 1: K-mer index scoring...
+13:35:01 [INFO] Search Stage 1: K-mer index scoring done (11.31s)
+13:35:01 [INFO] Search Stage 1: K-mer index scoring done (11.31s)
+13:35:01 [INFO]   K-mer scoring: 4000000 candidate pairs (avg 2000.0/query)
+13:35:01 [INFO]   K-mer scoring: 4000000 candidate pairs (avg 2000.0/query)
+13:35:01 [INFO]   Alignment: 4000000 pairs, band_width=126, threshold=0.1
+13:35:01 [INFO]   Alignment: 4000000 pairs, band_width=126, threshold=0.1
+13:35:01 [INFO] Search Stage 2: Banded NW alignment...
+13:35:01 [INFO] Search Stage 2: Banded NW alignment...
+13:35:39 [INFO] Search Stage 2: Banded NW alignment done (38.33s)
+13:35:39 [INFO] Search Stage 2: Banded NW alignment done (38.33s)
+13:35:39 [INFO]   667264 pairs above threshold 0.1
+13:35:39 [INFO]   667264 pairs above threshold 0.1
+13:35:40 [INFO]   504706 total hits for 2000/2000 queries
+13:35:40 [INFO]   504706 total hits for 2000/2000 queries
+13:35:40 [INFO] Search completed in 51.22s
+13:35:40 [INFO] Search completed in 51.22s
+Loading database index...
+Loaded 2000 queries
+
+==================================================================================================================================
+Speed tier optimization: vary max_cands_per_query + phase_a_topk
+==================================================================================================================================
+  mc=200, topk=2000                                            ROC1=0.6464 MAP=0.6464 cands=200/q aligned=400000 time=21.9s
+  mc=300, topk=3000                                            ROC1=0.6585 MAP=0.6586 cands=300/q aligned=600000 time=13.6s
+  mc=500, topk=3000                                            ROC1=0.6629 MAP=0.6629 cands=500/q aligned=1000000 time=15.8s
+  mc=500, topk=5000                                            ROC1=0.6734 MAP=0.6735 cands=500/q aligned=1000000 time=18.8s
+  mc=800, topk=5000                                            ROC1=0.6738 MAP=0.6739 cands=800/q aligned=1600000 time=22.6s
+  mc=800, topk=10000                                           ROC1=0.6920 MAP=0.6925 cands=800/q aligned=1600000 time=29.7s
+  mc=1000, topk=10000                                          ROC1=0.6927 MAP=0.6932 cands=1000/q aligned=2000000 time=33.2s
+  mc=1000, topk=20000                                          ROC1=0.7093 MAP=0.7096 cands=1000/q aligned=2000000 time=41.8s
+  mc=1500, topk=20000                                          ROC1=0.7104 MAP=0.7108 cands=1500/q aligned=3000000 time=54.9s
+  mc=1500, topk=50000                                          ROC1=0.7355 MAP=0.7360 cands=1500/q aligned=3000000 time=69.2s
+  mc=2000, topk=50000                                          ROC1=0.7367 MAP=0.7372 cands=2000/q aligned=4000000 time=83.8s
+  mc=2000, topk=3000 (current fast)                            ROC1=0.6635 MAP=0.6636 cands=1997/q aligned=3994834 time=29.0s
+  mc=2000, topk=10000 (current default)                        ROC1=0.6942 MAP=0.6947 cands=2000/q aligned=4000000 time=51.2s
+
+==================================================================================================================================
+SUMMARY (sorted by time)
+==================================================================================================================================
+Config                                                          ROC1     MAP    Aligned     Time
+----------------------------------------------------------------------------------------------------
+mc=300, topk=3000                                             0.6585  0.6586     600000     13.6
+mc=500, topk=3000                                             0.6629  0.6629    1000000     15.8
+mc=500, topk=5000                                             0.6734  0.6735    1000000     18.8
+mc=200, topk=2000                                             0.6464  0.6464     400000     21.9
+mc=800, topk=5000                                             0.6738  0.6739    1600000     22.6
+mc=2000, topk=3000 (current fast)                             0.6635  0.6636    3994834     29.0
+mc=800, topk=10000                                            0.6920  0.6925    1600000     29.7
+mc=1000, topk=10000                                           0.6927  0.6932    2000000     33.2
+mc=1000, topk=20000                                           0.7093  0.7096    2000000     41.8
+mc=2000, topk=10000 (current default)                         0.6942  0.6947    4000000     51.2
+mc=1500, topk=20000                                           0.7104  0.7108    3000000     54.9
+mc=1500, topk=50000                                           0.7355  0.7360    3000000     69.2
+mc=2000, topk=50000                                           0.7367  0.7372    4000000     83.8
+
+Pareto frontier (sorted by ROC1, showing only Pareto-optimal):
+----------------------------------------------------------------------------------------------------
+mc=2000, topk=50000                                           0.7367  0.7372    4000000     83.8
+mc=1500, topk=50000                                           0.7355  0.7360    3000000     69.2
+mc=1500, topk=20000                                           0.7104  0.7108    3000000     54.9
+mc=1000, topk=20000                                           0.7093  0.7096    2000000     41.8
+mc=1000, topk=10000                                           0.6927  0.6932    2000000     33.2
+mc=800, topk=10000                                            0.6920  0.6925    1600000     29.7
+mc=800, topk=5000                                             0.6738  0.6739    1600000     22.6
+mc=500, topk=5000                                             0.6734  0.6735    1000000     18.8
+mc=500, topk=3000                                             0.6629  0.6629    1000000     15.8
+mc=300, topk=3000                                             0.6585  0.6586     600000     13.6
+
+Reference (from previous benchmarks):
+  MMseqs2 (s=1):   ROC1=0.6452  Time=~5s
+  MMseqs2 (s=4):   ROC1=0.7311  Time=~10s
+  MMseqs2 (s=5.7): ROC1=0.7692  Time=~18s
+  MMseqs2 (s=7.5): ROC1=0.7942  Time=~44s

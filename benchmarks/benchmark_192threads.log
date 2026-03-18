@@ -1,0 +1,426 @@
+========================================================================================================================
+PFAM CONCORDANCE BENCHMARK — ClustKIT vs CD-HIT vs MMseqs2 (192 threads)
+========================================================================================================================
+
+Mixed dataset: 21818 sequences from 56 families
+  PF00001: 500 sequences
+  PF00005: 500 sequences
+  PF00008: 223 sequences
+  PF00013: 486 sequences
+  PF00014: 395 sequences
+  PF00018: 440 sequences
+  PF00022: 500 sequences
+  PF00023: 420 sequences
+  PF00028: 328 sequences
+  PF00036: 120 sequences
+  PF00041: 417 sequences
+  PF00042: 486 sequences
+  PF00046: 457 sequences
+  PF00047: 219 sequences
+  PF00048: 195 sequences
+  PF00067: 483 sequences
+  PF00069: 461 sequences
+  PF00071: 499 sequences
+  PF00072: 484 sequences
+  PF00076: 500 sequences
+  PF00078: 283 sequences
+  PF00085: 461 sequences
+  PF00089: 500 sequences
+  PF00096: 500 sequences
+  PF00102: 189 sequences
+  PF00106: 499 sequences
+  PF00112: 250 sequences
+  PF00115: 258 sequences
+  PF00125: 500 sequences
+  PF00128: 500 sequences
+  PF00153: 499 sequences
+  PF00155: 500 sequences
+  PF00168: 475 sequences
+  PF00169: 494 sequences
+  PF00171: 500 sequences
+  PF00175: 500 sequences
+  PF00178: 105 sequences
+  PF00179: 371 sequences
+  PF00195: 206 sequences
+  PF00226: 500 sequences
+  PF00240: 399 sequences
+  PF00244: 147 sequences
+  PF00248: 295 sequences
+  PF00249: 392 sequences
+  PF00291: 500 sequences
+  PF00307: 217 sequences
+  PF00389: 329 sequences
+  PF00400: 500 sequences
+  PF00412: 397 sequences
+  PF00435: 82 sequences
+  PF00462: 179 sequences
+  PF00487: 182 sequences
+  PF00501: 500 sequences
+  PF00561: 496 sequences
+  PF00702: 500 sequences
+  PF00753: 500 sequences
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.3
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 21:58:30 [INFO] Numba threads: 192
+21:58:30 [INFO] Phase 0: Reading sequences...
+21:58:32 [INFO] Phase 0: Reading sequences done (2.09s)
+21:58:32 [INFO]   Loaded 22343 sequences (max length 35213)
+21:58:32 [INFO]   Adaptive k: using k=3 for LSH (threshold=0.3)
+21:58:32 [INFO] Phase 1: Computing sketches...
+21:58:32 [INFO] Phase 1: Computing sketches done (0.30s)
+21:58:32 [INFO]   LSH params: 253 tables, 1 bands/table
+21:58:32 [INFO] Phase 2: LSH candidate generation...
+21:59:07 [INFO] Phase 2: LSH candidate generation done (34.63s)
+21:59:07 [INFO]   Found 30214906 candidate pairs
+21:59:07 [INFO]   Mode: alignment | threshold 0.3 | band_width 458
+21:59:07 [INFO] Phase 3: Pairwise similarity (alignment)...
+21:59:09 [INFO]   Jaccard pre-filter skipped: estimated 1.2% removal rate below 5% threshold
+22:07:16 [INFO] Phase 3: Pairwise similarity (alignment) done (489.55s)
+22:07:16 [INFO]   594099 pairs above threshold 0.3
+22:07:16 [INFO] Phase 4: Building similarity graph...
+22:07:16 [INFO] Phase 4: Building similarity graph done (0.03s)
+22:07:16 [INFO]   Graph: 22343 nodes, 594099 edges
+22:07:16 [INFO] Phase 5: Clustering...
+22:07:16 [INFO] Phase 5: Clustering done (0.02s)
+22:07:16 [INFO]   2697 clusters
+22:07:16 [INFO] Phase 6: Selecting representatives...
+22:07:16 [INFO] Phase 6: Selecting representatives done (0.04s)
+22:07:16 [INFO] Writing output files...
+22:07:16 [INFO] Writing output files done (0.05s)
+22:07:16 [INFO] Done. 2697 clusters from 22343 sequences in 526.72s
+2697 clusters, ARI=0.018, P=0.0291, R=0.473, F1=0.0548, 526.78s
+  CD-HIT... FAILED (0.21s)
+  MMseqs2... 4070 clusters, ARI=0.2695, P=0.9984, R=0.158, F1=0.2728, 31.55s
+  MMseqs2 linclust... 7771 clusters, ARI=0.0914, P=1.0, R=0.0496, F1=0.0945, 8.65s
+  VSEARCH... 439 clusters, ARI=0.083, P=0.1152, R=0.0863, F1=0.0987, 103.63s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.4
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:09:41 [INFO] Numba threads: 192
+22:09:41 [INFO] Phase 0: Reading sequences...
+22:09:43 [INFO] Phase 0: Reading sequences done (1.47s)
+22:09:43 [INFO]   Loaded 22343 sequences (max length 35213)
+22:09:43 [INFO]   Adaptive k: using k=3 for LSH (threshold=0.4)
+22:09:43 [INFO] Phase 1: Computing sketches...
+22:09:43 [INFO] Phase 1: Computing sketches done (0.20s)
+22:09:43 [INFO]   LSH params: 105 tables, 1 bands/table
+22:09:43 [INFO] Phase 2: LSH candidate generation...
+22:09:52 [INFO] Phase 2: LSH candidate generation done (9.38s)
+22:09:52 [INFO]   Found 24338858 candidate pairs
+22:09:52 [INFO]   Mode: alignment | threshold 0.4 | band_width 458
+22:09:52 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:09:54 [INFO]   Jaccard pre-filter skipped: estimated 0.7% removal rate below 5% threshold
+22:15:34 [INFO] Phase 3: Pairwise similarity (alignment) done (341.40s)
+22:15:34 [INFO]   393600 pairs above threshold 0.4
+22:15:34 [INFO] Phase 4: Building similarity graph...
+22:15:34 [INFO] Phase 4: Building similarity graph done (0.02s)
+22:15:34 [INFO]   Graph: 22343 nodes, 393600 edges
+22:15:34 [INFO] Phase 5: Clustering...
+22:15:34 [INFO] Phase 5: Clustering done (0.01s)
+22:15:34 [INFO]   5039 clusters
+22:15:34 [INFO] Phase 6: Selecting representatives...
+22:15:34 [INFO] Phase 6: Selecting representatives done (0.06s)
+22:15:34 [INFO] Writing output files...
+22:15:34 [INFO] Writing output files done (0.05s)
+22:15:34 [INFO] Done. 5039 clusters from 22343 sequences in 352.57s
+5039 clusters, ARI=0.3148, P=0.9652, R=0.1906, F1=0.3183, 352.59s
+  CD-HIT... 5389 clusters, ARI=0.1703, P=0.9992, R=0.0939, F1=0.1716, 152.41s
+  MMseqs2... 5429 clusters, ARI=0.1934, P=0.9986, R=0.1083, F1=0.1955, 37.32s
+  MMseqs2 linclust... 8039 clusters, ARI=0.0892, P=1.0, R=0.048, F1=0.0917, 9.78s
+  VSEARCH... 439 clusters, ARI=0.083, P=0.1152, R=0.0863, F1=0.0987, 97.45s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.5
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:20:32 [INFO] Numba threads: 192
+22:20:32 [INFO] Phase 0: Reading sequences...
+22:20:33 [INFO] Phase 0: Reading sequences done (1.57s)
+22:20:33 [INFO]   Loaded 22343 sequences (max length 35213)
+22:20:33 [INFO]   Adaptive k: using k=4 for LSH (threshold=0.5)
+22:20:33 [INFO] Phase 1: Computing sketches...
+22:20:33 [INFO] Phase 1: Computing sketches done (0.20s)
+22:20:33 [INFO]   LSH params: 108 tables, 1 bands/table
+22:20:33 [INFO] Phase 2: LSH candidate generation...
+22:20:35 [INFO] Phase 2: LSH candidate generation done (1.74s)
+22:20:35 [INFO]   Found 2817446 candidate pairs
+22:20:35 [INFO]   Mode: alignment | threshold 0.5 | band_width 458
+22:20:35 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:20:35 [INFO]   Jaccard pre-filter: 2817446 → 1005984 pairs (1811462 removed, 64.3%)
+22:20:53 [INFO] Phase 3: Pairwise similarity (alignment) done (18.09s)
+22:20:53 [INFO]   235671 pairs above threshold 0.5
+22:20:53 [INFO] Phase 4: Building similarity graph...
+22:20:53 [INFO] Phase 4: Building similarity graph done (0.02s)
+22:20:53 [INFO]   Graph: 22343 nodes, 235671 edges
+22:20:53 [INFO] Phase 5: Clustering...
+22:20:53 [INFO] Phase 5: Clustering done (0.01s)
+22:20:53 [INFO]   7202 clusters
+22:20:53 [INFO] Phase 6: Selecting representatives...
+22:20:53 [INFO] Phase 6: Selecting representatives done (0.11s)
+22:20:53 [INFO] Writing output files...
+22:20:53 [INFO] Writing output files done (0.08s)
+22:20:53 [INFO] Done. 7202 clusters from 22343 sequences in 21.81s
+7202 clusters, ARI=0.1999, P=0.9991, R=0.1135, F1=0.2039, 21.85s
+  CD-HIT... 7117 clusters, ARI=0.1203, P=0.9996, R=0.0658, F1=0.1235, 110.22s
+  MMseqs2... 6936 clusters, ARI=0.1247, P=0.9993, R=0.0677, F1=0.1268, 39.50s
+  MMseqs2 linclust... 8506 clusters, ARI=0.0847, P=1.0, R=0.0454, F1=0.0868, 9.81s
+  VSEARCH... 439 clusters, ARI=0.083, P=0.1152, R=0.0863, F1=0.0987, 95.08s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.6
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:25:09 [INFO] Numba threads: 192
+22:25:09 [INFO] Phase 0: Reading sequences...
+22:25:11 [INFO] Phase 0: Reading sequences done (1.80s)
+22:25:11 [INFO]   Loaded 22343 sequences (max length 35213)
+22:25:11 [INFO]   Adaptive k: using k=4 for LSH (threshold=0.6)
+22:25:11 [INFO] Phase 1: Computing sketches...
+22:25:11 [INFO] Phase 1: Computing sketches done (0.22s)
+22:25:11 [INFO]   LSH params: 50 tables, 1 bands/table
+22:25:11 [INFO] Phase 2: LSH candidate generation...
+22:25:12 [INFO] Phase 2: LSH candidate generation done (1.00s)
+22:25:12 [INFO]   Found 1619391 candidate pairs
+22:25:12 [INFO]   Mode: alignment | threshold 0.6 | band_width 458
+22:25:12 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:25:12 [INFO]   Jaccard pre-filter: 1619391 → 327298 pairs (1292093 removed, 79.8%)
+22:25:17 [INFO] Phase 3: Pairwise similarity (alignment) done (5.17s)
+22:25:17 [INFO]   148858 pairs above threshold 0.6
+22:25:17 [INFO] Phase 4: Building similarity graph...
+22:25:17 [INFO] Phase 4: Building similarity graph done (0.01s)
+22:25:17 [INFO]   Graph: 22343 nodes, 148858 edges
+22:25:17 [INFO] Phase 5: Clustering...
+22:25:17 [INFO] Phase 5: Clustering done (0.01s)
+22:25:17 [INFO]   9337 clusters
+22:25:17 [INFO] Phase 6: Selecting representatives...
+22:25:17 [INFO] Phase 6: Selecting representatives done (0.10s)
+22:25:17 [INFO] Writing output files...
+22:25:17 [INFO] Writing output files done (0.09s)
+22:25:17 [INFO] Done. 9337 clusters from 22343 sequences in 8.40s
+9337 clusters, ARI=0.1195, P=1.0, R=0.0651, F1=0.1222, 8.42s
+  CD-HIT... 8724 clusters, ARI=0.0844, P=1.0, R=0.0449, F1=0.0859, 88.98s
+  MMseqs2... 8507 clusters, ARI=0.0855, P=1.0, R=0.0457, F1=0.0874, 23.50s
+  MMseqs2 linclust... 9415 clusters, ARI=0.0603, P=1.0, R=0.0318, F1=0.0617, 10.39s
+  VSEARCH... 439 clusters, ARI=0.0829, P=0.1152, R=0.0861, F1=0.0986, 87.24s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.7
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:28:48 [INFO] Numba threads: 192
+22:28:48 [INFO] Phase 0: Reading sequences...
+22:28:50 [INFO] Phase 0: Reading sequences done (1.82s)
+22:28:50 [INFO]   Loaded 22343 sequences (max length 35213)
+22:28:50 [INFO] Phase 1: Computing sketches...
+22:28:50 [INFO] Phase 1: Computing sketches done (0.22s)
+22:28:50 [INFO]   LSH params: 242 tables, 2 bands/table
+22:28:50 [INFO] Phase 2: LSH candidate generation...
+22:28:52 [INFO] Phase 2: LSH candidate generation done (1.50s)
+22:28:52 [INFO]   Found 686411 candidate pairs
+22:28:52 [INFO]   Mode: alignment | threshold 0.7 | band_width 458
+22:28:52 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:28:52 [INFO]   Jaccard pre-filter: 686411 → 80420 pairs (605991 removed, 88.3%)
+22:28:53 [INFO] Phase 3: Pairwise similarity (alignment) done (0.66s)
+22:28:53 [INFO]   66896 pairs above threshold 0.7
+22:28:53 [INFO] Phase 4: Building similarity graph...
+22:28:53 [INFO] Phase 4: Building similarity graph done (0.00s)
+22:28:53 [INFO]   Graph: 22343 nodes, 66896 edges
+22:28:53 [INFO] Phase 5: Clustering...
+22:28:53 [INFO] Phase 5: Clustering done (0.00s)
+22:28:53 [INFO]   12534 clusters
+22:28:53 [INFO] Phase 6: Selecting representatives...
+22:28:53 [INFO] Phase 6: Selecting representatives done (0.15s)
+22:28:53 [INFO] Writing output files...
+22:28:53 [INFO] Writing output files done (0.09s)
+22:28:53 [INFO] Done. 12534 clusters from 22343 sequences in 4.45s
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+12534 clusters, ARI=0.0707, P=1.0, R=0.0377, F1=0.0726, 4.47s
+  CD-HIT... 10259 clusters, ARI=0.0599, P=1.0, R=0.0313, F1=0.0607, 105.58s
+  MMseqs2... 10066 clusters, ARI=0.0621, P=1.0, R=0.0326, F1=0.0632, 21.60s
+  MMseqs2 linclust... 10613 clusters, ARI=0.049, P=1.0, R=0.026, F1=0.0506, 9.68s
+  VSEARCH... 445 clusters, ARI=0.08, P=0.1155, R=0.0795, F1=0.0942, 106.43s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.8
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:32:57 [INFO] Numba threads: 192
+22:32:57 [INFO] Phase 0: Reading sequences...
+22:32:59 [INFO] Phase 0: Reading sequences done (1.56s)
+22:32:59 [INFO]   Loaded 22343 sequences (max length 35213)
+22:32:59 [INFO] Phase 1: Computing sketches...
+22:32:59 [INFO] Phase 1: Computing sketches done (0.22s)
+22:32:59 [INFO]   LSH params: 61 tables, 2 bands/table
+22:32:59 [INFO] Phase 2: LSH candidate generation...
+22:32:59 [INFO] Phase 2: LSH candidate generation done (0.57s)
+22:32:59 [INFO]   Found 601762 candidate pairs
+22:32:59 [INFO]   Mode: alignment | threshold 0.8 | band_width 458
+22:32:59 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:32:59 [INFO]   Jaccard pre-filter: 601762 → 55427 pairs (546335 removed, 90.8%)
+22:33:00 [INFO] Phase 3: Pairwise similarity (alignment) done (0.59s)
+22:33:00 [INFO]   43719 pairs above threshold 0.8
+22:33:00 [INFO] Phase 4: Building similarity graph...
+22:33:00 [INFO] Phase 4: Building similarity graph done (0.02s)
+22:33:00 [INFO]   Graph: 22343 nodes, 43719 edges
+22:33:00 [INFO] Phase 5: Clustering...
+22:33:00 [INFO] Phase 5: Clustering done (0.02s)
+22:33:00 [INFO]   14327 clusters
+22:33:00 [INFO] Phase 6: Selecting representatives...
+22:33:00 [INFO] Phase 6: Selecting representatives done (0.15s)
+22:33:00 [INFO] Writing output files...
+22:33:00 [INFO] Writing output files done (0.08s)
+22:33:00 [INFO] Done. 14327 clusters from 22343 sequences in 3.24s
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+14327 clusters, ARI=0.0454, P=1.0, R=0.0241, F1=0.047, 3.25s
+  CD-HIT... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+12051 clusters, ARI=0.0407, P=1.0, R=0.0217, F1=0.0424, 104.08s
+  MMseqs2... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+11915 clusters, ARI=0.0434, P=1.0, R=0.0225, F1=0.0441, 20.81s
+  MMseqs2 linclust... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+12429 clusters, ARI=0.0311, P=1.0, R=0.0161, F1=0.0317, 9.43s
+  VSEARCH... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+11481 clusters, ARI=0.0097, P=0.4493, R=0.0054, F1=0.0108, 283.44s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.9
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 22:39:59 [INFO] Numba threads: 192
+22:39:59 [INFO] Phase 0: Reading sequences...
+22:40:00 [INFO] Phase 0: Reading sequences done (1.53s)
+22:40:00 [INFO]   Loaded 22343 sequences (max length 35213)
+22:40:00 [INFO] Phase 1: Computing sketches...
+22:40:01 [INFO] Phase 1: Computing sketches done (0.19s)
+22:40:01 [INFO]   LSH params: 30 tables, 3 bands/table
+22:40:01 [INFO] Phase 2: LSH candidate generation...
+22:40:01 [INFO] Phase 2: LSH candidate generation done (0.17s)
+22:40:01 [INFO]   Found 133576 candidate pairs
+22:40:01 [INFO]   Mode: alignment | threshold 0.9 | band_width 458
+22:40:01 [INFO] Phase 3: Pairwise similarity (alignment)...
+22:40:01 [INFO]   Jaccard pre-filter: 133576 → 14567 pairs (119009 removed, 89.1%)
+22:40:01 [INFO] Phase 3: Pairwise similarity (alignment) done (0.35s)
+22:40:01 [INFO]   11750 pairs above threshold 0.9
+22:40:01 [INFO] Phase 4: Building similarity graph...
+22:40:01 [INFO] Phase 4: Building similarity graph done (0.00s)
+22:40:01 [INFO]   Graph: 22343 nodes, 11750 edges
+22:40:01 [INFO] Phase 5: Clustering...
+22:40:01 [INFO] Phase 5: Clustering done (0.00s)
+22:40:01 [INFO]   18106 clusters
+22:40:01 [INFO] Phase 6: Selecting representatives...
+22:40:01 [INFO] Phase 6: Selecting representatives done (0.23s)
+22:40:01 [INFO] Writing output files...
+22:40:01 [INFO] Writing output files done (0.12s)
+22:40:01 [INFO] Done. 18106 clusters from 22343 sequences in 2.62s
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+18106 clusters, ARI=0.0165, P=1.0, R=0.0086, F1=0.0171, 2.64s
+  CD-HIT... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+14505 clusters, ARI=0.0171, P=1.0, R=0.0088, F1=0.0175, 103.36s
+  MMseqs2... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+14440 clusters, ARI=0.0207, P=1.0, R=0.0107, F1=0.0212, 21.44s
+  MMseqs2 linclust... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+15110 clusters, ARI=0.0181, P=1.0, R=0.0095, F1=0.0187, 9.68s
+  VSEARCH... /home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+/home/bizon/anaconda3/lib/python3.10/site-packages/sklearn/metrics/cluster/_supervised.py:50: UserWarning: The number of unique classes is greater than 50% of the number of samples. `y` could represent a regression problem, not a classification problem.
+  type_pred = type_of_target(labels_pred)
+19576 clusters, ARI=0.0029, P=1.0, R=0.0014, F1=0.0028, 325.72s
+
+========================================================================================================================
+SUMMARY
+========================================================================================================================
+
+Thresh   Tool        Clust      ARI      NMI    Homog    Compl    P(pw)    R(pw)   F1(pw)       Time
+------------------------------------------------------------------------------------------------------------------------
+0.3      ClustKIT     2697   0.0180   0.4823   0.4631   0.5032   0.0291   0.4730   0.0548    526.78s
+0.3      CD-HIT       FAIL                                                                     0.21s
+0.3      MMseqs2      4070   0.2695   0.7182   0.9981   0.5609   0.9984   0.1580   0.2728     31.55s
+0.3      linclust     7771   0.0914   0.6500   0.9991   0.4817   1.0000   0.0496   0.0945      8.65s
+0.3      VSEARCH       439   0.0830   0.2905   0.3333   0.2574   0.1152   0.0863   0.0987    103.63s
+
+0.4      ClustKIT     5039   0.3148   0.7168   0.9950   0.5602   0.9652   0.1906   0.3183    352.59s
+0.4      CD-HIT       5389   0.1703   0.6841   0.9981   0.5204   0.9992   0.0939   0.1716    152.41s
+0.4      MMseqs2      5429   0.1934   0.6894   0.9985   0.5265   0.9986   0.1083   0.1955     37.32s
+0.4      linclust     8039   0.0892   0.6479   0.9992   0.4793   1.0000   0.0480   0.0917      9.78s
+0.4      VSEARCH       439   0.0830   0.2905   0.3333   0.2574   0.1152   0.0863   0.0987     97.45s
+
+0.5      ClustKIT     7202   0.1999   0.6762   0.9989   0.5112   0.9991   0.1135   0.2039     21.85s
+0.5      CD-HIT       7117   0.1203   0.6613   0.9989   0.4942   0.9996   0.0658   0.1235    110.22s
+0.5      MMseqs2      6936   0.1247   0.6652   0.9990   0.4986   0.9993   0.0677   0.1268     39.50s
+0.5      linclust     8506   0.0847   0.6441   0.9993   0.4752   1.0000   0.0454   0.0868      9.81s
+0.5      VSEARCH       439   0.0830   0.2905   0.3333   0.2574   0.1152   0.0863   0.0987     95.08s
+
+0.6      ClustKIT     9337   0.1195   0.6480   0.9992   0.4795   1.0000   0.0651   0.1222      8.42s
+0.6      CD-HIT       8724   0.0844   0.6427   0.9993   0.4737   1.0000   0.0449   0.0859     88.98s
+0.6      MMseqs2      8507   0.0855   0.6456   0.9992   0.4768   1.0000   0.0457   0.0874     23.50s
+0.6      linclust     9415   0.0603   0.6346   0.9994   0.4649   1.0000   0.0318   0.0617     10.39s
+0.6      VSEARCH       439   0.0829   0.2904   0.3332   0.2573   0.1152   0.0861   0.0986     87.24s
+
+0.7      ClustKIT    12534   0.0707   0.6205   0.9997   0.4499   1.0000   0.0377   0.0726      4.47s
+0.7      CD-HIT      10259   0.0599   0.6282   0.9994   0.4581   1.0000   0.0313   0.0607    105.58s
+0.7      MMseqs2     10066   0.0621   0.6301   0.9994   0.4601   1.0000   0.0326   0.0632     21.60s
+0.7      linclust    10613   0.0490   0.6248   0.9996   0.4544   1.0000   0.0260   0.0506      9.68s
+0.7      VSEARCH       445   0.0800   0.2926   0.3395   0.2571   0.1155   0.0795   0.0942    106.43s
+
+0.8      ClustKIT    14327   0.0454   0.6062   0.9998   0.4349   1.0000   0.0241   0.0470      3.25s
+0.8      CD-HIT      12051   0.0407   0.6140   0.9995   0.4431   1.0000   0.0217   0.0424    104.08s
+0.8      MMseqs2     11915   0.0434   0.6155   0.9996   0.4446   1.0000   0.0225   0.0441     20.81s
+0.8      linclust    12429   0.0311   0.6112   0.9997   0.4401   1.0000   0.0161   0.0317      9.43s
+0.8      VSEARCH     11481   0.0097   0.5293   0.8591   0.3825   0.4493   0.0054   0.0108    283.44s
+
+0.9      ClustKIT    18106   0.0165   0.5842   1.0000   0.4126   1.0000   0.0086   0.0171      2.64s
+0.9      CD-HIT      14505   0.0171   0.5985   0.9998   0.4271   1.0000   0.0088   0.0175    103.36s
+0.9      MMseqs2     14440   0.0207   0.5991   0.9998   0.4277   1.0000   0.0107   0.0212     21.44s
+0.9      linclust    15110   0.0181   0.5958   0.9999   0.4244   1.0000   0.0095   0.0187      9.68s
+0.9      VSEARCH     19576   0.0029   0.5754   0.9995   0.4040   1.0000   0.0014   0.0028    325.72s
+
+Results saved to /mnt/ca1e2e99-718e-417c-9ba6-62421455971a/ClustKIT/benchmarks/data/pfam_benchmark_results/pfam_concordance_results_192threads.json

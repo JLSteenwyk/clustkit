@@ -1,0 +1,188 @@
+========================================================================================================================
+PFAM CONCORDANCE BENCHMARK — ClustKIT vs CD-HIT vs MMseqs2
+========================================================================================================================
+
+Mixed dataset: 21818 sequences from 56 families
+  PF00001: 500 sequences
+  PF00005: 500 sequences
+  PF00008: 223 sequences
+  PF00013: 486 sequences
+  PF00014: 395 sequences
+  PF00018: 440 sequences
+  PF00022: 500 sequences
+  PF00023: 420 sequences
+  PF00028: 328 sequences
+  PF00036: 120 sequences
+  PF00041: 417 sequences
+  PF00042: 486 sequences
+  PF00046: 457 sequences
+  PF00047: 219 sequences
+  PF00048: 195 sequences
+  PF00067: 483 sequences
+  PF00069: 461 sequences
+  PF00071: 499 sequences
+  PF00072: 484 sequences
+  PF00076: 500 sequences
+  PF00078: 283 sequences
+  PF00085: 461 sequences
+  PF00089: 500 sequences
+  PF00096: 500 sequences
+  PF00102: 189 sequences
+  PF00106: 499 sequences
+  PF00112: 250 sequences
+  PF00115: 258 sequences
+  PF00125: 500 sequences
+  PF00128: 500 sequences
+  PF00153: 499 sequences
+  PF00155: 500 sequences
+  PF00168: 475 sequences
+  PF00169: 494 sequences
+  PF00171: 500 sequences
+  PF00175: 500 sequences
+  PF00178: 105 sequences
+  PF00179: 371 sequences
+  PF00195: 206 sequences
+  PF00226: 500 sequences
+  PF00240: 399 sequences
+  PF00244: 147 sequences
+  PF00248: 295 sequences
+  PF00249: 392 sequences
+  PF00291: 500 sequences
+  PF00307: 217 sequences
+  PF00389: 329 sequences
+  PF00400: 500 sequences
+  PF00412: 397 sequences
+  PF00435: 82 sequences
+  PF00462: 179 sequences
+  PF00487: 182 sequences
+  PF00501: 500 sequences
+  PF00561: 496 sequences
+  PF00702: 500 sequences
+  PF00753: 500 sequences
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.7
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 18:15:58 [INFO] Phase 0: Reading sequences...
+18:16:00 [INFO] Phase 0: Reading sequences done (1.64s)
+18:16:00 [INFO]   Loaded 22343 sequences (max length 35213)
+18:16:00 [INFO] Phase 1: Computing sketches...
+18:16:00 [INFO] Phase 1: Computing sketches done (0.30s)
+18:16:00 [INFO]   LSH params: 160 tables, 1 bands/table
+18:16:00 [INFO] Phase 2: LSH candidate generation...
+18:16:03 [INFO] Phase 2: LSH candidate generation done (2.44s)
+18:16:03 [INFO]   Found 1130506 candidate pairs
+18:16:03 [INFO]   Mode: alignment | threshold 0.7 | band_width 458
+18:16:03 [INFO] Phase 3: Pairwise similarity (alignment)...
+18:16:08 [INFO] Phase 3: Pairwise similarity (alignment) done (4.79s)
+18:16:08 [INFO]   135736 pairs above threshold 0.7
+18:16:08 [INFO] Phase 4: Building similarity graph...
+18:16:08 [INFO] Phase 4: Building similarity graph done (0.01s)
+18:16:08 [INFO]   Graph: 22343 nodes, 135736 edges
+18:16:08 [INFO] Phase 5: Clustering...
+18:16:08 [INFO] Phase 5: Clustering done (0.00s)
+18:16:08 [INFO]   10175 clusters
+18:16:08 [INFO] Phase 6: Selecting representatives...
+18:16:08 [INFO] Phase 6: Selecting representatives done (0.08s)
+18:16:08 [INFO] Writing output files...
+18:16:08 [INFO] Writing output files done (0.06s)
+18:16:08 [INFO] Done. 10175 clusters from 22343 sequences in 9.32s
+10175 clusters, ARI=0.0857, P=1.0, R=0.0456, F1=0.0873, 9.34s
+  CD-HIT... 10259 clusters, ARI=0.0587, P=1.0, R=0.0307, F1=0.0596, 5.16s
+  MMseqs2... 10066 clusters, ARI=0.0621, P=1.0, R=0.0326, F1=0.0632, 34.84s
+  MMseqs2 linclust... 10613 clusters, ARI=0.049, P=1.0, R=0.026, F1=0.0506, 2.54s
+  VSEARCH... 445 clusters, ARI=0.08, P=0.1155, R=0.0795, F1=0.0942, 46.11s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.5
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 18:17:37 [INFO] Phase 0: Reading sequences...
+18:17:39 [INFO] Phase 0: Reading sequences done (1.46s)
+18:17:39 [INFO]   Loaded 22343 sequences (max length 35213)
+18:17:39 [INFO]   Adaptive k: using k=4 for LSH (threshold=0.5)
+18:17:39 [INFO] Phase 1: Computing sketches...
+18:17:39 [INFO] Phase 1: Computing sketches done (0.05s)
+18:17:39 [INFO]   LSH params: 256 tables, 1 bands/table
+18:17:39 [INFO] Phase 2: LSH candidate generation...
+18:17:43 [INFO] Phase 2: LSH candidate generation done (4.35s)
+18:17:43 [INFO]   Found 3451606 candidate pairs
+18:17:43 [INFO]   Mode: alignment | threshold 0.5 | band_width 458
+18:17:43 [INFO] Phase 3: Pairwise similarity (alignment)...
+18:18:18 [INFO] Phase 3: Pairwise similarity (alignment) done (34.76s)
+18:18:18 [INFO]   255429 pairs above threshold 0.5
+18:18:18 [INFO] Phase 4: Building similarity graph...
+18:18:18 [INFO] Phase 4: Building similarity graph done (0.01s)
+18:18:18 [INFO]   Graph: 22343 nodes, 255429 edges
+18:18:18 [INFO] Phase 5: Clustering...
+18:18:18 [INFO] Phase 5: Clustering done (0.01s)
+18:18:18 [INFO]   6996 clusters
+18:18:18 [INFO] Phase 6: Selecting representatives...
+18:18:18 [INFO] Phase 6: Selecting representatives done (0.09s)
+18:18:18 [INFO] Writing output files...
+18:18:18 [INFO] Writing output files done (0.07s)
+18:18:18 [INFO] Done. 6996 clusters from 22343 sequences in 40.81s
+6996 clusters, ARI=0.2051, P=0.9991, R=0.1167, F1=0.209, 40.84s
+  CD-HIT... 7117 clusters, ARI=0.112, P=0.9996, R=0.0613, F1=0.1155, 392.54s
+  MMseqs2... 6936 clusters, ARI=0.1247, P=0.9993, R=0.0677, F1=0.1268, 62.81s
+  MMseqs2 linclust... 8506 clusters, ARI=0.0847, P=1.0, R=0.0454, F1=0.0868, 1.93s
+  VSEARCH... 439 clusters, ARI=0.083, P=0.1152, R=0.0863, F1=0.0987, 36.91s
+
+------------------------------------------------------------------------------------------------------------------------
+Threshold = 0.4
+------------------------------------------------------------------------------------------------------------------------
+  ClustKIT (align)... 18:26:33 [INFO] Phase 0: Reading sequences...
+18:26:34 [INFO] Phase 0: Reading sequences done (1.50s)
+18:26:34 [INFO]   Loaded 22343 sequences (max length 35213)
+18:26:34 [INFO]   Adaptive k: using k=3 for LSH (threshold=0.4)
+18:26:34 [INFO] Phase 1: Computing sketches...
+18:26:34 [INFO] Phase 1: Computing sketches done (0.04s)
+18:26:34 [INFO]   LSH params: 256 tables, 1 bands/table
+18:26:34 [INFO] Phase 2: LSH candidate generation...
+18:26:49 [INFO] Phase 2: LSH candidate generation done (14.77s)
+18:26:49 [INFO]   Found 30214906 candidate pairs
+18:26:49 [INFO]   Mode: alignment | threshold 0.4 | band_width 458
+18:26:49 [INFO] Phase 3: Pairwise similarity (alignment)...
+18:32:22 [INFO] Phase 3: Pairwise similarity (alignment) done (332.64s)
+18:32:22 [INFO]   427556 pairs above threshold 0.4
+18:32:22 [INFO] Phase 4: Building similarity graph...
+18:32:22 [INFO] Phase 4: Building similarity graph done (0.02s)
+18:32:22 [INFO]   Graph: 22343 nodes, 427556 edges
+18:32:22 [INFO] Phase 5: Clustering...
+18:32:22 [INFO] Phase 5: Clustering done (0.01s)
+18:32:22 [INFO]   4886 clusters
+18:32:22 [INFO] Phase 6: Selecting representatives...
+18:32:22 [INFO] Phase 6: Selecting representatives done (0.04s)
+18:32:22 [INFO] Writing output files...
+18:32:22 [INFO] Writing output files done (0.04s)
+18:32:22 [INFO] Done. 4886 clusters from 22343 sequences in 349.06s
+4886 clusters, ARI=0.3178, P=0.9171, R=0.1948, F1=0.3213, 349.10s
+  CD-HIT... 5389 clusters, ARI=0.1713, P=0.9992, R=0.0945, F1=0.1727, 1141.93s
+  MMseqs2... 5429 clusters, ARI=0.1934, P=0.9986, R=0.1083, F1=0.1955, 50.95s
+  MMseqs2 linclust... 8039 clusters, ARI=0.0892, P=1.0, R=0.048, F1=0.0917, 2.03s
+  VSEARCH... 439 clusters, ARI=0.083, P=0.1152, R=0.0863, F1=0.0987, 36.70s
+
+========================================================================================================================
+SUMMARY
+========================================================================================================================
+
+Thresh   Tool        Clust      ARI      NMI    Homog    Compl    P(pw)    R(pw)   F1(pw)       Time
+------------------------------------------------------------------------------------------------------------------------
+0.7      ClustKIT    10175   0.0857   0.6348   0.9994   0.4651   1.0000   0.0456   0.0873      9.34s
+0.7      CD-HIT      10259   0.0587   0.6279   0.9994   0.4578   1.0000   0.0307   0.0596      5.16s
+0.7      MMseqs2     10066   0.0621   0.6301   0.9994   0.4601   1.0000   0.0326   0.0632     34.84s
+0.7      linclust    10613   0.0490   0.6248   0.9996   0.4544   1.0000   0.0260   0.0506      2.54s
+0.7      VSEARCH       445   0.0800   0.2926   0.3395   0.2571   0.1155   0.0795   0.0942     46.11s
+
+0.5      ClustKIT     6996   0.2051   0.6785   0.9989   0.5137   0.9991   0.1167   0.2090     40.84s
+0.5      CD-HIT       7117   0.1120   0.6600   0.9989   0.4928   0.9996   0.0613   0.1155    392.54s
+0.5      MMseqs2      6936   0.1247   0.6652   0.9990   0.4986   0.9993   0.0677   0.1268     62.81s
+0.5      linclust     8506   0.0847   0.6441   0.9993   0.4752   1.0000   0.0454   0.0868      1.93s
+0.5      VSEARCH       439   0.0830   0.2905   0.3333   0.2574   0.1152   0.0863   0.0987     36.91s
+
+0.4      ClustKIT     4886   0.3178   0.7171   0.9899   0.5621   0.9171   0.1948   0.3213    349.10s
+0.4      CD-HIT       5389   0.1713   0.6842   0.9981   0.5205   0.9992   0.0945   0.1727   1141.93s
+0.4      MMseqs2      5429   0.1934   0.6894   0.9985   0.5265   0.9986   0.1083   0.1955     50.95s
+0.4      linclust     8039   0.0892   0.6479   0.9992   0.4793   1.0000   0.0480   0.0917      2.03s
+0.4      VSEARCH       439   0.0830   0.2905   0.3333   0.2574   0.1152   0.0863   0.0987     36.70s
+
+Results saved to /mnt/ca1e2e99-718e-417c-9ba6-62421455971a/ClustKIT/benchmarks/data/pfam_benchmark_results/pfam_concordance_results.json
