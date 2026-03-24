@@ -135,7 +135,9 @@ static int cmp_score_desc(const void* a, const void* b) {
     return (vb > va) - (vb < va);  /* descending */
 }
 
-/* Helper: top-K selection via qsort on packed (score<<32|id).
+/* Helper: top-K selection via qsort on packed (score<<32|inverted_id).
+ * Inverted ID ensures equal-score targets sort by ASCENDING ID,
+ * matching Numba's stable sort behavior (insertion order = scan order).
  * Writes top-K ids to out_ids, scores to out_scores. Returns count. */
 static int32_t topk_by_score(
     const int32_t* ids, const int16_t* scores, int32_t n, int32_t k,
@@ -148,13 +150,15 @@ static int32_t topk_by_score(
         }
         return n;
     }
-    /* Pack as (score << 32 | id) for sorting */
+    /* Pack as (score << 32 | inverted_id) — inverted so equal scores
+       sort by ascending ID (matching Numba stable sort behavior) */
     int64_t* packed = (int64_t*)malloc(n * sizeof(int64_t));
     for (int32_t i = 0; i < n; i++)
-        packed[i] = ((int64_t)(uint16_t)scores[i] << 32) | (uint32_t)ids[i];
+        packed[i] = ((int64_t)(uint16_t)scores[i] << 32)
+                   | (uint32_t)(0x7FFFFFFF - ids[i]);
     qsort(packed, n, sizeof(int64_t), cmp_score_desc);
     for (int32_t i = 0; i < k; i++) {
-        out_ids[i] = (int32_t)(packed[i] & 0xFFFFFFFF);
+        out_ids[i] = (int32_t)(0x7FFFFFFF - (packed[i] & 0xFFFFFFFF));
         out_scores[i] = (int32_t)(packed[i] >> 32);
     }
     free(packed);
@@ -172,10 +176,11 @@ static int32_t topk_by_score32(
     }
     int64_t* packed = (int64_t*)malloc(n * sizeof(int64_t));
     for (int32_t i = 0; i < n; i++)
-        packed[i] = ((int64_t)(uint32_t)scores[i] << 32) | (uint32_t)ids[i];
+        packed[i] = ((int64_t)(uint32_t)scores[i] << 32)
+                   | (uint32_t)(0x7FFFFFFF - ids[i]);
     qsort(packed, n, sizeof(int64_t), cmp_score_desc);
     for (int32_t i = 0; i < k; i++) {
-        out_ids[i] = (int32_t)(packed[i] & 0xFFFFFFFF);
+        out_ids[i] = (int32_t)(0x7FFFFFFF - (packed[i] & 0xFFFFFFFF));
         out_scores[i] = (int32_t)(packed[i] >> 32);
     }
     free(packed);
@@ -263,14 +268,15 @@ static int32_t score_query_full(
         }
     }
 
-    /* Sort to get top-K by Phase A score (O(n log n) via qsort) */
+    /* Sort to get top-K by Phase A score — invert ID for stable tie-breaking */
     if (topk < num_passing) {
         int64_t* pk = (int64_t*)malloc(num_passing * sizeof(int64_t));
         for (int32_t i = 0; i < num_passing; i++)
-            pk[i] = ((int64_t)(uint16_t)pass_sc[i] << 32) | (uint32_t)pass_ids[i];
+            pk[i] = ((int64_t)(uint16_t)pass_sc[i] << 32)
+                   | (uint32_t)(0x7FFFFFFF - pass_ids[i]);
         qsort(pk, num_passing, sizeof(int64_t), cmp_score_desc);
         for (int32_t i = 0; i < topk; i++) {
-            pass_ids[i] = (int32_t)(pk[i] & 0xFFFFFFFF);
+            pass_ids[i] = (int32_t)(0x7FFFFFFF - (pk[i] & 0xFFFFFFFF));
             pass_sc[i] = (int16_t)(pk[i] >> 32);
         }
         free(pk);
@@ -564,10 +570,11 @@ static int32_t score_query_full_spaced(
     if (topk < num_passing) {
         int64_t* pk = (int64_t*)malloc(num_passing * sizeof(int64_t));
         for (int32_t i = 0; i < num_passing; i++)
-            pk[i] = ((int64_t)(uint16_t)pass_sc[i] << 32) | (uint32_t)pass_ids[i];
+            pk[i] = ((int64_t)(uint16_t)pass_sc[i] << 32)
+                   | (uint32_t)(0x7FFFFFFF - pass_ids[i]);
         qsort(pk, num_passing, sizeof(int64_t), cmp_score_desc);
         for (int32_t i = 0; i < topk; i++) {
-            pass_ids[i] = (int32_t)(pk[i] & 0xFFFFFFFF);
+            pass_ids[i] = (int32_t)(0x7FFFFFFF - (pk[i] & 0xFFFFFFFF));
             pass_sc[i] = (int16_t)(pk[i] >> 32);
         }
         free(pk);

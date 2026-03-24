@@ -1496,7 +1496,7 @@ def search_kmer_index(
     extra_alphabets: list[tuple] | None = None,
     ml_prefilter_model: tuple | None = None,
     use_c_sw: bool = False,
-    c_sw_band_width: int = 20,
+    c_sw_band_width: int = 50,
     use_c_scoring: bool = False,
 ):
     """Search queries against a pre-built k-mer inverted index.
