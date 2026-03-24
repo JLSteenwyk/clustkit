@@ -503,6 +503,29 @@ Complete record of every perturbation tested for sequence search sensitivity and
 
 ---
 
+## v8.0 — Integrated C Pipeline with Diagonal Hints
+
+**Change:** Full integration of C scoring + C SW bw=20 + diagonal hints into `search_kmer_index`. Fixed dangling pointer bug (numpy temp arrays passed to ctypes). Diagonal hints wired from Phase B through union to C SW using numpy searchsorted.
+
+**Affects:** Search only.
+
+| Config | Time | ROC1 | vs MMseqs2 |
+|--------|------|------|------------|
+| 3idx C scoring + C SW bw=20 + diag hints | **~100s** | **0.798** | **+0.003** |
+| 3idx C scoring + C SW bw=20 (no hints) | 81s | 0.784 | -0.011 |
+| 4idx C scoring + C SW bw=20 + diag hints | 155s | 0.799 | +0.005 |
+| Numba baseline (bw=126) | 1553s | 0.808 | +0.013 |
+
+**Key findings:**
+- Diagonal hints recover +0.014 ROC1 at bw=20 (0.784 → 0.798)
+- Weight-4 spaced seeds all have same posting list size — pattern doesn't affect speed
+- 4-index adds +0.001 ROC1 but costs +55s (not worth it)
+- Dangling pointer fix: store `.astype()` results in variables before ctypes calls
+
+**Pipeline:** C scoring ~38s + union ~13s + C SW ~25s + overhead ~24s = ~100s
+
+---
+
 ## Current Best Pipeline
 
 ```
