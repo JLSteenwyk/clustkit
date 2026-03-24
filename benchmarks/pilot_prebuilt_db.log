@@ -2,67 +2,67 @@
 Step 1: Build database with pre-built reduced indices
 ================================================================================
   Building from benchmarks/data/scop_search_results/database.fasta...
-23:44:45 [INFO] Reading database sequences...
-23:44:45 [INFO] Reading database sequences...
-23:44:58 [INFO] Reading database sequences done (13.23s)
-23:44:58 [INFO] Reading database sequences done (13.23s)
-23:44:58 [INFO] Loaded 591288 sequences (max length 1664)
-23:44:58 [INFO] Loaded 591288 sequences (max length 1664)
-23:44:58 [INFO] Using k-mer size k=3 for LSH (requested 5)
-23:44:58 [INFO] Using k-mer size k=3 for LSH (requested 5)
-23:44:58 [INFO] Computing sketches...
-23:44:58 [INFO] Computing sketches...
-23:45:05 [INFO] Computing sketches done (6.74s)
-23:45:05 [INFO] Computing sketches done (6.74s)
-23:45:05 [INFO] LSH parameters: 512 tables, 1 bands per table
-23:45:05 [INFO] LSH parameters: 512 tables, 1 bands per table
-23:45:05 [INFO] Hashing database sequences into LSH tables...
-23:45:05 [INFO] Hashing database sequences into LSH tables...
-23:45:06 [INFO] Hashing database sequences into LSH tables done (1.26s)
-23:45:06 [INFO] Hashing database sequences into LSH tables done (1.26s)
-23:45:06 [INFO] Building k-mer inverted index...
-23:45:06 [INFO] Building k-mer inverted index...
-23:45:08 [INFO] K-mer index built: 8000 k-mers, 118,784,568 total entries, k=3
-23:45:08 [INFO] K-mer index built: 8000 k-mers, 118,784,568 total entries, k=3
-23:45:08 [INFO] Building k-mer inverted index done (1.64s)
-23:45:08 [INFO] Building k-mer inverted index done (1.64s)
-23:45:08 [INFO] Building reduced alphabet indices...
-23:45:08 [INFO] Building reduced alphabet indices...
-23:45:09 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
-23:45:09 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
-23:45:11 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
-23:45:11 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
-23:45:13 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
-23:45:13 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
-23:45:15 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
-23:45:15 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
-23:45:15 [INFO] Building reduced alphabet indices done (7.50s)
-23:45:15 [INFO] Building reduced alphabet indices done (7.50s)
-23:45:15 [INFO]   Built 4 reduced/spaced indices
-23:45:15 [INFO]   Built 4 reduced/spaced indices
-23:45:15 [INFO] Database index built successfully
-23:45:15 [INFO] Database index built successfully
-  Built in 30.4s
+18:04:12 [INFO] Reading database sequences...
+18:04:12 [INFO] Reading database sequences...
+18:04:25 [INFO] Reading database sequences done (13.37s)
+18:04:25 [INFO] Reading database sequences done (13.37s)
+18:04:25 [INFO] Loaded 591288 sequences (max length 1664)
+18:04:25 [INFO] Loaded 591288 sequences (max length 1664)
+18:04:25 [INFO] Using k-mer size k=3 for LSH (requested 5)
+18:04:25 [INFO] Using k-mer size k=3 for LSH (requested 5)
+18:04:25 [INFO] Computing sketches...
+18:04:25 [INFO] Computing sketches...
+18:04:26 [INFO] Computing sketches done (1.23s)
+18:04:26 [INFO] Computing sketches done (1.23s)
+18:04:26 [INFO] LSH parameters: 512 tables, 1 bands per table
+18:04:26 [INFO] LSH parameters: 512 tables, 1 bands per table
+18:04:26 [INFO] Hashing database sequences into LSH tables...
+18:04:26 [INFO] Hashing database sequences into LSH tables...
+18:04:27 [INFO] Hashing database sequences into LSH tables done (0.70s)
+18:04:27 [INFO] Hashing database sequences into LSH tables done (0.70s)
+18:04:27 [INFO] Building k-mer inverted index...
+18:04:27 [INFO] Building k-mer inverted index...
+18:04:29 [INFO] K-mer index built: 8000 k-mers, 118,784,568 total entries, k=3
+18:04:29 [INFO] K-mer index built: 8000 k-mers, 118,784,568 total entries, k=3
+18:04:29 [INFO] Building k-mer inverted index done (1.66s)
+18:04:29 [INFO] Building k-mer inverted index done (1.66s)
+18:04:29 [INFO] Building reduced alphabet indices...
+18:04:29 [INFO] Building reduced alphabet indices...
+18:04:31 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+18:04:31 [INFO] K-mer index built: 6561 k-mers, 118,193,280 total entries, k=4
+18:04:32 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+18:04:32 [INFO] K-mer index built: 59049 k-mers, 117,601,992 total entries, k=5
+18:04:35 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+18:04:35 [INFO] Spaced seed index: pattern=11011, 6561 k-mers, 117,601,992 entries
+18:04:36 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+18:04:36 [INFO] Spaced seed index: pattern=110011, 6561 k-mers, 117,010,704 entries
+18:04:36 [INFO] Building reduced alphabet indices done (7.52s)
+18:04:36 [INFO] Building reduced alphabet indices done (7.52s)
+18:04:36 [INFO]   Built 4 reduced/spaced indices
+18:04:36 [INFO]   Built 4 reduced/spaced indices
+18:04:36 [INFO] Database index built successfully
+18:04:36 [INFO] Database index built successfully
+  Built in 24.5s
   Reduced indices: ['red_k4', 'red_k5', 'sp_11011', 'sp_110011']
-23:45:15 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
-23:45:15 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
-23:45:21 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (6.25s)
-23:45:21 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (6.25s)
-23:45:21 [INFO] Saved index for 591288 sequences (512 LSH tables)
-23:45:21 [INFO] Saved index for 591288 sequences (512 LSH tables)
+18:04:36 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
+18:04:36 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
+18:04:44 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (7.95s)
+18:04:44 [INFO] Saving database index to benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (7.95s)
+18:04:44 [INFO] Saved index for 591288 sequences (512 LSH tables)
+18:04:44 [INFO] Saved index for 591288 sequences (512 LSH tables)
 
 ================================================================================
 Step 2: Reload database and verify pre-built indices
 ================================================================================
-23:45:21 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
-23:45:21 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
-23:45:23 [INFO]   Loaded 4 pre-built reduced indices
-23:45:23 [INFO]   Loaded 4 pre-built reduced indices
-23:45:24 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (2.58s)
-23:45:24 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (2.58s)
-23:45:24 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
-23:45:24 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
-  Loaded in 2.6s
+18:04:44 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
+18:04:44 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2...
+18:04:46 [INFO]   Loaded 4 pre-built reduced indices
+18:04:46 [INFO]   Loaded 4 pre-built reduced indices
+18:04:47 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (2.72s)
+18:04:47 [INFO] Loading database index from benchmarks/data/speed_sensitivity_results/clustkit_db_v2 done (2.72s)
+18:04:47 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+18:04:47 [INFO] Loaded index: 591288 sequences, 512 LSH tables, k=3, sketch_size=128
+  Loaded in 2.7s
   Reduced indices: ['red_k4', 'red_k5', 'sp_11011', 'sp_110011']
   Reduced flat: (119967144,)
     red_k4: offsets=(6562,), entries=(118193280,), freqs=(6561,)
@@ -75,56 +75,135 @@ Step 3: Search with pre-built indices (Numba + C scoring)
 ================================================================================
 
   >>> 3idx Numba scoring (pre-built indices)
-23:45:24 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
-23:45:24 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
-23:45:24 [INFO]   K-mer freq threshold: 63425
-23:45:24 [INFO]   K-mer freq threshold: 63425
-23:45:24 [INFO] Search Stage 1: K-mer index scoring...
-23:45:24 [INFO] Search Stage 1: K-mer index scoring...
-23:46:38 [INFO] Search Stage 1: K-mer index scoring done (73.77s)
-23:46:38 [INFO] Search Stage 1: K-mer index scoring done (73.77s)
-23:46:38 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
-23:46:38 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
-23:46:38 [INFO] Search Stage 1.5: Reduced alphabet k=5...
-23:46:38 [INFO] Search Stage 1.5: Reduced alphabet k=5...
-23:46:38 [INFO]   Using pre-built reduced index (k=5)
-23:46:38 [INFO]   Using pre-built reduced index (k=5)
-23:47:02 [INFO]   Reduced k=5: 15952926 candidates
-23:47:02 [INFO]   Reduced k=5: 15952926 candidates
-23:47:02 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.34s)
-23:47:02 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.34s)
-23:47:06 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
-23:47:06 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
-23:47:06 [INFO] Search Stage 1.6: Spaced seed 110011...
-23:47:06 [INFO] Search Stage 1.6: Spaced seed 110011...
-23:47:06 [INFO]   Using pre-built spaced seed index (110011)
-23:47:06 [INFO]   Using pre-built spaced seed index (110011)
-23:49:49 [INFO]   Spaced 110011: 16000000 candidates
-23:49:49 [INFO]   Spaced 110011: 16000000 candidates
-23:49:49 [INFO] Search Stage 1.6: Spaced seed 110011 done (162.75s)
-23:49:49 [INFO] Search Stage 1.6: Spaced seed 110011 done (162.75s)
-23:49:55 [INFO]   Spaced seed union: 45199347 total (was 31185095)
-23:49:55 [INFO]   Spaced seed union: 45199347 total (was 31185095)
-23:49:57 [INFO]   Alignment: 45199347 pairs, band_width=126, threshold=0.1, mode=SW local alignment
-23:49:57 [INFO]   Alignment: 45199347 pairs, band_width=126, threshold=0.1, mode=SW local alignment
-23:49:57 [INFO] Search Stage 2: SW local alignment...
-23:49:57 [INFO] Search Stage 2: SW local alignment...
-00:11:23 [INFO] Search Stage 2: SW local alignment done (1286.61s)
-00:11:23 [INFO] Search Stage 2: SW local alignment done (1286.61s)
-00:11:24 [INFO]   45199347 pairs above threshold 0.1
-00:11:24 [INFO]   45199347 pairs above threshold 0.1
-00:11:39 [INFO]   1000000 total hits for 2000/2000 queries
-00:11:39 [INFO]   1000000 total hits for 2000/2000 queries
-00:11:39 [INFO] Search completed in 1574.74s
-00:11:39 [INFO] Search completed in 1574.74s
-      Time: 1575.0s  Aligned: 45199347  ROC1: 0.8076 (vs MMseqs2: +0.0134)
+18:04:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:04:47 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:04:47 [INFO]   K-mer freq threshold: 63425
+18:04:47 [INFO]   K-mer freq threshold: 63425
+18:04:47 [INFO] Search Stage 1: K-mer index scoring...
+18:04:47 [INFO] Search Stage 1: K-mer index scoring...
+18:06:00 [INFO] Search Stage 1: K-mer index scoring done (73.38s)
+18:06:00 [INFO] Search Stage 1: K-mer index scoring done (73.38s)
+18:06:00 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:06:00 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:06:00 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:06:00 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:06:00 [INFO]   Using pre-built reduced index (k=5)
+18:06:00 [INFO]   Using pre-built reduced index (k=5)
+18:06:25 [INFO]   Reduced k=5: 15952926 candidates
+18:06:25 [INFO]   Reduced k=5: 15952926 candidates
+18:06:25 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.22s)
+18:06:25 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (24.22s)
+18:06:29 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
+18:06:29 [INFO]   Reduced alphabet union: 31185095 total (was 16000000 from standard index)
+18:06:29 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:06:29 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:06:29 [INFO]   Using pre-built spaced seed index (110011)
+18:06:29 [INFO]   Using pre-built spaced seed index (110011)
+18:09:09 [INFO]   Spaced 110011: 16000000 candidates
+18:09:09 [INFO]   Spaced 110011: 16000000 candidates
+18:09:09 [INFO] Search Stage 1.6: Spaced seed 110011 done (160.59s)
+18:09:09 [INFO] Search Stage 1.6: Spaced seed 110011 done (160.59s)
+18:09:15 [INFO]   Spaced seed union: 45199347 total (was 31185095)
+18:09:15 [INFO]   Spaced seed union: 45199347 total (was 31185095)
+18:09:17 [INFO]   Alignment: 45199347 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+18:09:17 [INFO]   Alignment: 45199347 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+18:09:17 [INFO] Search Stage 2: SW local alignment...
+18:09:17 [INFO] Search Stage 2: SW local alignment...
+18:30:25 [INFO] Search Stage 2: SW local alignment done (1267.80s)
+18:30:25 [INFO] Search Stage 2: SW local alignment done (1267.80s)
+18:30:26 [INFO]   45199347 pairs above threshold 0.1
+18:30:26 [INFO]   45199347 pairs above threshold 0.1
+18:30:40 [INFO]   1000000 total hits for 2000/2000 queries
+18:30:40 [INFO]   1000000 total hits for 2000/2000 queries
+18:30:40 [INFO] Search completed in 1553.23s
+18:30:40 [INFO] Search completed in 1553.23s
+      Time: 1553.3s  Aligned: 45199347  ROC1: 0.8076 (vs MMseqs2: +0.0134)
 
   >>> 3idx C scoring (pre-built indices)
-00:11:41 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
-00:11:41 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
-00:11:41 [INFO]   K-mer freq threshold: 63425
-00:11:41 [INFO]   K-mer freq threshold: 63425
-00:11:41 [INFO]   C/OpenMP scoring enabled
-00:11:41 [INFO]   C/OpenMP scoring enabled
-00:11:41 [INFO] Search Stage 1: K-mer index scoring...
-00:11:41 [INFO] Search Stage 1: K-mer index scoring...
+18:30:42 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:30:42 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:30:42 [INFO]   K-mer freq threshold: 63425
+18:30:42 [INFO]   K-mer freq threshold: 63425
+18:30:42 [INFO]   C/OpenMP scoring enabled
+18:30:42 [INFO]   C/OpenMP scoring enabled
+18:30:42 [INFO] Search Stage 1: K-mer index scoring...
+18:30:42 [INFO] Search Stage 1: K-mer index scoring...
+18:30:50 [INFO]   Using C/OpenMP scoring
+18:30:50 [INFO]   Using C/OpenMP scoring
+18:30:50 [INFO] Search Stage 1: K-mer index scoring done (7.75s)
+18:30:50 [INFO] Search Stage 1: K-mer index scoring done (7.75s)
+18:30:50 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:30:50 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:30:50 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:30:50 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:30:50 [INFO]   Using pre-built reduced index (k=5)
+18:30:50 [INFO]   Using pre-built reduced index (k=5)
+18:30:53 [INFO]   Reduced k=5: 15952926 candidates
+18:30:53 [INFO]   Reduced k=5: 15952926 candidates
+18:30:53 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (2.73s)
+18:30:53 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (2.73s)
+18:30:57 [INFO]   Reduced alphabet union: 31049029 total (was 16000000 from standard index)
+18:30:57 [INFO]   Reduced alphabet union: 31049029 total (was 16000000 from standard index)
+18:30:57 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:30:57 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:30:57 [INFO]   Using pre-built spaced seed index (110011)
+18:30:57 [INFO]   Using pre-built spaced seed index (110011)
+18:31:18 [INFO]   Spaced 110011: 16000000 candidates
+18:31:18 [INFO]   Spaced 110011: 16000000 candidates
+18:31:18 [INFO] Search Stage 1.6: Spaced seed 110011 done (21.11s)
+18:31:18 [INFO] Search Stage 1.6: Spaced seed 110011 done (21.11s)
+18:31:24 [INFO]   Spaced seed union: 44744126 total (was 31049029)
+18:31:24 [INFO]   Spaced seed union: 44744126 total (was 31049029)
+18:31:26 [INFO]   Alignment: 44744126 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+18:31:26 [INFO]   Alignment: 44744126 pairs, band_width=126, threshold=0.1, mode=SW local alignment
+18:31:26 [INFO] Search Stage 2: SW local alignment...
+18:31:26 [INFO] Search Stage 2: SW local alignment...
+18:52:23 [INFO] Search Stage 2: SW local alignment done (1257.31s)
+18:52:23 [INFO] Search Stage 2: SW local alignment done (1257.31s)
+18:52:24 [INFO]   44744126 pairs above threshold 0.1
+18:52:24 [INFO]   44744126 pairs above threshold 0.1
+18:52:38 [INFO]   1000000 total hits for 2000/2000 queries
+18:52:38 [INFO]   1000000 total hits for 2000/2000 queries
+18:52:38 [INFO] Search completed in 1315.85s
+18:52:38 [INFO] Search completed in 1315.85s
+      Time: 1316.1s  Aligned: 44744126  ROC1: 0.8028 (vs MMseqs2: +0.0086)
+
+  >>> 3idx C scoring + C SW bw=20 (pre-built)
+18:52:40 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:52:40 [INFO] Search (k-mer index): 2000 queries against 591288 database sequences, k=3
+18:52:40 [INFO]   K-mer freq threshold: 63425
+18:52:40 [INFO]   K-mer freq threshold: 63425
+18:52:40 [INFO]   C/OpenMP scoring enabled
+18:52:40 [INFO]   C/OpenMP scoring enabled
+18:52:40 [INFO] Search Stage 1: K-mer index scoring...
+18:52:40 [INFO] Search Stage 1: K-mer index scoring...
+18:52:48 [INFO]   Using C/OpenMP scoring
+18:52:48 [INFO]   Using C/OpenMP scoring
+18:52:48 [INFO] Search Stage 1: K-mer index scoring done (7.77s)
+18:52:48 [INFO] Search Stage 1: K-mer index scoring done (7.77s)
+18:52:48 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:52:48 [INFO]   K-mer scoring: 16000000 candidate pairs (avg 8000.0/query)
+18:52:48 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:52:48 [INFO] Search Stage 1.5: Reduced alphabet k=5...
+18:52:48 [INFO]   Using pre-built reduced index (k=5)
+18:52:48 [INFO]   Using pre-built reduced index (k=5)
+18:52:50 [INFO]   Reduced k=5: 15952926 candidates
+18:52:50 [INFO]   Reduced k=5: 15952926 candidates
+18:52:50 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (2.72s)
+18:52:50 [INFO] Search Stage 1.5: Reduced alphabet k=5 done (2.72s)
+18:52:55 [INFO]   Reduced alphabet union: 31049029 total (was 16000000 from standard index)
+18:52:55 [INFO]   Reduced alphabet union: 31049029 total (was 16000000 from standard index)
+18:52:55 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:52:55 [INFO] Search Stage 1.6: Spaced seed 110011...
+18:52:55 [INFO]   Using pre-built spaced seed index (110011)
+18:52:55 [INFO]   Using pre-built spaced seed index (110011)
+18:53:16 [INFO]   Spaced 110011: 16000000 candidates
+18:53:16 [INFO]   Spaced 110011: 16000000 candidates
+18:53:16 [INFO] Search Stage 1.6: Spaced seed 110011 done (21.54s)
+18:53:16 [INFO] Search Stage 1.6: Spaced seed 110011 done (21.54s)
+18:53:22 [INFO]   Spaced seed union: 44744126 total (was 31049029)
+18:53:22 [INFO]   Spaced seed union: 44744126 total (was 31049029)
+18:53:24 [INFO]   Alignment: 44744126 pairs, band_width=126, threshold=0.1, mode=C SW local alignment (bw=20, diag hints)
+18:53:24 [INFO]   Alignment: 44744126 pairs, band_width=126, threshold=0.1, mode=C SW local alignment (bw=20, diag hints)
+18:53:24 [INFO] Search Stage 2: C SW local alignment (bw=20, diag hints)...
+18:53:24 [INFO] Search Stage 2: C SW local alignment (bw=20, diag hints)...

@@ -1625,23 +1625,26 @@ def search_kmer_index(
     with timer("Search Stage 1: K-mer index scoring"):
         if use_c_scoring and not use_similar and not use_idf:
             out_scores_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
-            out_diags_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
+            # IMPORTANT: store astype results in variables to prevent GC
+            # before C function reads them (dangling pointer bug)
+            _q_off_i64 = q_off.astype(np.int64)
+            _q_lens_i32 = q_lens.astype(np.int32)
             _klib.batch_score_queries_c(
                 q_flat.ctypes.data,
-                q_off.astype(np.int64).ctypes.data,
-                q_lens.astype(np.int32).ctypes.data,
-                nq, int(k), int(alpha_size),
+                _q_off_i64.ctypes.data,
+                _q_lens_i32.ctypes.data,
+                int(nq), int(k), int(alpha_size),
                 db_index.kmer_offsets.ctypes.data,
                 db_index.kmer_entries.ctypes.data,
                 db_index.kmer_freqs.ctypes.data,
-                int(freq_thresh), nd,
+                int(freq_thresh), int(nd),
                 int(min_total_hits), int(min_diag_hits),
                 int(diag_bin_width), int(max_cands_per_query),
                 int(phase_a_topk),
                 out_targets.ctypes.data,
                 out_counts.ctypes.data,
                 out_scores_c.ctypes.data,
-                out_diags_c.ctypes.data,
+                None,  # out_diags
             )
             logger.info("  Using C/OpenMP scoring")
         elif use_similar:
@@ -1787,23 +1790,24 @@ def search_kmer_index(
                 # Use C scoring for reduced index when available
                 if use_c_scoring and not use_idf:
                     _red_sc = np.zeros((nq, red_mc), dtype=np.int32)
-                    _red_dg = np.zeros((nq, red_mc), dtype=np.int32)
+                    _rq_off = q_off.astype(np.int64)
+                    _rq_lens = q_lens.astype(np.int32)
                     _klib.batch_score_queries_c(
                         red_q_flat.ctypes.data,
-                        q_off.astype(np.int64).ctypes.data,
-                        q_lens.astype(np.int32).ctypes.data,
-                        nq, rk, REDUCED_ALPHA_SIZE,
+                        _rq_off.ctypes.data,
+                        _rq_lens.ctypes.data,
+                        int(nq), int(rk), int(REDUCED_ALPHA_SIZE),
                         red_offsets.ctypes.data,
                         red_entries.ctypes.data,
                         red_freqs.ctypes.data,
-                        int(red_freq_thresh), nd,
+                        int(red_freq_thresh), int(nd),
                         int(min_total_hits), int(min_diag_hits),
                         int(diag_bin_width), int(red_mc),
                         int(phase_a_topk),
                         red_out_targets.ctypes.data,
                         red_out_counts.ctypes.data,
                         _red_sc.ctypes.data,
-                        _red_dg.ctypes.data,
+                        None,
                     )
                 elif use_idf:
                     red_idf = np.log2(
@@ -2041,17 +2045,19 @@ def search_kmer_index(
 
                 if use_c_scoring:
                     _sp_sc = np.zeros((nq, sp_mc), dtype=np.int32)
+                    _sp_q_off = q_off.astype(np.int64)
+                    _sp_q_lens = q_lens.astype(np.int32)
                     _klib.batch_score_queries_spaced_c(
                         red_q_flat.ctypes.data,
-                        q_off.astype(np.int64).ctypes.data,
-                        q_lens.astype(np.int32).ctypes.data,
-                        nq,
+                        _sp_q_off.ctypes.data,
+                        _sp_q_lens.ctypes.data,
+                        int(nq),
                         sp_seed_off.ctypes.data,
                         int(sp_weight), int(sp_span),
-                        REDUCED_ALPHA_SIZE,
+                        int(REDUCED_ALPHA_SIZE),
                         sp_off.ctypes.data, sp_ent.ctypes.data,
                         sp_freq.ctypes.data,
-                        int(sp_freq_thresh), nd,
+                        int(sp_freq_thresh), int(nd),
                         int(min_total_hits), int(min_diag_hits),
                         int(diag_bin_width), int(sp_mc),
                         int(phase_a_topk),
@@ -2202,19 +2208,24 @@ def search_kmer_index(
                 ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
             ]
             M = len(merged_pairs)
-            pf = np.ascontiguousarray(merged_pairs.flatten())
+            # IMPORTANT: store all arrays in variables to prevent GC
+            # before C function reads them (dangling pointer bug)
+            _sw_pf = np.ascontiguousarray(merged_pairs.flatten())
+            _sw_flat = merged["flat_sequences"]
+            _sw_off = merged["offsets"].astype(np.int64)
+            _sw_lens = merged_lengths
+            _sw_sm = BLOSUM62.astype(np.int8)
             c_sims = np.empty(M, dtype=np.float32)
             c_scores = np.empty(M, dtype=np.int32)
             c_mask = np.empty(M, dtype=np.uint8)
-            sm = BLOSUM62.astype(np.int8)
             _swlib.batch_sw_align_c(
-                pf.ctypes.data,
-                merged["flat_sequences"].ctypes.data,
-                merged["offsets"].astype(np.int64).ctypes.data,
-                merged_lengths.ctypes.data,
-                M, c_sw_band_width, sm.ctypes.data,
+                _sw_pf.ctypes.data,
+                _sw_flat.ctypes.data,
+                _sw_off.ctypes.data,
+                _sw_lens.ctypes.data,
+                M, c_sw_band_width, _sw_sm.ctypes.data,
                 np.float32(threshold),
-                None,  # no diag hints for now (TODO: thread from Phase B)
+                None,  # no diag hints yet (TODO: thread from Phase B)
                 c_sims.ctypes.data, c_scores.ctypes.data, c_mask.ctypes.data,
             )
             sims = c_sims

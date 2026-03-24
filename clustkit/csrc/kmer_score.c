@@ -230,6 +230,13 @@ static int32_t score_query_full(
     int32_t max_diag_shift = q_len;
 
     int64_t* surv_keys = (int64_t*)malloc(n_surv_hits * sizeof(int64_t));
+    if (!surv_keys) {
+        /* Allocation failed — fall back to Phase A only results */
+        int32_t nc2 = topk_by_score(pass_ids, pass_sc, topk, max_cands,
+                                     out_ids, out_scores);
+        free(counts); free(pass_ids); free(pass_sc); free(surv_mask);
+        return nc2;
+    }
     int64_t sw = 0;
 
     for (int32_t qpos = 0; qpos < num_kmers; qpos++) {
@@ -310,28 +317,27 @@ static int32_t score_query_full(
         num_final++;
     }
 
+    /* Build tid→diag lookup BEFORE topk_by_score32 (which reorders arrays) */
+    /* Use the surv_mask array (already allocated, num_db bytes) as a
+       temporary lookup: store diag offset indexed by target ID */
+    int32_t* tid_to_diag = (int32_t*)malloc(num_db * sizeof(int32_t));
+    if (tid_to_diag && out_diags) {
+        memset(tid_to_diag, 0, num_db * sizeof(int32_t));
+        for (int32_t f = 0; f < num_final; f++)
+            tid_to_diag[final_ids[f]] = final_diag[f];
+    }
+
     /* Select top max_cands from final (O(n log n) sort) */
     int32_t nc = topk_by_score32(final_ids, final_sc, num_final, max_cands,
                                   out_ids, out_scores);
-    /* Copy diagonal hints for the selected top-mc */
-    /* topk_by_score32 reorders final_ids/final_sc — diags must follow */
-    /* Re-derive: out_ids has the selected target IDs, find their diags */
-    /* Simpler: output diags in the same order as topk_by_score32 output */
-    /* Since topk_by_score32 uses packed sort, we need diags in that order */
-    /* For now, just map from final arrays (nc <= num_final) */
-    if (out_diags) {
-        for (int32_t c = 0; c < nc; c++) {
-            int32_t tid = out_ids[c];
-            /* Linear scan to find this tid's diagonal in final arrays */
-            for (int32_t f = 0; f < num_final; f++) {
-                if (final_ids[f] == tid) {
-                    out_diags[c] = final_diag[f];
-                    break;
-                }
-            }
-        }
+
+    /* Copy diagonal hints using O(1) lookup */
+    if (out_diags && tid_to_diag) {
+        for (int32_t c = 0; c < nc; c++)
+            out_diags[c] = tid_to_diag[out_ids[c]];
     }
 
+    free(tid_to_diag);
     free(counts); free(pass_ids); free(pass_sc);
     free(surv_mask); free(surv_keys);
     free(final_ids); free(final_sc); free(final_diag);
