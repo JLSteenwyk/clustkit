@@ -229,6 +229,11 @@ void batch_sw_align_c(
             const uint8_t* seq_j = flat_sequences + offsets[j];
 
             int32_t hint = diag_hints ? diag_hints[idx] : 0;
+            /* Clamp extreme diagonal hints to prevent very wide effective
+               bands. Hints beyond ±shorter_len are unreliable. */
+            int32_t shorter_len = len_i < len_j ? len_i : len_j;
+            if (hint > shorter_len) hint = 0;
+            if (hint < -shorter_len) hint = 0;
             float identity;
             int32_t score;
 
