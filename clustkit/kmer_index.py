@@ -1802,6 +1802,14 @@ def search_kmer_index(
                     _red_sc = np.zeros((nq, red_mc), dtype=np.int32)
                     _rq_off = q_off.astype(np.int64)
                     _rq_lens = q_lens.astype(np.int32)
+                    # Check for compact entries in pre-built index
+                    _red_data = (db_index.reduced_indices or {}).get(
+                        f'red_k{rk}', None)
+                    _red_compact_ptr = None
+                    if _red_data and len(_red_data) > 3:
+                        _red_compact = _red_data[3]
+                        if isinstance(_red_compact, np.ndarray) and _red_compact.dtype == np.int32:
+                            _red_compact_ptr = _red_compact.ctypes.data
                     _klib.batch_score_queries_c(
                         red_q_flat.ctypes.data,
                         _rq_off.ctypes.data,
@@ -1809,6 +1817,7 @@ def search_kmer_index(
                         int(nq), int(rk), int(REDUCED_ALPHA_SIZE),
                         red_offsets.ctypes.data,
                         red_entries.ctypes.data,
+                        _red_compact_ptr,
                         red_freqs.ctypes.data,
                         int(red_freq_thresh), int(nd),
                         int(min_total_hits), int(min_diag_hits),
