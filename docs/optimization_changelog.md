@@ -522,7 +522,24 @@ Complete record of every perturbation tested for sequence search sensitivity and
 - 4-index adds +0.001 ROC1 but costs +55s (not worth it)
 - Dangling pointer fix: store `.astype()` results in variables before ctypes calls
 
-**Pipeline:** C scoring ~38s + union ~13s + C SW ~25s + overhead ~24s = ~100s
+**v8.0 Pipeline:** C scoring ~38s + union ~13s + C SW ~25s + overhead ~24s = ~100s
+
+---
+
+## v8.1 — Stable Tie-Breaking + bw=50
+
+**Change:** (1) Invert target IDs in C scoring sort key so equal-score targets sort by ascending ID, matching Numba's stable sort. (2) Increase SW band from 20 to 50 with diagonal hints.
+
+**Affects:** Search only.
+
+| Config | Time | ROC1 | vs MMseqs2 |
+|--------|------|------|------------|
+| v8.0 (bw=20, unstable) | 98s | 0.798 | +0.003 |
+| **v8.1 (bw=50, stable)** | **134s** | **0.810** | **+0.016** |
+| bw=75 tested | 167s | 0.811 | +0.017 |
+| Numba baseline (bw=126) | 1556s | 0.808 | +0.013 |
+
+**Key finding:** Stable tie-breaking recovered +0.005 ROC1 (the dominant fix). bw=50 vs bw=20 added +0.007. Combined +0.012 improvement. Result EXCEEDS Numba baseline (0.810 > 0.808) because stable sort produces slightly better candidates. bw=75 adds only +0.001 for +33s — not worth it.
 
 ---
 
