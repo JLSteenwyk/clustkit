@@ -1625,8 +1625,7 @@ def search_kmer_index(
     with timer("Search Stage 1: K-mer index scoring"):
         if use_c_scoring and not use_similar and not use_idf:
             out_scores_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
-            # IMPORTANT: store astype results in variables to prevent GC
-            # before C function reads them (dangling pointer bug)
+            out_diags_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
             _q_off_i64 = q_off.astype(np.int64)
             _q_lens_i32 = q_lens.astype(np.int32)
             _klib.batch_score_queries_c(
@@ -1644,7 +1643,7 @@ def search_kmer_index(
                 out_targets.ctypes.data,
                 out_counts.ctypes.data,
                 out_scores_c.ctypes.data,
-                None,  # out_diags
+                out_diags_c.ctypes.data,
             )
             logger.info("  Using C/OpenMP scoring")
         elif use_similar:
@@ -1720,12 +1719,18 @@ def search_kmer_index(
         )
 
     candidate_pairs = np.empty((total_cands, 2), dtype=np.int32)
+    # Track diagonal hints when C scoring provides them
+    candidate_diags = None
+    if use_c_scoring and not use_similar and not use_idf:
+        candidate_diags = np.zeros(total_cands, dtype=np.int32)
     pos = 0
     for qi in range(nq):
         nc = int(out_counts[qi])
         if nc > 0:
             candidate_pairs[pos:pos + nc, 0] = qi
             candidate_pairs[pos:pos + nc, 1] = out_targets[qi, :nc]
+            if candidate_diags is not None:
+                candidate_diags[pos:pos + nc] = out_diags_c[qi, :nc]
             pos += nc
 
     # ── Stage 1.5: Reduced alphabet candidates (optional) ────────────
@@ -1883,6 +1888,17 @@ def search_kmer_index(
             candidate_pairs[:, 0] = (union_packed // nd).astype(np.int32)
             candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
             total_cands = len(candidate_pairs)
+            # Rebuild diag hints: map old diags to new positions, 0 for new pairs
+            if candidate_diags is not None:
+                old_diag_map = {}
+                for i in range(n_before):
+                    old_diag_map[int(std_packed[i])] = int(candidate_diags[i])
+                new_diags = np.zeros(total_cands, dtype=np.int32)
+                for i in range(total_cands):
+                    pk = int(union_packed[i])
+                    if pk in old_diag_map:
+                        new_diags[i] = old_diag_map[pk]
+                candidate_diags = new_diags
             logger.info(
                 f"  Reduced alphabet union: {total_cands} total "
                 f"(was {n_before} from standard index)"
@@ -2116,6 +2132,16 @@ def search_kmer_index(
             candidate_pairs[:, 0] = (union_packed // nd).astype(np.int32)
             candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
             total_cands = len(candidate_pairs)
+            if candidate_diags is not None:
+                old_diag_map2 = {}
+                for i in range(n_before):
+                    old_diag_map2[int(std_packed[i])] = int(candidate_diags[i])
+                new_diags2 = np.zeros(total_cands, dtype=np.int32)
+                for i in range(total_cands):
+                    pk = int(union_packed[i])
+                    if pk in old_diag_map2:
+                        new_diags2[i] = old_diag_map2[pk]
+                candidate_diags = new_diags2
             logger.info(
                 f"  Spaced seed union: {total_cands} total "
                 f"(was {n_before})"
@@ -2140,6 +2166,8 @@ def search_kmer_index(
     sort_order = np.argsort(sort_key, kind="mergesort")
     merged_pairs = merged_pairs[sort_order]
     candidate_pairs = candidate_pairs[sort_order]
+    if candidate_diags is not None:
+        candidate_diags = candidate_diags[sort_order]
 
     use_blosum = (mode == "protein") and (merged["flat_sequences"] is not None)
 
@@ -2218,6 +2246,8 @@ def search_kmer_index(
             c_sims = np.empty(M, dtype=np.float32)
             c_scores = np.empty(M, dtype=np.int32)
             c_mask = np.empty(M, dtype=np.uint8)
+            _sw_diag = candidate_diags.astype(np.int32) if candidate_diags is not None else None
+            _sw_diag_ptr = _sw_diag.ctypes.data if _sw_diag is not None else None
             _swlib.batch_sw_align_c(
                 _sw_pf.ctypes.data,
                 _sw_flat.ctypes.data,
@@ -2225,7 +2255,7 @@ def search_kmer_index(
                 _sw_lens.ctypes.data,
                 M, c_sw_band_width, _sw_sm.ctypes.data,
                 np.float32(threshold),
-                None,  # no diag hints yet (TODO: thread from Phase B)
+                _sw_diag_ptr,
                 c_sims.ctypes.data, c_scores.ctypes.data, c_mask.ctypes.data,
             )
             sims = c_sims
