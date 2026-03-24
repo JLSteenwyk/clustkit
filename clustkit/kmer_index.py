@@ -1888,16 +1888,11 @@ def search_kmer_index(
             candidate_pairs[:, 0] = (union_packed // nd).astype(np.int32)
             candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
             total_cands = len(candidate_pairs)
-            # Rebuild diag hints: map old diags to new positions, 0 for new pairs
+            # Rebuild diag hints: searchsorted maps old → new positions
             if candidate_diags is not None:
-                old_diag_map = {}
-                for i in range(n_before):
-                    old_diag_map[int(std_packed[i])] = int(candidate_diags[i])
                 new_diags = np.zeros(total_cands, dtype=np.int32)
-                for i in range(total_cands):
-                    pk = int(union_packed[i])
-                    if pk in old_diag_map:
-                        new_diags[i] = old_diag_map[pk]
+                positions = np.searchsorted(union_packed, std_packed)
+                new_diags[positions] = candidate_diags[:n_before]
                 candidate_diags = new_diags
             logger.info(
                 f"  Reduced alphabet union: {total_cands} total "
@@ -2133,14 +2128,9 @@ def search_kmer_index(
             candidate_pairs[:, 1] = (union_packed % nd).astype(np.int32)
             total_cands = len(candidate_pairs)
             if candidate_diags is not None:
-                old_diag_map2 = {}
-                for i in range(n_before):
-                    old_diag_map2[int(std_packed[i])] = int(candidate_diags[i])
                 new_diags2 = np.zeros(total_cands, dtype=np.int32)
-                for i in range(total_cands):
-                    pk = int(union_packed[i])
-                    if pk in old_diag_map2:
-                        new_diags2[i] = old_diag_map2[pk]
+                positions2 = np.searchsorted(union_packed, std_packed)
+                new_diags2[positions2] = candidate_diags[:n_before]
                 candidate_diags = new_diags2
             logger.info(
                 f"  Spaced seed union: {total_cands} total "
