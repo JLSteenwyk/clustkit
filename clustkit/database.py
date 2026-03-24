@@ -30,9 +30,13 @@ class DatabaseIndex:
     kmer_offsets: np.ndarray | None = None   # (num_possible_kmers+1,) int64
     kmer_entries: np.ndarray | None = None   # (total_occurrences,) int64
     kmer_freqs: np.ndarray | None = None     # (num_possible_kmers,) int32
+    kmer_entries_compact: np.ndarray | None = None  # int32 seq_ids only (Phase A)
     # Pre-built reduced alphabet + spaced seed indices (optional)
     reduced_indices: dict | None = None      # {name: (offsets, entries, freqs, ...)}
     reduced_flat: np.ndarray | None = None   # reduced-alphabet encoded sequences
+    # Pre-computed per-index frequency thresholds and IDF weights
+    freq_thresholds: dict | None = None      # {name: int32}
+    idf_weights: dict | None = None          # {name: float32[]}
 
 
 def build_database(
@@ -122,6 +126,14 @@ def build_database(
             mode,
         )
 
+    # 7b. Compact Phase A entries + freq thresholds + IDF weights
+    kmer_entries_compact = (kmer_entries >> 32).astype(np.int32)
+    from clustkit.kmer_index import compute_freq_threshold
+    nd = dataset.num_sequences
+    freq_thresholds = {"std": int(compute_freq_threshold(kmer_freqs, nd, 99.5))}
+    idf_weights = {}
+    logger.info(f"  Compact Phase A index: {len(kmer_entries_compact):,} int32 entries")
+
     # 8. Pre-build reduced alphabet + spaced seed indices (protein only)
     reduced_indices = {}
     reduced_flat = None
@@ -140,14 +152,18 @@ def build_database(
                 reduced_flat, dataset.offsets, dataset.lengths,
                 4, mode, alpha_size=REDUCED_ALPHA_SIZE,
             )
-            reduced_indices["red_k4"] = (r4_off, r4_ent, r4_freq)
+            r4_compact = (r4_ent >> 32).astype(np.int32)
+            reduced_indices["red_k4"] = (r4_off, r4_ent, r4_freq, r4_compact)
+            freq_thresholds["red_k4"] = int(compute_freq_threshold(r4_freq, nd, 99.5))
 
             # Reduced k=5
             r5_off, r5_ent, r5_freq = build_kmer_index(
                 reduced_flat, dataset.offsets, dataset.lengths,
                 5, mode, alpha_size=REDUCED_ALPHA_SIZE,
             )
-            reduced_indices["red_k5"] = (r5_off, r5_ent, r5_freq)
+            r5_compact = (r5_ent >> 32).astype(np.int32)
+            reduced_indices["red_k5"] = (r5_off, r5_ent, r5_freq, r5_compact)
+            freq_thresholds["red_k5"] = int(compute_freq_threshold(r5_freq, nd, 99.5))
 
             # Spaced seeds
             for pattern in ["11011", "110011"]:
@@ -157,8 +173,12 @@ def build_database(
                         pattern, mode, alpha_size=REDUCED_ALPHA_SIZE,
                     )
                 )
+                sp_compact = (sp_ent >> 32).astype(np.int32)
                 reduced_indices[f"sp_{pattern}"] = (
-                    sp_off, sp_ent, sp_freq, sp_so, sp_w, sp_span,
+                    sp_off, sp_ent, sp_freq, sp_so, sp_w, sp_span, sp_compact,
+                )
+                freq_thresholds[f"sp_{pattern}"] = int(
+                    compute_freq_threshold(sp_freq, nd, 99.5)
                 )
 
         logger.info(
@@ -193,8 +213,10 @@ def build_database(
         kmer_offsets=kmer_offsets,
         kmer_entries=kmer_entries,
         kmer_freqs=kmer_freqs,
+        kmer_entries_compact=kmer_entries_compact,
         reduced_indices=reduced_indices if reduced_indices else None,
         reduced_flat=reduced_flat,
+        freq_thresholds=freq_thresholds if freq_thresholds else None,
     )
 
 
@@ -231,6 +253,14 @@ def save_database(db_index: DatabaseIndex, output_dir: str | Path):
             np.save(output_dir / "kmer_offsets.npy", db_index.kmer_offsets)
             np.save(output_dir / "kmer_entries.npy", db_index.kmer_entries)
             np.save(output_dir / "kmer_freqs.npy", db_index.kmer_freqs)
+            if db_index.kmer_entries_compact is not None:
+                np.save(output_dir / "kmer_entries_compact.npy",
+                        db_index.kmer_entries_compact)
+
+        # Frequency thresholds
+        if db_index.freq_thresholds:
+            with open(output_dir / "freq_thresholds.json", "w") as f:
+                json.dump(db_index.freq_thresholds, f)
 
         # Reduced alphabet + spaced seed indices
         if db_index.reduced_indices:
@@ -242,11 +272,17 @@ def save_database(db_index: DatabaseIndex, output_dir: str | Path):
                 np.save(red_dir / f"{name}_offsets.npy", arrays[0])
                 np.save(red_dir / f"{name}_entries.npy", arrays[1])
                 np.save(red_dir / f"{name}_freqs.npy", arrays[2])
-                if len(arrays) > 3:
-                    # Spaced seed: also save seed_offsets, weight, span
+                if name.startswith("sp_"):
+                    # Spaced seed: (off, ent, freq, seed_off, w, span, compact)
                     np.save(red_dir / f"{name}_seed_offsets.npy", arrays[3])
                     np.save(red_dir / f"{name}_meta.npy",
                             np.array([arrays[4], arrays[5]], dtype=np.int32))
+                    if len(arrays) > 6:
+                        np.save(red_dir / f"{name}_compact.npy", arrays[6])
+                else:
+                    # Contiguous: (off, ent, freq, compact)
+                    if len(arrays) > 3:
+                        np.save(red_dir / f"{name}_compact.npy", arrays[3])
             # Save index names for loading
             with open(red_dir / "index_names.json", "w") as f:
                 json.dump(list(db_index.reduced_indices.keys()), f)
@@ -307,11 +343,23 @@ def load_database(db_dir: str | Path) -> DatabaseIndex:
         kmer_offsets = None
         kmer_entries = None
         kmer_freqs = None
+        kmer_entries_compact = None
         kmer_offsets_path = db_dir / "kmer_offsets.npy"
         if kmer_offsets_path.exists():
             kmer_offsets = np.load(kmer_offsets_path)
             kmer_entries = np.load(db_dir / "kmer_entries.npy")
             kmer_freqs = np.load(db_dir / "kmer_freqs.npy")
+            compact_path = db_dir / "kmer_entries_compact.npy"
+            if compact_path.exists():
+                kmer_entries_compact = np.load(compact_path)
+                logger.info(f"  Loaded compact Phase A index ({len(kmer_entries_compact):,} int32)")
+
+        # Load frequency thresholds
+        freq_thresholds = None
+        ft_path = db_dir / "freq_thresholds.json"
+        if ft_path.exists():
+            with open(ft_path) as f:
+                freq_thresholds = json.load(f)
 
         # Load reduced alphabet + spaced seed indices (optional)
         reduced_indices = None
@@ -387,6 +435,8 @@ def load_database(db_dir: str | Path) -> DatabaseIndex:
         kmer_offsets=kmer_offsets,
         kmer_entries=kmer_entries,
         kmer_freqs=kmer_freqs,
+        kmer_entries_compact=kmer_entries_compact,
         reduced_indices=reduced_indices,
         reduced_flat=reduced_flat,
+        freq_thresholds=freq_thresholds,
     )

@@ -1602,7 +1602,8 @@ def search_kmer_index(
         _klib.batch_score_queries_c.argtypes = [
             ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
             ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
-            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,  # offsets, entries, compact
+            ctypes.c_void_p,  # kmer_freqs
             ctypes.c_int32, ctypes.c_int32,
             ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
             ctypes.c_int32, ctypes.c_int32,
@@ -1628,6 +1629,9 @@ def search_kmer_index(
             out_diags_c = np.zeros((nq, max_cands_per_query), dtype=np.int32)
             _q_off_i64 = q_off.astype(np.int64)
             _q_lens_i32 = q_lens.astype(np.int32)
+            # Use compact Phase A entries if available (2x less bandwidth)
+            _compact_ptr = (db_index.kmer_entries_compact.ctypes.data
+                           if db_index.kmer_entries_compact is not None else None)
             _klib.batch_score_queries_c(
                 q_flat.ctypes.data,
                 _q_off_i64.ctypes.data,
@@ -1635,6 +1639,7 @@ def search_kmer_index(
                 int(nq), int(k), int(alpha_size),
                 db_index.kmer_offsets.ctypes.data,
                 db_index.kmer_entries.ctypes.data,
+                _compact_ptr,
                 db_index.kmer_freqs.ctypes.data,
                 int(freq_thresh), int(nd),
                 int(min_total_hits), int(min_diag_hits),

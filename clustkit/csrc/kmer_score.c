@@ -17,6 +17,7 @@
 
 /* ─── Phase A: k-mer counting per target ─────────────────────────── */
 
+/* Phase A using FULL entries (int64, includes position) */
 static void score_query_phase_a(
     const uint8_t*  q_seq,
     int32_t         q_len,
@@ -62,6 +63,56 @@ static void score_query_phase_a(
 
         for (int64_t h = s; h < e; h++) {
             int32_t tid = (int32_t)(kmer_entries[h] >> 32);
+            if (target_counts[tid] < 32767)
+                target_counts[tid]++;
+        }
+    }
+}
+
+/* Phase A using COMPACT entries (int32 seq_ids only — half bandwidth) */
+static void score_query_phase_a_compact(
+    const uint8_t*  q_seq,
+    int32_t         q_len,
+    int32_t         k,
+    int32_t         alpha_size,
+    const int64_t*  kmer_offsets,
+    const int32_t*  compact_entries,   /* int32 seq_ids only */
+    const int32_t*  kmer_freqs,
+    int32_t         freq_thresh,
+    int32_t         num_db,
+    int16_t*        target_counts
+) {
+    int32_t num_kmers = q_len - k + 1;
+    if (num_kmers <= 0) return;
+
+    for (int32_t qpos = 0; qpos < num_kmers; qpos++) {
+        int64_t kmer_val = 0;
+        int valid = 1;
+        for (int32_t j = 0; j < k; j++) {
+            uint8_t r = q_seq[qpos + j];
+            if (r >= (uint8_t)alpha_size) { valid = 0; break; }
+            kmer_val = kmer_val * alpha_size + r;
+        }
+        if (!valid) continue;
+        if (kmer_freqs[kmer_val] > freq_thresh) continue;
+
+        int64_t s = kmer_offsets[kmer_val];
+        int64_t e = kmer_offsets[kmer_val + 1];
+
+        if (qpos + 1 < num_kmers) {
+            int64_t nk = 0; int nv = 1;
+            for (int32_t j = 0; j < k; j++) {
+                uint8_t r = q_seq[qpos + 1 + j];
+                if (r >= (uint8_t)alpha_size) { nv = 0; break; }
+                nk = nk * alpha_size + r;
+            }
+            if (nv && kmer_freqs[nk] <= freq_thresh)
+                __builtin_prefetch(&compact_entries[kmer_offsets[nk]], 0, 1);
+        }
+
+        /* 4 bytes per entry instead of 8 — 2x less memory bandwidth */
+        for (int64_t h = s; h < e; h++) {
+            int32_t tid = compact_entries[h];
             if (target_counts[tid] < 32767)
                 target_counts[tid]++;
         }
@@ -140,7 +191,8 @@ static int32_t score_query_full(
     int32_t         k,
     int32_t         alpha_size,
     const int64_t*  kmer_offsets,
-    const int64_t*  kmer_entries,
+    const int64_t*  kmer_entries,       /* full entries for Phase B */
+    const int32_t*  compact_entries,    /* int32 seq_ids for Phase A (or NULL) */
     const int32_t*  kmer_freqs,
     int32_t         freq_thresh,
     int32_t         num_db,
@@ -160,9 +212,16 @@ static int32_t score_query_full(
     int16_t* counts = (int16_t*)calloc(num_db, sizeof(int16_t));
     if (!counts) return 0;
 
-    score_query_phase_a(q_seq, q_len, k, alpha_size,
-                        kmer_offsets, kmer_entries, kmer_freqs,
-                        freq_thresh, num_db, counts);
+    /* Use compact (int32) entries for Phase A when available — 2x less bandwidth */
+    if (compact_entries) {
+        score_query_phase_a_compact(q_seq, q_len, k, alpha_size,
+                                    kmer_offsets, compact_entries, kmer_freqs,
+                                    freq_thresh, num_db, counts);
+    } else {
+        score_query_phase_a(q_seq, q_len, k, alpha_size,
+                            kmer_offsets, kmer_entries, kmer_freqs,
+                            freq_thresh, num_db, counts);
+    }
 
     /* Collect passing targets */
     int32_t num_passing = 0;
@@ -356,6 +415,7 @@ void batch_score_queries_c(
     int32_t         alpha_size,
     const int64_t*  kmer_offsets,
     const int64_t*  kmer_entries,
+    const int32_t*  compact_entries,    /* int32 seq_ids for Phase A, or NULL */
     const int32_t*  kmer_freqs,
     int32_t         freq_thresh,
     int32_t         num_db,
@@ -380,7 +440,7 @@ void batch_score_queries_c(
 
         int32_t nc = score_query_full(
             q_seq, q_len, k, alpha_size,
-            kmer_offsets, kmer_entries, kmer_freqs,
+            kmer_offsets, kmer_entries, compact_entries, kmer_freqs,
             freq_thresh, num_db, min_total_hits,
             min_diag_hits, diag_bin_width, phase_a_topk,
             max_cands, row_targets, row_scores, row_diags
