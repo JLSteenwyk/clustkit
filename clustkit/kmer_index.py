@@ -1785,7 +1785,7 @@ def search_kmer_index(
                         rk, mode,
                         alpha_size=REDUCED_ALPHA_SIZE,
                     )
-                    setattr(db_index, _cache_key, (
+                    setattr(db_index, f'_red_idx_k{rk}', (
                         red_offsets, red_entries, red_freqs,
                     ))
 
