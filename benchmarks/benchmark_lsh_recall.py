@@ -20,6 +20,7 @@ from clustkit.lsh import lsh_candidates
 from clustkit.sketch import compute_sketches
 from clustkit.pairwise import _nw_identity
 from clustkit.io import read_sequences
+from clustkit.clustering_mode import resolve_clustering_mode
 from clustkit.utils import auto_kmer_for_lsh, auto_lsh_params
 
 # ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ def run_benchmark(
     threads: int,
     sample_pairs_count: int,
     num_tables_list: list[int],
+    clustkit_mode: str = "balanced",
     seed: int = 42,
     output_json: Path | None = None,
 ):
@@ -165,11 +167,14 @@ def run_benchmark(
     # ---------------------------------------------------------------------------
     k_user = 5
     k_lsh = auto_kmer_for_lsh(threshold, "protein", k_user)
-    sketch_size = 128
-    lsh_params = auto_lsh_params(threshold, "high", k=k_lsh)
+    sketch_size, sensitivity = resolve_clustering_mode(clustkit_mode, threshold)
+    lsh_params = auto_lsh_params(threshold, sensitivity, k=k_lsh)
     default_num_bands = lsh_params["num_bands"]
 
-    log.info(f"  k_lsh = {k_lsh}, sketch_size = {sketch_size}, num_bands = {default_num_bands}")
+    log.info(
+        f"  mode = {clustkit_mode}, k_lsh = {k_lsh}, sketch_size = {sketch_size}, "
+        f"sensitivity = {sensitivity}, num_bands = {default_num_bands}"
+    )
 
     log.info("Computing sketches ...")
     t0 = time.perf_counter()
@@ -383,8 +388,10 @@ def run_benchmark(
         "dataset": str(input_fasta),
         "n_sequences": n,
         "threshold": threshold,
+        "clustkit_mode": clustkit_mode,
         "k_lsh": k_lsh,
         "sketch_size": sketch_size,
+        "sensitivity": sensitivity,
         "num_bands": default_num_bands,
         "n_sampled_pairs": actual_sample,
         "n_true_pairs": n_true_pairs,
@@ -441,6 +448,11 @@ def main():
         "--output", "-o", type=Path, default=None,
         help="Output JSON file for results (default: benchmarks/data/lsh_recall_results.json).",
     )
+    parser.add_argument(
+        "--clustkit-mode", type=str, default="balanced",
+        choices=["balanced", "accurate", "fast"],
+        help="ClustKIT clustering mode to benchmark.",
+    )
 
     args = parser.parse_args()
 
@@ -453,6 +465,7 @@ def main():
         threads=args.threads,
         sample_pairs_count=args.sample_pairs,
         num_tables_list=sorted(args.num_tables),
+        clustkit_mode=args.clustkit_mode,
         seed=args.seed,
         output_json=args.output,
     )

@@ -23,6 +23,7 @@ from clustkit.io import read_sequences
 from clustkit.sketch import compute_sketches
 from clustkit.lsh import lsh_candidates
 from clustkit.pairwise import _batch_align, _nw_identity
+from clustkit.clustering_mode import resolve_clustering_mode
 from clustkit.utils import auto_kmer_for_lsh, auto_lsh_params
 
 
@@ -677,17 +678,24 @@ def main():
         help="Sequence type (default: protein)",
     )
     parser.add_argument(
+        "--clustkit-mode",
+        type=str,
+        default="balanced",
+        choices=["balanced", "accurate", "fast"],
+        help="ClustKIT clustering mode to profile.",
+    )
+    parser.add_argument(
         "--sensitivity",
         type=str,
-        default="high",
+        default=None,
         choices=["low", "medium", "high"],
-        help="LSH sensitivity (default: high)",
+        help="LSH sensitivity override (default: from --clustkit-mode)",
     )
     parser.add_argument(
         "--sketch-size",
         type=int,
-        default=128,
-        help="Sketch size for MinHash (default: 128)",
+        default=None,
+        help="Sketch size override for MinHash (default: from --clustkit-mode)",
     )
     parser.add_argument(
         "--kmer-size", "-k",
@@ -720,13 +728,21 @@ def main():
         print(f"Hint: Run the Pfam download/mix script first, or specify --input")
         sys.exit(1)
 
+    resolved_sketch_size, resolved_sensitivity = resolve_clustering_mode(
+        args.clustkit_mode, args.threshold, args.sketch_size, args.sensitivity
+    )
+    args.sketch_size = resolved_sketch_size
+    args.sensitivity = resolved_sensitivity
+
     _separator("=")
     print(f"  ClustKIT Phase 3 Profiler")
     _separator("=")
     print(f"  Input:       {input_path}")
     print(f"  Threshold:   {args.threshold}")
     print(f"  Mode:        {args.mode}")
+    print(f"  CK mode:     {args.clustkit_mode}")
     print(f"  Sensitivity: {args.sensitivity}")
+    print(f"  Sketch size: {args.sketch_size}")
     print(f"  Max threads: {args.max_threads}")
     print()
 

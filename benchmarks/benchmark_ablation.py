@@ -34,6 +34,7 @@ from sklearn.metrics import (
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from clustkit.pipeline import run_pipeline
+from clustkit.clustering_mode import resolve_clustering_mode
 
 # Import the benchmark_pfam_concordance helpers for data loading
 from benchmark_pfam_concordance import load_and_mix_families
@@ -144,17 +145,19 @@ def evaluate_clusters(ground_truth, pred_clusters):
 # Ablation variant definitions
 # ──────────────────────────────────────────────────────────────────────
 
-def _base_config(mixed_fasta, out_dir, threshold, threads):
+def _base_config(mixed_fasta, out_dir, threshold, threads, clustkit_mode):
     """Return the baseline ClustKIT config."""
+    sketch_size, sensitivity = resolve_clustering_mode(clustkit_mode, threshold)
     return {
         "input": mixed_fasta,
         "output": out_dir,
         "threshold": threshold,
+        "clustering_mode": clustkit_mode,
         "mode": "protein",
         "alignment": "align",
-        "sketch_size": 128,
+        "sketch_size": sketch_size,
         "kmer_size": 5,
-        "sensitivity": "high",
+        "sensitivity": sensitivity,
         "cluster_method": "connected",
         "representative": "longest",
         "device": "cpu",
@@ -169,6 +172,7 @@ def _run_variant_and_evaluate(
     ground_truth,
     threshold,
     threads,
+    clustkit_mode,
     config_overrides=None,
     mock_patches=None,
 ):
@@ -189,7 +193,7 @@ def _run_variant_and_evaluate(
     out_dir = OUTPUT_DIR / variant_name.lower().replace(" ", "_")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    config = _base_config(mixed_fasta, out_dir, threshold, threads)
+    config = _base_config(mixed_fasta, out_dir, threshold, threads, clustkit_mode)
     if config_overrides:
         config.update(config_overrides)
 
@@ -449,7 +453,7 @@ def _make_no_adaptive_band_batch_align():
 # Main benchmark
 # ──────────────────────────────────────────────────────────────────────
 
-def run_ablation(threshold=0.4, max_per_family=500, threads=4):
+def run_ablation(threshold=0.4, max_per_family=500, threads=4, clustkit_mode="balanced"):
     """Run the ablation study.
 
     Args:
@@ -460,7 +464,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     print("=" * 120)
-    print(f"ABLATION STUDY — ClustKIT at threshold={threshold} ({threads} threads)")
+    print(f"ABLATION STUDY — ClustKIT[{clustkit_mode}] at threshold={threshold} ({threads} threads)")
     print("=" * 120)
     print()
 
@@ -473,7 +477,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     # ── Variant 1: Full ClustKIT (baseline) ──────────────────────────
     result = _run_variant_and_evaluate(
         "Full ClustKIT",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
     )
     all_results.append(result)
 
@@ -481,7 +485,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     # At t=0.4, auto_kmer_for_lsh returns k=3. Force k=5 instead.
     result = _run_variant_and_evaluate(
         "No adaptive k",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         mock_patches=[
             ("clustkit.pipeline.auto_kmer_for_lsh", _make_fixed_kmer_for_lsh(5)),
         ],
@@ -495,7 +499,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     no_adaptive_batch, no_adaptive_batch_compact = _make_no_adaptive_band_batch_align()
     result = _run_variant_and_evaluate(
         "No adaptive band",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         mock_patches=[
             ("clustkit.pairwise._batch_align", no_adaptive_batch),
             ("clustkit.pairwise._batch_align_compact", no_adaptive_batch_compact),
@@ -547,7 +551,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
 
     result = _run_variant_and_evaluate(
         "No early termination",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         mock_patches=[
             (
                 "clustkit.pipeline.compute_pairwise_alignment",
@@ -564,7 +568,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
 
     result = _run_variant_and_evaluate(
         "No length pre-filter",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         mock_patches=[
             ("clustkit.pairwise._batch_align", no_prefilter_batch),
             ("clustkit.pairwise._batch_align_compact", no_prefilter_batch_compact),
@@ -576,7 +580,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     # Use alignment="kmer" with k=5 instead of NW alignment.
     result = _run_variant_and_evaluate(
         "k-mer mode only",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         config_overrides={
             "alignment": "kmer",
             "kmer_size": 5,
@@ -588,7 +592,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
     # Force 32 tables, 2 bands regardless of threshold.
     result = _run_variant_and_evaluate(
         "Fixed LSH params",
-        mixed_fasta, ground_truth, threshold, threads,
+        mixed_fasta, ground_truth, threshold, threads, clustkit_mode,
         mock_patches=[
             ("clustkit.pipeline.auto_lsh_params", _make_fixed_lsh_params(32, 2)),
         ],
@@ -667,7 +671,7 @@ def run_ablation(threshold=0.4, max_per_family=500, threads=4):
         print()
 
     # Save results
-    results_file = OUTPUT_DIR / "ablation_results.json"
+    results_file = OUTPUT_DIR / f"ablation_results_{clustkit_mode}.json"
     with open(results_file, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"Results saved to {results_file}")
@@ -697,10 +701,18 @@ if __name__ == "__main__":
         default=4,
         help="Number of CPU threads (default: 4).",
     )
+    parser.add_argument(
+        "--clustkit-mode",
+        type=str,
+        default="balanced",
+        choices=["balanced", "accurate", "fast"],
+        help="ClustKIT clustering mode to benchmark.",
+    )
     args = parser.parse_args()
 
     run_ablation(
         threshold=args.threshold,
         max_per_family=args.max_per_family,
         threads=args.threads,
+        clustkit_mode=args.clustkit_mode,
     )

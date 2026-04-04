@@ -49,7 +49,7 @@ python benchmarks/benchmark_ablation.py \
 echo
 
 # Step 3: Thread scaling (Fig S3)
-echo ">>> Step 3: Thread scaling..."
+echo ">>> Step 3: Thread scaling (ClustKIT, MMseqs2, Linclust, DeepClust, CD-HIT, VSEARCH)..."
 python benchmarks/benchmark_thread_scaling.py \
     --max-threads "$THREADS" \
     --threshold 0.5 \
@@ -95,14 +95,6 @@ else
 fi
 echo
 
-# Step 7: Search benchmarks (Fig 4, requires Pfam data)
-echo ">>> Step 7: Search benchmarks (CS4)..."
-python benchmarks/benchmark_search.py cs4 \
-    --threads "$THREADS" \
-    --skip-blast --skip-diamond \
-    2>&1 | tee "$RESULTS_DIR/search_cs4.log"
-echo
-
 echo "============================================================"
 echo "All benchmarks complete. Results saved to $RESULTS_DIR/"
 echo "============================================================"
@@ -118,5 +110,3 @@ echo "  # Annotation consistency (CP2-CP4) — requires UniProt-GOA:"
 echo "  python benchmarks/benchmark_annotation_consistency.py cp2 cp3 cp4 \\"
 echo "      --fasta swissprot.fasta --goa-file goa.gaf --pfam-file interpro.tsv --threads $THREADS"
 echo
-echo "  # SCOP sensitivity (CP5) — requires SCOP data:"
-echo "  python benchmarks/benchmark_search.py cp5 --threads $THREADS"

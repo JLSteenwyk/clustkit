@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from clustkit.io import read_sequences
 from clustkit.pipeline import run_pipeline
+from clustkit.clustering_mode import resolve_clustering_mode
 
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "pfam_families"
@@ -41,6 +42,7 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "data" / "pfam_benchmark_results"
 CDHIT_SIF = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/cd-hit.sif"
 MMSEQS_BIN = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/mmseqs/bin/mmseqs"
 VSEARCH_BIN = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/VSEARCH/vsearch-2.30.5-linux-x86_64/bin/vsearch"
+DIAMOND_BIN = "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/diamond-linux64/diamond"
 
 
 def load_and_mix_families(data_dir: Path, max_per_family: int = 500):
@@ -315,6 +317,33 @@ def run_vsearch(fasta_path, output_prefix, threshold, threads=4):
     return clusters, elapsed
 
 
+def run_deepclust(fasta_path, output_prefix, threshold, threads=4):
+    """Run DIAMOND DeepClust clustering."""
+    out_file = str(output_prefix) + "_deepclust.tsv"
+    # --approx-id expects a percentage (0-100)
+    approx_id = int(threshold * 100)
+    cmd = [
+        DIAMOND_BIN, "deepclust",
+        "-d", str(fasta_path),
+        "-o", out_file,
+        "--approx-id", str(approx_id),
+        "--member-cover", "80",
+        "--threads", str(threads),
+        "-M", "64G",
+    ]
+
+    start = time.perf_counter()
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)
+    elapsed = time.perf_counter() - start
+
+    if result.returncode != 0:
+        return None, elapsed
+
+    # DeepClust outputs same 2-column TSV as MMseqs2 (representative, member)
+    clusters = parse_mmseqs_clusters(out_file)
+    return clusters, elapsed
+
+
 def _normalize_id(seq_id):
     """Extract UniProt accession from sp|ACC|NAME format, or return as-is."""
     parts = seq_id.split("|")
@@ -364,7 +393,7 @@ def evaluate_tool(ground_truth, pred_clusters):
     }
 
 
-def run_benchmark(thresholds=None, max_per_family=500, threads=4):
+def run_benchmark(thresholds=None, max_per_family=500, threads=4, clustkit_mode="balanced"):
     """Run the full Pfam concordance benchmark with ClustKIT, CD-HIT, and MMseqs2.
 
     Args:
@@ -379,7 +408,7 @@ def run_benchmark(thresholds=None, max_per_family=500, threads=4):
 
     # Load and mix families
     print("=" * 120)
-    print(f"PFAM CONCORDANCE BENCHMARK — ClustKIT vs CD-HIT vs MMseqs2 ({threads} threads)")
+    print(f"PFAM CONCORDANCE BENCHMARK — ClustKIT vs CD-HIT vs MMseqs2 vs DeepClust ({threads} threads)")
     print("=" * 120)
     print()
 
@@ -395,49 +424,59 @@ def run_benchmark(thresholds=None, max_per_family=500, threads=4):
 
         scenario = {}
 
-        # --- ClustKIT ---
-        print(f"  ClustKIT (align)...", end=" ", flush=True)
-        out_dir = OUTPUT_DIR / f"clustkit_t{threshold}"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        config = {
-            "input": mixed_fasta,
-            "output": out_dir,
-            "threshold": threshold,
-            "mode": "protein",
-            "alignment": "align",
-            "sketch_size": 128,
-            "kmer_size": 5,
-            "sensitivity": "high",
-            "cluster_method": "connected",
-            "representative": "longest",
-            "device": "cpu",
-            "threads": threads,
-            "format": "tsv",
+        # --- ClustKIT (3 modes) ---
+        clustkit_modes = {
+            "fast": {"cluster_method": "greedy", "band_width": 50, "sensitivity": "medium"},
+            "default": {"cluster_method": "leiden", "band_width": 100, "sensitivity": "high"},
+            "sensitive": {"cluster_method": "leiden", "band_width": 200, "sensitivity": "high"},
         }
+        for mode_name, mode_cfg in clustkit_modes.items():
+            label = f"clustkit_{mode_name}"
+            print(f"  ClustKIT ({mode_name})...", end=" ", flush=True)
+            out_dir = OUTPUT_DIR / f"clustkit_{mode_name}_t{threshold}"
+            out_dir.mkdir(parents=True, exist_ok=True)
 
-        start = time.perf_counter()
-        run_pipeline(config)
-        elapsed = time.perf_counter() - start
+            config = {
+                "input": mixed_fasta,
+                "output": out_dir,
+                "threshold": threshold,
+                "mode": "protein",
+                "alignment": "align",
+                "sketch_size": 128,
+                "kmer_size": 5,
+                "sensitivity": mode_cfg["sensitivity"],
+                "cluster_method": mode_cfg["cluster_method"],
+                "representative": "longest",
+                "device": "cpu",
+                "threads": threads,
+                "format": "tsv",
+                "use_c_ext": True,
+                "band_width": mode_cfg["band_width"],
+                "block": "off",
+                "cascade": "off",
+            }
 
-        # Parse ClustKIT output
-        clustkit_clusters = {}
-        with open(out_dir / "clusters.tsv") as f:
-            next(f)
-            for line in f:
-                parts = line.strip().split("\t")
-                clustkit_clusters[parts[0]] = int(parts[1])
+            start = time.perf_counter()
+            run_pipeline(config)
+            elapsed = time.perf_counter() - start
 
-        clustkit_eval = evaluate_tool(ground_truth, clustkit_clusters)
-        clustkit_eval["runtime_seconds"] = round(elapsed, 2)
-        scenario["clustkit"] = clustkit_eval
-        if "error" not in clustkit_eval:
-            print(f"{clustkit_eval['n_predicted_clusters']} clusters, "
-                  f"ARI={clustkit_eval['ARI']}, "
-                  f"P={clustkit_eval['pairwise_precision']}, R={clustkit_eval['pairwise_recall']}, F1={clustkit_eval['pairwise_F1']}, "
-                  f"{elapsed:.2f}s")
-        else:
-            print(f"EVAL ERROR: {clustkit_eval['error']} ({elapsed:.2f}s)")
+            clustkit_clusters = {}
+            with open(out_dir / "clusters.tsv") as f:
+                next(f)
+                for line in f:
+                    parts = line.strip().split("\t")
+                    clustkit_clusters[parts[0]] = int(parts[1])
+
+            clustkit_eval = evaluate_tool(ground_truth, clustkit_clusters)
+            clustkit_eval["runtime_seconds"] = round(elapsed, 2)
+            scenario[label] = clustkit_eval
+            if "error" not in clustkit_eval:
+                print(f"{clustkit_eval['n_predicted_clusters']} clusters, "
+                      f"ARI={clustkit_eval['ARI']}, "
+                      f"P={clustkit_eval['pairwise_precision']}, R={clustkit_eval['pairwise_recall']}, F1={clustkit_eval['pairwise_F1']}, "
+                      f"{elapsed:.2f}s")
+            else:
+                print(f"EVAL ERROR: {clustkit_eval['error']} ({elapsed:.2f}s)")
 
         # --- CD-HIT ---
         print(f"  CD-HIT...", end=" ", flush=True)
@@ -515,6 +554,25 @@ def run_benchmark(thresholds=None, max_per_family=500, threads=4):
             scenario["vsearch"] = {"error": "failed", "runtime_seconds": round(vsearch_time, 2)}
             print(f"FAILED ({vsearch_time:.2f}s)")
 
+        # --- DIAMOND DeepClust ---
+        print(f"  DIAMOND DeepClust...", end=" ", flush=True)
+        deepclust_prefix = OUTPUT_DIR / f"deepclust_t{threshold}"
+        deepclust_clusters, deepclust_time = run_deepclust(mixed_fasta, deepclust_prefix, threshold, threads=threads)
+        if deepclust_clusters:
+            deepclust_eval = evaluate_tool(ground_truth, deepclust_clusters)
+            deepclust_eval["runtime_seconds"] = round(deepclust_time, 2)
+            scenario["deepclust"] = deepclust_eval
+            if "error" not in deepclust_eval:
+                print(f"{deepclust_eval['n_predicted_clusters']} clusters, "
+                      f"ARI={deepclust_eval['ARI']}, "
+                      f"P={deepclust_eval['pairwise_precision']}, R={deepclust_eval['pairwise_recall']}, F1={deepclust_eval['pairwise_F1']}, "
+                      f"{deepclust_time:.2f}s")
+            else:
+                print(f"EVAL ERROR: {deepclust_eval['error']} ({deepclust_time:.2f}s)")
+        else:
+            scenario["deepclust"] = {"error": "failed", "runtime_seconds": round(deepclust_time, 2)}
+            print(f"FAILED ({deepclust_time:.2f}s)")
+
         all_results[str(threshold)] = scenario
         print()
 
@@ -523,13 +581,13 @@ def run_benchmark(thresholds=None, max_per_family=500, threads=4):
     print("SUMMARY")
     print("=" * 120)
     print()
-    print(f"{'Thresh':<8} {'Tool':<10} {'Clust':>6} {'ARI':>8} {'NMI':>8} "
+    print(f"{'Thresh':<8} {'Tool':<18} {'Clust':>6} {'ARI':>8} {'NMI':>8} "
           f"{'Homog':>8} {'Compl':>8} {'P(pw)':>8} {'R(pw)':>8} {'F1(pw)':>8} {'Time':>10}")
     print("-" * 120)
 
     for t in thresholds:
         r = all_results[str(t)]
-        for tool_name, key in [("ClustKIT", "clustkit"), ("CD-HIT", "cdhit"), ("MMseqs2", "mmseqs2"), ("linclust", "linclust"), ("VSEARCH", "vsearch")]:
+        for tool_name, key in [("CK-fast", "clustkit_fast"), ("CK-default", "clustkit_default"), ("CK-sensitive", "clustkit_sensitive"), ("CD-HIT", "cdhit"), ("MMseqs2", "mmseqs2"), ("linclust", "linclust"), ("VSEARCH", "vsearch"), ("DeepClust", "deepclust")]:
             res = r.get(key, {})
             if "error" in res:
                 rt = res.get("runtime_seconds", "?")
@@ -546,7 +604,7 @@ def run_benchmark(thresholds=None, max_per_family=500, threads=4):
         print()
 
     # Save results
-    results_file = OUTPUT_DIR / f"pfam_concordance_results_{threads}threads.json"
+    results_file = OUTPUT_DIR / f"pfam_concordance_results_{threads}threads_{clustkit_mode}.json"
     with open(results_file, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"Results saved to {results_file}")
@@ -569,10 +627,16 @@ if __name__ == "__main__":
         "--max-per-family", type=int, default=500,
         help="Max sequences per Pfam family (default: 500)",
     )
+    parser.add_argument(
+        "--clustkit-mode", type=str, default="balanced",
+        choices=["balanced", "accurate", "fast"],
+        help="ClustKIT clustering mode to benchmark.",
+    )
     args = parser.parse_args()
 
     run_benchmark(
         thresholds=args.thresholds,
         max_per_family=args.max_per_family,
         threads=args.threads,
+        clustkit_mode=args.clustkit_mode,
     )

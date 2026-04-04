@@ -1,19 +1,14 @@
-"""Thread scaling benchmark for ClustKIT.
+"""Thread scaling benchmark for clustering tools.
 
 Fixed Pfam dataset, varying thread count from 1 to max.
-Also measures MMseqs2 scaling for comparison.
+Measures scaling for ClustKIT and the external clustering baselines.
 
 C5 from the publication plan.
 """
 
 import json
-import os
-import shutil
-import subprocess
 import sys
-import tempfile
 import time
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -21,38 +16,40 @@ import numpy as np
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from clustkit.clustering_mode import resolve_clustering_mode
 from clustkit.pipeline import run_pipeline
 
 # Import data loading from the Pfam benchmark
-from benchmark_pfam_concordance import load_and_mix_families
+from benchmark_pfam_concordance import (
+    load_and_mix_families,
+    run_cdhit as run_cdhit_clusters,
+    run_deepclust as run_deepclust_clusters,
+    run_mmseqs as run_mmseqs_clusters,
+    run_mmseqs_linclust as run_linclust_clusters,
+    run_vsearch as run_vsearch_clusters,
+)
 
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "pfam_families"
 OUTPUT_DIR = Path(__file__).resolve().parent / "data" / "thread_scaling_results"
 
-MMSEQS_BIN = (
-    "/mnt/ca1e2e99-718e-417c-9ba6-62421455971a/SOFTWARE/mmseqs/bin/mmseqs"
-)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Tool runners
-# ──────────────────────────────────────────────────────────────────────
-
-def run_clustkit(mixed_fasta, out_dir, threshold, threads):
+def run_clustkit(mixed_fasta, out_dir, threshold, threads, clustkit_mode):
     """Run ClustKIT and return elapsed time."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    sketch_size, sensitivity = resolve_clustering_mode(clustkit_mode, threshold)
 
     config = {
         "input": mixed_fasta,
         "output": out_dir,
         "threshold": threshold,
+        "clustering_mode": clustkit_mode,
         "mode": "protein",
         "alignment": "align",
-        "sketch_size": 128,
+        "sketch_size": sketch_size,
         "kmer_size": 5,
-        "sensitivity": "high",
+        "sensitivity": sensitivity,
         "cluster_method": "connected",
         "representative": "longest",
         "device": "cpu",
@@ -80,43 +77,18 @@ def run_clustkit(mixed_fasta, out_dir, threshold, threads):
     return elapsed, n_clusters
 
 
-def parse_mmseqs_clusters(tsv_path):
-    """Parse MMseqs2 cluster TSV and return number of clusters."""
-    clusters = set()
-    with open(tsv_path) as f:
-        for line in f:
-            parts = line.strip().split("\t")
-            if len(parts) >= 2:
-                clusters.add(parts[0])
-    return len(clusters)
+def _count_clusters(cluster_map):
+    if not cluster_map:
+        return 0
+    return len(set(cluster_map.values()))
 
 
-def run_mmseqs(fasta_path, output_prefix, threshold, threads):
-    """Run MMseqs2 easy-cluster and return elapsed time."""
-    tmp_dir = tempfile.mkdtemp(prefix="mmseqs_scaling_tmp_")
-    cmd = [
-        MMSEQS_BIN, "easy-cluster",
-        str(fasta_path),
-        str(output_prefix),
-        tmp_dir,
-        "--min-seq-id", str(threshold),
-        "--threads", str(threads),
-        "-c", "0.8",
-        "--cov-mode", "0",
-    ]
-
-    start = time.perf_counter()
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)
-    elapsed = time.perf_counter() - start
-
-    shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    n_clusters = 0
-    tsv_file = str(output_prefix) + "_cluster.tsv"
-    if result.returncode == 0 and os.path.exists(tsv_file):
-        n_clusters = parse_mmseqs_clusters(tsv_file)
-
-    return elapsed, n_clusters, result.returncode == 0
+def run_external_tool(runner, fasta_path, output_prefix, threshold, threads):
+    """Run an external clustering tool and return elapsed time and cluster count."""
+    clusters, elapsed = runner(fasta_path, output_prefix, threshold, threads=threads)
+    if clusters is None:
+        return elapsed, 0, False
+    return elapsed, _count_clusters(clusters), True
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -128,6 +100,7 @@ def run_thread_scaling(
     threshold=0.5,
     max_per_family=500,
     repeats=1,
+    clustkit_mode="balanced",
 ):
     """Run the thread scaling benchmark.
 
@@ -150,7 +123,11 @@ def run_thread_scaling(
         thread_counts.append(max_threads)
 
     print("=" * 120)
-    print(f"THREAD SCALING BENCHMARK — ClustKIT & MMseqs2 at threshold={threshold}")
+    print(
+        "THREAD SCALING BENCHMARK — "
+        f"ClustKIT[{clustkit_mode}] vs MMseqs2 vs Linclust vs DeepClust vs CD-HIT vs VSEARCH "
+        f"at threshold={threshold}"
+    )
     print(f"Thread counts: {thread_counts}")
     print(f"Repeats per config: {repeats}")
     print("=" * 120)
@@ -162,133 +139,107 @@ def run_thread_scaling(
     print(f"Dataset: {n_sequences} sequences")
     print()
 
-    # ── ClustKIT scaling ─────────────────────────────────────────────
-    print("-" * 120)
-    print("ClustKIT Thread Scaling")
-    print("-" * 120)
+    tool_specs = [
+        {
+            "key": "clustkit",
+            "label": f"ClustKIT-{clustkit_mode}",
+            "runner": None,
+        },
+        {"key": "mmseqs2", "label": "MMseqs2", "runner": run_mmseqs_clusters},
+        {"key": "linclust", "label": "Linclust", "runner": run_linclust_clusters},
+        {"key": "deepclust", "label": "DeepClust", "runner": run_deepclust_clusters},
+        {"key": "cdhit", "label": "CD-HIT", "runner": run_cdhit_clusters},
+        {"key": "vsearch", "label": "VSEARCH", "runner": run_vsearch_clusters},
+    ]
 
-    clustkit_results = []
-    baseline_time = None
+    results_by_key = {}
 
-    for n_threads in thread_counts:
-        times = []
-        n_clusters = 0
+    for tool in tool_specs:
+        print("-" * 120)
+        print(f"{tool['label']} Thread Scaling")
+        print("-" * 120)
 
-        for rep in range(repeats):
-            out_dir = OUTPUT_DIR / f"clustkit_t{threshold}_threads{n_threads}_rep{rep}"
-            elapsed, n_clust = run_clustkit(
-                mixed_fasta, out_dir, threshold, n_threads
-            )
-            times.append(elapsed)
-            n_clusters = n_clust
+        tool_results = []
+        baseline_time = None
 
-        mean_time = np.mean(times)
-        std_time = np.std(times) if repeats > 1 else 0.0
+        for n_threads in thread_counts:
+            times = []
+            n_clusters = 0
+            success = True
 
-        if baseline_time is None:
-            baseline_time = mean_time
+            for rep in range(repeats):
+                if tool["key"] == "clustkit":
+                    out_dir = (
+                        OUTPUT_DIR
+                        / f"clustkit_{clustkit_mode}_t{threshold}_threads{n_threads}_rep{rep}"
+                    )
+                    elapsed, n_clust = run_clustkit(
+                        mixed_fasta, out_dir, threshold, n_threads, clustkit_mode
+                    )
+                    times.append(elapsed)
+                    n_clusters = n_clust
+                else:
+                    output_prefix = (
+                        OUTPUT_DIR / f"{tool['key']}_t{threshold}_threads{n_threads}_rep{rep}"
+                    )
+                    elapsed, n_clust, ok = run_external_tool(
+                        tool["runner"], mixed_fasta, output_prefix, threshold, n_threads
+                    )
+                    if ok:
+                        times.append(elapsed)
+                        n_clusters = n_clust
+                    else:
+                        success = False
+                        break
 
-        speedup = baseline_time / mean_time if mean_time > 0 else 0.0
-        efficiency = speedup / n_threads if n_threads > 0 else 0.0
-        throughput = n_sequences / mean_time if mean_time > 0 else 0.0
+            if not success or not times:
+                print(f"  {n_threads:>3} threads: FAILED")
+                tool_results.append(
+                    {
+                        "tool": tool["label"],
+                        "threads": n_threads,
+                        "error": "failed",
+                    }
+                )
+                continue
 
-        result = {
-            "tool": "ClustKIT",
-            "threads": n_threads,
-            "mean_time": round(mean_time, 2),
-            "std_time": round(std_time, 2),
-            "speedup": round(speedup, 2),
-            "parallel_efficiency": round(efficiency, 4),
-            "throughput_seqs_per_sec": round(throughput, 1),
-            "n_clusters": n_clusters,
-        }
-        clustkit_results.append(result)
+            mean_time = np.mean(times)
+            std_time = np.std(times) if repeats > 1 else 0.0
 
-        if repeats > 1:
-            print(
-                f"  {n_threads:>3} threads: {mean_time:>8.2f}s +/- {std_time:.2f}s | "
-                f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
-                f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
-            )
-        else:
-            print(
-                f"  {n_threads:>3} threads: {mean_time:>8.2f}s | "
-                f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
-                f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
-            )
+            if baseline_time is None:
+                baseline_time = mean_time
 
-    print()
+            speedup = baseline_time / mean_time if mean_time > 0 else 0.0
+            efficiency = speedup / n_threads if n_threads > 0 else 0.0
+            throughput = n_sequences / mean_time if mean_time > 0 else 0.0
 
-    # ── MMseqs2 scaling ──────────────────────────────────────────────
-    print("-" * 120)
-    print("MMseqs2 Thread Scaling")
-    print("-" * 120)
-
-    mmseqs_results = []
-    mmseqs_baseline_time = None
-
-    for n_threads in thread_counts:
-        times = []
-        n_clusters = 0
-        success = True
-
-        for rep in range(repeats):
-            mmseqs_prefix = OUTPUT_DIR / f"mmseqs_t{threshold}_threads{n_threads}_rep{rep}"
-            elapsed, n_clust, ok = run_mmseqs(
-                mixed_fasta, mmseqs_prefix, threshold, n_threads
-            )
-            if ok:
-                times.append(elapsed)
-                n_clusters = n_clust
-            else:
-                success = False
-                break
-
-        if not success or not times:
-            print(f"  {n_threads:>3} threads: FAILED")
-            mmseqs_results.append({
-                "tool": "MMseqs2",
+            result = {
+                "tool": tool["label"],
                 "threads": n_threads,
-                "error": "failed",
-            })
-            continue
+                "mean_time": round(mean_time, 2),
+                "std_time": round(std_time, 2),
+                "speedup": round(speedup, 2),
+                "parallel_efficiency": round(efficiency, 4),
+                "throughput_seqs_per_sec": round(throughput, 1),
+                "n_clusters": n_clusters,
+            }
+            tool_results.append(result)
 
-        mean_time = np.mean(times)
-        std_time = np.std(times) if repeats > 1 else 0.0
+            if repeats > 1:
+                print(
+                    f"  {n_threads:>3} threads: {mean_time:>8.2f}s +/- {std_time:.2f}s | "
+                    f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
+                    f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
+                )
+            else:
+                print(
+                    f"  {n_threads:>3} threads: {mean_time:>8.2f}s | "
+                    f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
+                    f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
+                )
 
-        if mmseqs_baseline_time is None:
-            mmseqs_baseline_time = mean_time
-
-        speedup = mmseqs_baseline_time / mean_time if mean_time > 0 else 0.0
-        efficiency = speedup / n_threads if n_threads > 0 else 0.0
-        throughput = n_sequences / mean_time if mean_time > 0 else 0.0
-
-        result = {
-            "tool": "MMseqs2",
-            "threads": n_threads,
-            "mean_time": round(mean_time, 2),
-            "std_time": round(std_time, 2),
-            "speedup": round(speedup, 2),
-            "parallel_efficiency": round(efficiency, 4),
-            "throughput_seqs_per_sec": round(throughput, 1),
-            "n_clusters": n_clusters,
-        }
-        mmseqs_results.append(result)
-
-        if repeats > 1:
-            print(
-                f"  {n_threads:>3} threads: {mean_time:>8.2f}s +/- {std_time:.2f}s | "
-                f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
-                f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
-            )
-        else:
-            print(
-                f"  {n_threads:>3} threads: {mean_time:>8.2f}s | "
-                f"speedup={speedup:.2f}x | efficiency={efficiency:.1%} | "
-                f"throughput={throughput:.0f} seq/s | {n_clusters} clusters"
-            )
-
-    print()
+        results_by_key[tool["key"]] = tool_results
+        print()
 
     # ── Summary table ────────────────────────────────────────────────
     print("=" * 120)
@@ -296,81 +247,52 @@ def run_thread_scaling(
     print("=" * 120)
     print()
 
-    # ClustKIT summary
-    print("ClustKIT:")
-    print(
-        f"  {'Threads':>8} {'Time(s)':>10} {'Speedup':>10} "
-        f"{'Efficiency':>12} {'Throughput':>14} {'Clusters':>10}"
-    )
-    print("  " + "-" * 70)
-    for res in clustkit_results:
-        if "error" in res:
-            print(f"  {res['threads']:>8} {'FAILED':>10}")
-            continue
+    for tool in tool_specs:
+        tool_results = results_by_key[tool["key"]]
+        print(f"{tool['label']}:")
         print(
-            f"  {res['threads']:>8} "
-            f"{res['mean_time']:>10.2f} "
-            f"{res['speedup']:>9.2f}x "
-            f"{res['parallel_efficiency']:>11.1%} "
-            f"{res['throughput_seqs_per_sec']:>11.0f} seq/s "
-            f"{res['n_clusters']:>10}"
+            f"  {'Threads':>8} {'Time(s)':>10} {'Speedup':>10} "
+            f"{'Efficiency':>12} {'Throughput':>14} {'Clusters':>10}"
         )
-    print()
+        print("  " + "-" * 70)
+        for res in tool_results:
+            if "error" in res:
+                print(f"  {res['threads']:>8} {'FAILED':>10}")
+                continue
+            print(
+                f"  {res['threads']:>8} "
+                f"{res['mean_time']:>10.2f} "
+                f"{res['speedup']:>9.2f}x "
+                f"{res['parallel_efficiency']:>11.1%} "
+                f"{res['throughput_seqs_per_sec']:>11.0f} seq/s "
+                f"{res['n_clusters']:>10}"
+            )
+        print()
 
-    # MMseqs2 summary
-    print("MMseqs2:")
-    print(
-        f"  {'Threads':>8} {'Time(s)':>10} {'Speedup':>10} "
-        f"{'Efficiency':>12} {'Throughput':>14} {'Clusters':>10}"
-    )
-    print("  " + "-" * 70)
-    for res in mmseqs_results:
-        if "error" in res:
-            print(f"  {res['threads']:>8} {'FAILED':>10}")
-            continue
-        print(
-            f"  {res['threads']:>8} "
-            f"{res['mean_time']:>10.2f} "
-            f"{res['speedup']:>9.2f}x "
-            f"{res['parallel_efficiency']:>11.1%} "
-            f"{res['throughput_seqs_per_sec']:>11.0f} seq/s "
-            f"{res['n_clusters']:>10}"
-        )
-    print()
-
-    # ── Side-by-side comparison at each thread count ─────────────────
     print("Side-by-side comparison (time in seconds):")
-    print(
-        f"  {'Threads':>8} {'ClustKIT':>12} {'MMseqs2':>12} "
-        f"{'CK Speedup':>12} {'MM Speedup':>12}"
+    header = (
+        f"  {'Threads':>8} {'ClustKIT':>12} {'MMseqs2':>12} {'Linclust':>12} "
+        f"{'DeepClust':>12} {'CD-HIT':>12} {'VSEARCH':>12}"
     )
-    print("  " + "-" * 62)
+    print(header)
+    print("  " + "-" * (len(header) - 2))
 
-    mmseqs_by_threads = {}
-    for res in mmseqs_results:
-        if "error" not in res:
-            mmseqs_by_threads[res["threads"]] = res
+    by_tool_and_threads = {}
+    for tool in tool_specs:
+        by_thread = {}
+        for res in results_by_key[tool["key"]]:
+            if "error" not in res:
+                by_thread[res["threads"]] = res
+        by_tool_and_threads[tool["key"]] = by_thread
 
-    for res in clustkit_results:
-        if "error" in res:
-            continue
-        t = res["threads"]
-        ck_time = res["mean_time"]
-        ck_speedup = res["speedup"]
-
-        mm = mmseqs_by_threads.get(t)
-        if mm:
-            mm_time = mm["mean_time"]
-            mm_speedup = mm["speedup"]
-            print(
-                f"  {t:>8} {ck_time:>11.2f}s {mm_time:>11.2f}s "
-                f"{ck_speedup:>11.2f}x {mm_speedup:>11.2f}x"
+    for n_threads in thread_counts:
+        row = [f"  {n_threads:>8}"]
+        for tool_key in ["clustkit", "mmseqs2", "linclust", "deepclust", "cdhit", "vsearch"]:
+            res = by_tool_and_threads[tool_key].get(n_threads)
+            row.append(
+                f"{res['mean_time']:>11.2f}s" if res else f"{'FAILED':>12}"
             )
-        else:
-            print(
-                f"  {t:>8} {ck_time:>11.2f}s {'N/A':>12} "
-                f"{ck_speedup:>11.2f}x {'N/A':>12}"
-            )
+        print(" ".join(row))
 
     print()
 
@@ -382,12 +304,12 @@ def run_thread_scaling(
             "n_sequences": n_sequences,
             "thread_counts": thread_counts,
             "repeats": repeats,
+            "clustkit_mode": clustkit_mode,
         },
-        "clustkit": clustkit_results,
-        "mmseqs2": mmseqs_results,
+        "results": results_by_key,
     }
 
-    results_file = OUTPUT_DIR / "thread_scaling_results.json"
+    results_file = OUTPUT_DIR / f"thread_scaling_results_{clustkit_mode}.json"
     with open(results_file, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"Results saved to {results_file}")
@@ -397,7 +319,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Thread scaling benchmark for ClustKIT and MMseqs2 (C5)"
+        description="Thread scaling benchmark for ClustKIT and external clustering baselines (C5)"
     )
     parser.add_argument(
         "--max-threads",
@@ -423,6 +345,13 @@ if __name__ == "__main__":
         default=1,
         help="Number of repeat runs per configuration (default: 1).",
     )
+    parser.add_argument(
+        "--clustkit-mode",
+        type=str,
+        default="balanced",
+        choices=["balanced", "accurate", "fast"],
+        help="ClustKIT clustering mode to benchmark.",
+    )
     args = parser.parse_args()
 
     run_thread_scaling(
@@ -430,4 +359,5 @@ if __name__ == "__main__":
         threshold=args.threshold,
         max_per_family=args.max_per_family,
         repeats=args.repeats,
+        clustkit_mode=args.clustkit_mode,
     )
