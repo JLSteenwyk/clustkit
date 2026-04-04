@@ -115,10 +115,14 @@ class TestLeidenClustering:
 
     def test_single_cluster(self):
         leidenalg = pytest.importorskip("leidenalg")
-        pairs = np.array([[0, 1], [1, 2], [2, 3]], dtype=np.int32)
-        sims = np.array([0.9, 0.9, 0.9], dtype=np.float32)
+        # Use a complete graph (clique) — a chain can be legitimately split
+        # by modularity-based algorithms like Leiden
+        pairs = np.array(
+            [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]], dtype=np.int32
+        )
+        sims = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.9], dtype=np.float32)
         graph = build_similarity_graph(4, pairs, sims)
         labels = _leiden_clustering(graph)
         assert len(labels) == 4
-        # All connected, should be one cluster
+        # Fully connected clique should be one cluster
         assert len(np.unique(labels)) == 1

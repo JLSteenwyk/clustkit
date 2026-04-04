@@ -13,6 +13,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
+
+/* Allow Python to set thread count before each batch call. */
+void sw_set_num_threads(int32_t n) {
+    omp_set_num_threads(n);
+}
 
 /* ─── Single-pair banded SW ──────────────────────────────────────── */
 

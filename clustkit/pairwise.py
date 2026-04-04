@@ -2,19 +2,25 @@
 
 Two modes:
   - "kmer": fast k-mer Jaccard from MinHash sketches (good for >=60% identity)
-  - "align": Needleman-Wunsch global alignment identity (accurate at all thresholds)
+  - "align": Banded alignment identity (NW global or SW local)
 
-Alignment uses Numba JIT with adaptive banded NW, forward match counting
+Alignment uses Numba JIT with adaptive banded NW/SW, forward match counting
 (no traceback needed), and early termination. The band width adapts per pair
 based on sequence length difference: narrow bands for similar-length
 sequences (typical case), wider bands when needed.
 
+When available, the C/OpenMP Smith-Waterman extension (csrc/sw_align.so) is
+used for 8-10x speedup over Numba.
+
 GPU uses CuPy raw kernels for k-mer Jaccard mode.
 """
 
+import ctypes
 import logging
+import os
 import numpy as np
 from numba import njit, prange, uint64, int32, int8, float32
+from pathlib import Path as _Path
 
 try:
     import cupy as cp
@@ -24,6 +30,83 @@ except ImportError:
     _CUPY_AVAILABLE = False
 
 _logger = logging.getLogger("clustkit")
+
+# ──────────────────────────────────────────────────────────────────────
+# C/OpenMP Smith-Waterman extension (lazy-loaded)
+# ──────────────────────────────────────────────────────────────────────
+
+_c_sw_lib = None  # cached ctypes library handle
+_c_sw_available = None  # None = not yet checked
+
+
+def _load_c_sw():
+    """Load the C/OpenMP SW shared library. Returns (lib, available)."""
+    global _c_sw_lib, _c_sw_available
+    if _c_sw_available is not None:
+        return _c_sw_lib, _c_sw_available
+    try:
+        so_path = _Path(__file__).resolve().parent / "csrc" / "sw_align.so"
+        lib = ctypes.cdll.LoadLibrary(str(so_path))
+        lib.batch_sw_align_c.restype = None
+        lib.batch_sw_align_c.argtypes = [
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+            ctypes.c_void_p, ctypes.c_int32, ctypes.c_int32,
+            ctypes.c_void_p, ctypes.c_float, ctypes.c_void_p,
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+        ]
+        lib.sw_set_num_threads.restype = None
+        lib.sw_set_num_threads.argtypes = [ctypes.c_int32]
+        _c_sw_lib = lib
+        _c_sw_available = True
+        _logger.info("  C/OpenMP SW extension loaded")
+    except (OSError, AttributeError):
+        _c_sw_lib = None
+        _c_sw_available = False
+        _logger.warning("  C/OpenMP SW extension not available, using Numba fallback")
+    return _c_sw_lib, _c_sw_available
+
+
+def _batch_sw_c(pairs, flat_sequences, offsets, lengths, threshold,
+                band_width, sub_matrix, n_threads=4):
+    """C/OpenMP banded Smith-Waterman alignment for clustering.
+
+    Returns (sims, mask) matching compute_pairwise_alignment's contract.
+    """
+    lib, available = _load_c_sw()
+    if not available:
+        raise RuntimeError("C SW extension not available")
+
+    # Set OpenMP thread count via omp_set_num_threads (env var doesn't work after init)
+    lib.sw_set_num_threads(n_threads)
+
+    M = len(pairs)
+    # IMPORTANT: store all arrays in local variables to prevent GC
+    # before C function reads them (dangling pointer bug)
+    _sw_pf = np.ascontiguousarray(pairs.flatten().astype(np.int32))
+    _sw_flat = np.ascontiguousarray(flat_sequences)
+    _sw_off = offsets.astype(np.int64)
+    _sw_lens = lengths.astype(np.int32)
+    _sw_sm = sub_matrix.astype(np.int8)
+    c_sims = np.empty(M, dtype=np.float32)
+    c_scores = np.empty(M, dtype=np.int32)
+    c_mask = np.empty(M, dtype=np.uint8)
+
+    # No diagonal hints for clustering (pass NULL)
+    lib.batch_sw_align_c(
+        _sw_pf.ctypes.data,
+        _sw_flat.ctypes.data,
+        _sw_off.ctypes.data,
+        _sw_lens.ctypes.data,
+        M, band_width, _sw_sm.ctypes.data,
+        np.float32(threshold),
+        None,  # no diagonal hints
+        c_sims.ctypes.data, c_scores.ctypes.data, c_mask.ctypes.data,
+    )
+
+    # Apply identity threshold for clustering (C only checks score > 0)
+    mask = c_sims >= threshold
+    return c_sims, mask
+
 
 # ──────────────────────────────────────────────────────────────────────
 # BLOSUM62-derived scoring for protein alignment (Numba-compatible)
@@ -897,6 +980,49 @@ def _jaccard_prefilter(
     return sims >= jaccard_floor
 
 
+def _refine_borderline_sw_hits(
+    kept_pairs: np.ndarray,
+    kept_sims: np.ndarray,
+    *,
+    threshold: float,
+    refine_global_margin: float,
+    flat_sequences: np.ndarray,
+    offsets: np.ndarray,
+    lengths: np.ndarray,
+    band_width: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Recompute borderline SW hits with global NW identity.
+
+    Clustering is ultimately sensitive to edge semantics rather than local
+    alignment score alone. For pairs that are only slightly above the SW
+    threshold, re-check with global identity before keeping the edge.
+    """
+    if refine_global_margin <= 0 or len(kept_pairs) == 0:
+        return kept_pairs, kept_sims
+
+    refine_mask = kept_sims < (threshold + refine_global_margin)
+    if not np.any(refine_mask):
+        return kept_pairs, kept_sims
+
+    _logger.info(
+        f"  Refining {int(np.sum(refine_mask))} borderline SW hits with global NW"
+    )
+    nw_sims, nw_keep = _batch_align_compact(
+        kept_pairs[refine_mask],
+        flat_sequences,
+        offsets,
+        lengths,
+        np.float32(threshold),
+        int32(band_width),
+    )
+
+    kept_sims = kept_sims.copy()
+    kept_sims[refine_mask] = nw_sims
+    final_mask = np.ones(len(kept_pairs), dtype=np.bool_)
+    final_mask[refine_mask] = nw_keep
+    return kept_pairs[final_mask], kept_sims[final_mask]
+
+
 def compute_pairwise_alignment(
     candidate_pairs: np.ndarray,
     encoded_sequences: np.ndarray,
@@ -908,6 +1034,10 @@ def compute_pairwise_alignment(
     sketches: np.ndarray | None = None,
     flat_sequences: np.ndarray | None = None,
     offsets: np.ndarray | None = None,
+    use_sw: bool = False,
+    use_c_sw: bool = False,
+    n_threads: int = 4,
+    refine_global_margin: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute pairwise identity via alignment for candidate pairs.
 
@@ -924,6 +1054,11 @@ def compute_pairwise_alignment(
             Jaccard pre-filtering. If None, Jaccard pre-filter is skipped.
         flat_sequences: 1D uint8 array of concatenated sequences (compact format).
         offsets: (N,) int64 array of start positions in flat_sequences.
+        use_sw: Use Smith-Waterman local alignment instead of NW global.
+        use_c_sw: Use C/OpenMP SW extension (requires use_sw=True).
+        n_threads: Number of threads for C/OpenMP extension.
+        refine_global_margin: If > 0 in SW mode, recompute global NW identity
+            for SW hits within ``threshold + margin`` before final acceptance.
 
     Returns:
         Tuple of:
@@ -960,13 +1095,66 @@ def compute_pairwise_alignment(
             threshold, band_width,
         )
 
+    # Multi-GPU: device="0,1" splits pairs across devices
+    if "," in device and _CUPY_AVAILABLE:
+        return _compute_pairwise_alignment_multi_gpu(
+            candidate_pairs, encoded_sequences, lengths,
+            threshold, band_width, device,
+        )
+
     if device != "cpu" and _CUPY_AVAILABLE:
         return _compute_pairwise_alignment_gpu(
             candidate_pairs, encoded_sequences, lengths,
             threshold, band_width, int(device),
         )
 
-    # Prefer compact format on CPU (better cache behaviour, less memory)
+    # SW local alignment path (C/OpenMP or Numba fallback)
+    if use_sw and flat_sequences is not None and offsets is not None:
+        if use_c_sw:
+            _, c_available = _load_c_sw()
+            if c_available:
+                _logger.info(f"  Using C/OpenMP SW alignment ({n_threads} threads)")
+                sims, mask = _batch_sw_c(
+                    candidate_pairs, flat_sequences, offsets, lengths,
+                    threshold, band_width, BLOSUM62, n_threads=n_threads,
+                )
+                kept_pairs = candidate_pairs[mask]
+                kept_sims = sims[mask]
+                return _refine_borderline_sw_hits(
+                    kept_pairs,
+                    kept_sims,
+                    threshold=threshold,
+                    refine_global_margin=refine_global_margin,
+                    flat_sequences=flat_sequences,
+                    offsets=offsets,
+                    lengths=lengths,
+                    band_width=band_width,
+                )
+            else:
+                _logger.warning("  C SW not available, falling back to Numba SW")
+
+        # Numba SW fallback
+        _logger.info("  Using Numba SW local alignment")
+        sims, scores, mask = _batch_sw_compact_scored(
+            candidate_pairs, flat_sequences, offsets, lengths,
+            np.float32(threshold), int32(band_width), BLOSUM62,
+        )
+        # Apply identity threshold (Numba SW mask is score > 0)
+        mask = mask & (sims >= threshold)
+        kept_pairs = candidate_pairs[mask]
+        kept_sims = sims[mask]
+        return _refine_borderline_sw_hits(
+            kept_pairs,
+            kept_sims,
+            threshold=threshold,
+            refine_global_margin=refine_global_margin,
+            flat_sequences=flat_sequences,
+            offsets=offsets,
+            lengths=lengths,
+            band_width=band_width,
+        )
+
+    # NW global alignment path (original)
     if flat_sequences is not None and offsets is not None:
         sims, mask = _batch_align_compact(
             candidate_pairs, flat_sequences, offsets, lengths,
@@ -982,15 +1170,16 @@ def compute_pairwise_alignment(
 
 
 # ──────────────────────────────────────────────────────────────────────
-# GPU path for banded NW alignment (CuPy)
+# GPU path for banded SW alignment (CuPy)
 # ──────────────────────────────────────────────────────────────────────
 
-_NW_ALIGN_KERNEL_CODE = r"""
+_SW_ALIGN_KERNEL_CODE = r"""
 extern "C" __global__
-void nw_align_kernel(
+void sw_align_kernel(
     const int*           pairs,
     const unsigned char* sequences,
     const int*           lengths,
+    const signed char*   sub_matrix,   /* 20x20 BLOSUM62, row-major */
     float*               sims,
     int*                 mask_out,
     int*                 workspace,
@@ -1019,17 +1208,6 @@ void nw_align_kernel(
         return;
     }
 
-    int len_diff = len_i - len_j;
-    if (len_diff < 0) len_diff = -len_diff;
-    if (len_diff > band_width) {
-        sims[idx] = 0.0f;
-        mask_out[idx] = 0;
-        return;
-    }
-
-    int bw = len_diff + 10;
-    if (bw > band_width) bw = band_width;
-
     const unsigned char* seq_a;
     const unsigned char* seq_b;
     int len_a, len_b;
@@ -1050,26 +1228,21 @@ void nw_align_kernel(
     }
 
     int max_ab = len_a > len_b ? len_a : len_b;
+    int bw = band_width;
     if (bw <= 0 || max_ab <= 50) bw = max_ab;
 
     int cols = len_b + 1;
     shorter = len_a;
 
     const int NEG_INF    = -1000000;
-    const int GAP_OPEN   = -10;
+    const int GAP_OPEN   = -11;
     const int GAP_EXTEND = -1;
-    const int MATCH_SC   = 2;
-    const int MISMATCH_SC = -1;
 
-    /* Band-relative indexing:
+    /* Band-relative indexing (same as before):
        For row i, column j: bc = j - (i - bw) + 1
-       Previous row i-1:    bc_prev(j) = bc + 1
-       This gives:
-         H_prev(j-1) = Hp[bc],   H_prev(j) = Hp[bc+1]
-         H_curr(j-1) = Hc[bc-1], H_curr(j) = Hc[bc]
        max_band_cols = 2*bw + 3 covers all indices. */
 
-    int mbc = 2 * bw + 3;  // actual band cols needed for this pair's bw
+    int mbc = 2 * bw + 3;
 
     long long base = (long long)idx * 8 * max_band_cols;
     int* Hp  = workspace + base;
@@ -1081,19 +1254,14 @@ void nw_align_kernel(
     int* Emp = workspace + base + 6LL * max_band_cols;
     int* Emc = workspace + base + 7LL * max_band_cols;
 
-    // Initialize only the band cells (not full width!)
+    /* SW init: all zeros (local alignment — no gap penalties on borders) */
     for (int k = 0; k < mbc; k++) {
-        Hp[k] = NEG_INF; Ep[k] = NEG_INF; Hmp[k] = 0; Emp[k] = 0;
-        Hc[k] = NEG_INF; Ec[k] = NEG_INF; Hmc[k] = 0; Emc[k] = 0;
+        Hp[k] = 0; Ep[k] = NEG_INF; Hmp[k] = 0; Emp[k] = 0;
+        Hc[k] = 0; Ec[k] = NEG_INF; Hmc[k] = 0; Emc[k] = 0;
     }
 
-    // Init first row: H(0,j) at bc = j - (0 - bw) + 1 = j + bw + 1
-    Hp[bw + 1] = 0;  // H(0, 0)
-    int j_end_init = cols;
-    if (bw + 2 < j_end_init) j_end_init = bw + 2;
-    for (int j = 1; j < j_end_init; j++) {
-        Hp[j + bw + 1] = GAP_OPEN + GAP_EXTEND * (j - 1);
-    }
+    int global_max_score = 0;
+    int global_max_matches = 0;
 
     for (int i = 1; i <= len_a; i++) {
         int j_start = 1;
@@ -1101,40 +1269,46 @@ void nw_align_kernel(
         int j_end = cols;
         if (i + bw + 1 < j_end) j_end = i + bw + 1;
 
-        // Left border: bc(j_start - 1) = (j_start - 1) - (i - bw) + 1
-        int bc_left = j_start - i + bw;
-        if (j_start == 1) {
-            Hc[bc_left] = GAP_OPEN + GAP_EXTEND * (i - 1);
-            Hmc[bc_left] = 0;
-        } else {
-            Hc[bc_left] = NEG_INF;
-            Hmc[bc_left] = 0;
-        }
+        /* Skip row if band is outside matrix */
+        if (j_start >= cols || j_end <= 1) continue;
 
-        // Right border of prev row
+        /* Left border: SW uses 0, not gap penalty */
+        int bc_left = j_start - i + bw;
+        Hc[bc_left] = 0;
+        Hmc[bc_left] = 0;
+
+        /* Right border of prev row */
         int prev_j_end = cols;
         if (i + bw < prev_j_end) prev_j_end = i + bw;
-        if (j_end > prev_j_end && prev_j_end < cols) {
-            int bc_rp = prev_j_end - i + bw + 2; // bc_prev(prev_j_end)
-            Hp[bc_rp] = NEG_INF; Ep[bc_rp] = NEG_INF;
+        if (j_end > prev_j_end && prev_j_end > 0 && prev_j_end < cols) {
+            int bc_rp = prev_j_end - i + bw + 2;
+            Hp[bc_rp] = 0; Ep[bc_rp] = NEG_INF;
             Hmp[bc_rp] = 0; Emp[bc_rp] = 0;
         }
 
         int curr_F = NEG_INF;
         int curr_Fm = 0;
-        int max_Hm = 0;
+
+        unsigned char a_res = seq_a[i - 1];
 
         for (int j = j_start; j < j_end; j++) {
-            int bc = j - i + bw + 1;  // band column for (i, j)
+            int bc = j - i + bw + 1;
 
-            int is_match = (seq_a[i-1] == seq_b[j-1]) ? 1 : 0;
-            int s = is_match ? MATCH_SC : MISMATCH_SC;
+            unsigned char b_res = seq_b[j - 1];
+            int is_match = (a_res == b_res) ? 1 : 0;
 
-            // Diagonal: H(i-1, j-1) -> Hp[bc]
+            /* Substitution score from BLOSUM62 */
+            int s;
+            if (a_res < 20 && b_res < 20)
+                s = (int)sub_matrix[a_res * 20 + b_res];
+            else
+                s = -4;
+
+            /* Diagonal: H(i-1, j-1) -> Hp[bc] */
             int diag   = Hp[bc] + s;
             int diag_m = Hmp[bc] + is_match;
 
-            // E: vertical gap — H(i-1,j)->Hp[bc+1], E(i-1,j)->Ep[bc+1]
+            /* E: vertical gap — H(i-1,j)->Hp[bc+1], E(i-1,j)->Ep[bc+1] */
             int e_ext = Ep[bc+1] + GAP_EXTEND;
             int e_opn = Hp[bc+1] + GAP_OPEN;
             int e_val, e_m;
@@ -1142,20 +1316,26 @@ void nw_align_kernel(
             else                { e_val = e_opn; e_m = Hmp[bc+1]; }
             Ec[bc] = e_val; Emc[bc] = e_m;
 
-            // F: horizontal gap — H(i,j-1)->Hc[bc-1]
-            int f_val = (j > j_start) ? (curr_F + GAP_EXTEND) : NEG_INF;
-            int f_m = curr_Fm;
+            /* F: horizontal gap — H(i,j-1)->Hc[bc-1] */
+            int f_ext = (j > j_start) ? (curr_F + GAP_EXTEND) : NEG_INF;
+            int f_ext_m = curr_Fm;
             int f_opn = Hc[bc-1] + GAP_OPEN;
             int f_opn_m = Hmc[bc-1];
-            if (f_val >= f_opn) { curr_F = f_val; curr_Fm = f_m; }
+            if (f_ext >= f_opn) { curr_F = f_ext; curr_Fm = f_ext_m; }
             else                { curr_F = f_opn; curr_Fm = f_opn_m; }
 
-            int best = diag; int best_m = diag_m;
-            if (e_val > best)  { best = e_val;  best_m = e_m; }
+            /* SW recurrence: max(0, diag, E, F) */
+            int best = 0; int best_m = 0;
+            if (diag > best)  { best = diag;  best_m = diag_m; }
+            if (e_val > best) { best = e_val;  best_m = e_m; }
             if (curr_F > best) { best = curr_F; best_m = curr_Fm; }
 
             Hc[bc] = best; Hmc[bc] = best_m;
-            if (best_m > max_Hm) max_Hm = best_m;
+
+            if (best > global_max_score) {
+                global_max_score = best;
+                global_max_matches = best_m;
+            }
         }
 
         int* tmp;
@@ -1163,23 +1343,71 @@ void nw_align_kernel(
         tmp = Ep; Ep = Ec; Ec = tmp;
         tmp = Hmp; Hmp = Hmc; Hmc = tmp;
         tmp = Emp; Emp = Emc; Emc = tmp;
-
-        int remaining = len_a - i;
-        float max_possible = (float)(max_Hm + remaining) / (float)shorter;
-        if (max_possible < threshold) {
-            sims[idx] = 0.0f;
-            mask_out[idx] = 0;
-            return;
-        }
     }
 
-    // Final cell (len_a, len_b): bc = len_b - len_a + bw + 1
-    int bc_final = len_b - len_a + bw + 1;
-    float identity = (float)Hmp[bc_final] / (float)shorter;
-    sims[idx] = identity;
-    mask_out[idx] = (identity >= threshold) ? 1 : 0;
+    /* SW result: identity from global max, not final cell */
+    if (global_max_score <= 0) {
+        sims[idx] = 0.0f;
+        mask_out[idx] = 0;
+    } else {
+        float identity = (float)global_max_matches / (float)shorter;
+        sims[idx] = identity;
+        mask_out[idx] = (identity >= threshold) ? 1 : 0;
+    }
 }
 """
+
+
+def _compute_pairwise_alignment_multi_gpu(
+    candidate_pairs: np.ndarray,
+    encoded_sequences: np.ndarray,
+    lengths: np.ndarray,
+    threshold: float,
+    band_width: int,
+    device_str: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Split pairs across multiple GPUs and run in parallel.
+
+    Args:
+        device_str: Comma-separated device IDs, e.g. "0,1".
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    device_ids = [int(d.strip()) for d in device_str.split(",")]
+    n_devices = len(device_ids)
+    m = len(candidate_pairs)
+    chunk_size = (m + n_devices - 1) // n_devices
+
+    _logger.info(
+        f"  Multi-GPU alignment: {m} pairs across {n_devices} devices "
+        f"({', '.join(str(d) for d in device_ids)})"
+    )
+
+    def _run_on_device(device_id, pairs_chunk):
+        return _compute_pairwise_alignment_gpu(
+            pairs_chunk, encoded_sequences, lengths,
+            threshold, band_width, device_id,
+        )
+
+    chunks = []
+    for i, dev_id in enumerate(device_ids):
+        start = i * chunk_size
+        end = min(start + chunk_size, m)
+        if start < end:
+            chunks.append((dev_id, candidate_pairs[start:end]))
+
+    with ThreadPoolExecutor(max_workers=n_devices) as executor:
+        futures = [
+            executor.submit(_run_on_device, dev_id, chunk)
+            for dev_id, chunk in chunks
+        ]
+        results = [f.result() for f in futures]
+
+    all_pairs = np.concatenate([r[0] for r in results if len(r[0]) > 0], axis=0)
+    all_sims = np.concatenate([r[1] for r in results if len(r[1]) > 0])
+    if len(all_pairs) == 0:
+        return np.empty((0, 2), dtype=np.int32), np.empty(0, dtype=np.float32)
+    return all_pairs, all_sims
 
 
 def _compute_pairwise_alignment_gpu(
@@ -1190,37 +1418,38 @@ def _compute_pairwise_alignment_gpu(
     band_width: int,
     device_id: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """GPU-accelerated banded NW alignment using a CuPy raw kernel.
+    """GPU-accelerated banded SW local alignment using a CuPy raw kernel.
 
-    Uses band-relative indexing so workspace per thread is O(band_width),
-    not O(sequence_length). Sorts pairs by adaptive band width and batches
-    them for tight workspace allocation.
+    Uses BLOSUM62 scoring and band-relative indexing so workspace per thread
+    is O(band_width), not O(sequence_length). Sorts pairs by adaptive band
+    width and batches them for tight workspace allocation.
     """
     with cp.cuda.Device(device_id):
         m = len(candidate_pairs)
         max_len = encoded_sequences.shape[1]
 
-        # Compute per-pair adaptive band width for sorting/batching
+        # Compute per-pair effective band width for sorting/batching.
+        # The SW kernel uses bw = band_width for all pairs (matching the C SW),
+        # except for short sequences (max_len <= 50) where bw = max_len.
         len_i = lengths[candidate_pairs[:, 0]]
         len_j = lengths[candidate_pairs[:, 1]]
-        len_diff = np.abs(len_i.astype(np.int32) - len_j.astype(np.int32))
-        adaptive_bw = np.minimum(band_width, np.maximum(10, len_diff + 10))
-        # For short sequences, bw = max(len_a, len_b)
         max_lens = np.maximum(len_i, len_j)
+        effective_bw = np.full(m, band_width, dtype=np.int32)
         short_mask = max_lens <= 50
-        adaptive_bw[short_mask] = max_lens[short_mask]
+        effective_bw[short_mask] = max_lens[short_mask]
 
-        sort_order = np.argsort(adaptive_bw)
+        sort_order = np.argsort(effective_bw)
         sorted_pairs = candidate_pairs[sort_order]
-        sorted_bw = adaptive_bw[sort_order]
+        sorted_bw = effective_bw[sort_order]
 
         d_seqs = cp.asarray(encoded_sequences)
         d_lens = cp.asarray(lengths)
         d_pairs = cp.asarray(sorted_pairs)
+        d_sub_matrix = cp.asarray(BLOSUM62.ravel())
         d_sims = cp.empty(m, dtype=cp.float32)
         d_mask = cp.empty(m, dtype=cp.int32)
 
-        kernel = cp.RawKernel(_NW_ALIGN_KERNEL_CODE, "nw_align_kernel")
+        kernel = cp.RawKernel(_SW_ALIGN_KERNEL_CODE, "sw_align_kernel")
         threads = 128
         target_ws_bytes = 2_000_000_000  # ~2 GB workspace budget
 
@@ -1245,7 +1474,7 @@ def _compute_pairwise_alignment_gpu(
 
             kernel(
                 (blocks,), (threads,),
-                (d_pairs[start:end], d_seqs, d_lens,
+                (d_pairs[start:end], d_seqs, d_lens, d_sub_matrix,
                  d_sims[start:end], d_mask[start:end],
                  d_workspace,
                  np.int32(batch_m), np.int32(max_len),

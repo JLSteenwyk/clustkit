@@ -44,6 +44,12 @@ class TestSketchSequence:
         s2 = sketch_sequence(seq_b, 10, k=3, sketch_size=4, alphabet_size=20)
         assert not np.array_equal(s1, s2)
 
+    def test_unknown_residues_do_not_break_sketch(self):
+        seq = np.array([0, 1, 20, 3, 4, 20, 6, 7, 8, 9], dtype=np.uint8)
+        sketch = sketch_sequence(seq, len(seq), k=3, sketch_size=4, alphabet_size=20)
+        assert len(sketch) == 4
+        assert np.all(sketch[:-1] <= sketch[1:])
+
 
 class TestSketchSequenceNucleotide:
     def test_nucleotide_sketch_k11(self):

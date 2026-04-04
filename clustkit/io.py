@@ -94,6 +94,42 @@ class SequenceDataset:
         if self.flat_sequences is not None:
             self._encoded_sequences = None
 
+    def subset(self, indices: np.ndarray) -> "SequenceDataset":
+        """Create a new SequenceDataset containing only the specified sequences.
+
+        Args:
+            indices: 1D int array of sequence indices to keep (original indexing).
+
+        Returns:
+            New SequenceDataset with re-indexed compact storage.
+        """
+        indices = np.asarray(indices, dtype=np.int64)
+        sub_records = [self.records[i] for i in indices]
+        sub_lengths = self.lengths[indices]
+        sub_ids = [self.ids[i] for i in indices]
+
+        # Build new compact storage
+        total_len = int(np.sum(sub_lengths))
+        sub_flat = np.empty(total_len, dtype=np.uint8)
+        sub_offsets = np.empty(len(indices), dtype=np.int64)
+        pos = 0
+        for j, orig_i in enumerate(indices):
+            length = int(self.lengths[orig_i])
+            start = int(self.offsets[orig_i])
+            sub_offsets[j] = pos
+            sub_flat[pos:pos + length] = self.flat_sequences[start:start + length]
+            pos += length
+
+        return SequenceDataset(
+            records=sub_records,
+            mode=self.mode,
+            _encoded_sequences=None,
+            lengths=sub_lengths,
+            ids=sub_ids,
+            flat_sequences=sub_flat,
+            offsets=sub_offsets,
+        )
+
 
 def encode_sequence(sequence: str, mode: str) -> np.ndarray:
     """Encode a sequence string as an integer array.

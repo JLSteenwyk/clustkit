@@ -6,6 +6,7 @@ from typing import Optional
 import typer
 
 from clustkit import __version__
+from clustkit.clustering_mode import resolve_clustering_mode
 
 app = typer.Typer(
     name="clustkit",
@@ -68,10 +69,15 @@ def cluster(
         "--alignment",
         help="Similarity method: 'align' (default, accurate) or 'kmer' (fast).",
     ),
-    sketch_size: int = typer.Option(
-        128,
+    clustering_mode: str = typer.Option(
+        "balanced",
+        "--clustering-mode",
+        help="Threshold-aware clustering mode: 'balanced', 'accurate', or 'fast'.",
+    ),
+    sketch_size: Optional[int] = typer.Option(
+        None,
         "--sketch-size",
-        help="Number of minimizer hashes per sequence.",
+        help="Number of minimizer hashes per sequence. Overrides --clustering-mode.",
     ),
     kmer_size: Optional[int] = typer.Option(
         None,
@@ -79,10 +85,10 @@ def cluster(
         "--kmer-size",
         help="K-mer size (default: 5 for protein, 11 for nucleotide).",
     ),
-    sensitivity: str = typer.Option(
-        "medium",
+    sensitivity: Optional[str] = typer.Option(
+        None,
         "--sensitivity",
-        help="LSH sensitivity: 'low', 'medium', or 'high'.",
+        help="LSH sensitivity: 'low', 'medium', or 'high'. Overrides --clustering-mode.",
     ),
     cluster_method: str = typer.Option(
         "connected",
@@ -118,11 +124,18 @@ def cluster(
     # Resolve k-mer size default
     if kmer_size is None:
         kmer_size = 5 if mode == "protein" else 11
+    try:
+        sketch_size, sensitivity = resolve_clustering_mode(
+            clustering_mode, threshold, sketch_size, sensitivity
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
     config = {
         "input": input,
         "output": output,
         "threshold": threshold,
+        "clustering_mode": clustering_mode,
         "mode": mode,
         "alignment": alignment,
         "sketch_size": sketch_size,

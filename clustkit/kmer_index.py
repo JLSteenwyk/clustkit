@@ -2239,6 +2239,9 @@ def search_kmer_index(
                 ctypes.c_void_p, ctypes.c_float, ctypes.c_void_p,
                 ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
             ]
+            _swlib.sw_set_num_threads.restype = None
+            _swlib.sw_set_num_threads.argtypes = [ctypes.c_int32]
+            _swlib.sw_set_num_threads(numba.get_num_threads())
             M = len(merged_pairs)
             # IMPORTANT: store all arrays in variables to prevent GC
             # before C function reads them (dangling pointer bug)

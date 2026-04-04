@@ -36,29 +36,48 @@ def _sketch_one(encoded_seq, seq_length, k, sketch_size, alphabet_size, seed):
         return out
 
     num_kmers = seq_length - k + 1
+    out = np.full(sketch_size, max_val, dtype=np.uint64)
 
-    # Rolling base-encoding of k-mers + hash, keeping bottom-s via partial sort
-    # For efficiency, maintain a max-heap of size s — but simpler to just collect
-    # all hashes and partial-sort when num_kmers is moderate.
-    hashes = np.empty(num_kmers, dtype=np.uint64)
+    # Online bottom-s maintenance avoids materializing and sorting all hashes.
+    buf_count = int32(0)
+    buf_max = uint64(0)
+    buf_max_pos = int32(0)
+
+    # Rolling base encoding of consecutive k-mers.
+    base = uint64(alphabet_size)
+    highest_place = uint64(1)
+    for _ in range(k - 1):
+        highest_place *= base
+
+    val = uint64(0)
+    for j in range(k):
+        val = val * base + uint64(encoded_seq[j])
 
     for i in range(num_kmers):
-        # Encode k-mer as integer
-        val = uint64(0)
-        for j in range(k):
-            val = val * uint64(alphabet_size) + uint64(encoded_seq[i + j])
-        hashes[i] = _murmurhash3_fmix(val, uint64(seed))
+        h = _murmurhash3_fmix(val, uint64(seed))
 
-    # Sort and take bottom-s
-    hashes.sort()
+        if buf_count < sketch_size:
+            out[buf_count] = h
+            if buf_count == 0 or h > buf_max:
+                buf_max = h
+                buf_max_pos = buf_count
+            buf_count += 1
+        elif h < buf_max:
+            out[buf_max_pos] = h
+            buf_max = out[0]
+            buf_max_pos = 0
+            for s in range(1, sketch_size):
+                if out[s] > buf_max:
+                    buf_max = out[s]
+                    buf_max_pos = s
 
-    if num_kmers < sketch_size:
-        out = np.full(sketch_size, max_val, dtype=np.uint64)
-        for i in range(num_kmers):
-            out[i] = hashes[i]
-        return out
+        if i + 1 < num_kmers:
+            old_digit = uint64(encoded_seq[i])
+            new_digit = uint64(encoded_seq[i + k])
+            val = (val - old_digit * highest_place) * base + new_digit
 
-    return hashes[:sketch_size].copy()
+    out.sort()
+    return out
 
 
 @njit(parallel=True, cache=True)

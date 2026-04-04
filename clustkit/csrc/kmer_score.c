@@ -14,6 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <omp.h>
+
+void kmer_set_num_threads(int32_t n) {
+    omp_set_num_threads(n);
+}
 
 /* ─── Phase A: k-mer counting per target ─────────────────────────── */
 
