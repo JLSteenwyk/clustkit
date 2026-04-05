@@ -123,9 +123,11 @@ def lsh_candidates(
         all_seeds[t] = int(rng.randint(0, 2**31))
 
     if device != "cpu" and _CUPY_AVAILABLE:
+        # Use first device if multi-GPU string (e.g. "0,1")
+        dev_id = int(device.split(",")[0]) if "," in device else int(device)
         return _lsh_candidates_gpu(
             sketches, all_band_indices, all_seeds, num_tables, n,
-            int(device),
+            dev_id,
         )
 
     return _lsh_candidates_cpu(

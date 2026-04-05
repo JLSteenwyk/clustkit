@@ -165,10 +165,11 @@ def compute_sketches(
     alphabet_size = 20 if mode == "protein" else 4
 
     if device != "cpu" and _CUPY_AVAILABLE:
-        # GPU path requires padded matrix
+        # GPU path requires padded matrix; use first device if multi-GPU
+        dev_id = int(device.split(",")[0]) if "," in device else int(device)
         return _compute_sketches_gpu(
             encoded_sequences, lengths, k, sketch_size, alphabet_size, seed,
-            int(device),
+            dev_id,
         )
 
     # Prefer compact format on CPU (better cache behaviour, less memory)

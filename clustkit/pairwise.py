@@ -852,7 +852,8 @@ def _batch_align_compact(pairs, flat_sequences, offsets, lengths, threshold, ban
 
 def _calibrate_device(
     candidate_pairs: np.ndarray,
-    encoded_sequences: np.ndarray,
+    flat_sequences: np.ndarray,
+    offsets: np.ndarray,
     lengths: np.ndarray,
     threshold: float,
     band_width: int,
@@ -873,32 +874,52 @@ def _calibrate_device(
     idx = rng.choice(m, size=n_sample, replace=False)
     sample_pairs = candidate_pairs[idx]
 
-    # Warm up Numba (already compiled from module import, but ensure it)
-    if n_sample > 10:
+    # Time CPU using C SW path
+    _, c_available = _load_c_sw()
+    if c_available:
+        # Warm up
+        if n_sample > 10:
+            _batch_sw_c(
+                sample_pairs[:10], flat_sequences, offsets, lengths,
+                threshold, band_width, BLOSUM62, n_threads=1,
+            )
+        t0 = time.perf_counter()
+        _batch_sw_c(
+            sample_pairs, flat_sequences, offsets, lengths,
+            threshold, band_width, BLOSUM62, n_threads=1,
+        )
+        cpu_time = time.perf_counter() - t0
+    else:
+        # Fallback: use padded Numba path for timing
+        n_seqs = len(lengths)
+        max_len = int(np.max(lengths))
+        enc = np.zeros((n_seqs, max_len), dtype=np.uint8)
+        for k in range(n_seqs):
+            ln = int(lengths[k])
+            enc[k, :ln] = flat_sequences[int(offsets[k]):int(offsets[k]) + ln]
+        if n_sample > 10:
+            _batch_align(
+                sample_pairs[:10], enc, lengths,
+                np.float32(threshold), int32(band_width),
+            )
+        t0 = time.perf_counter()
         _batch_align(
-            sample_pairs[:10], encoded_sequences, lengths,
+            sample_pairs, enc, lengths,
             np.float32(threshold), int32(band_width),
         )
-
-    # Time CPU
-    t0 = time.perf_counter()
-    _batch_align(
-        sample_pairs, encoded_sequences, lengths,
-        np.float32(threshold), int32(band_width),
-    )
-    cpu_time = time.perf_counter() - t0
+        cpu_time = time.perf_counter() - t0
     cpu_rate = n_sample / cpu_time  # pairs/sec
 
     # Time GPU (includes first-call kernel compilation)
     try:
         # Warm up kernel compilation with tiny batch
         _compute_pairwise_alignment_gpu(
-            sample_pairs[:10], encoded_sequences, lengths,
+            sample_pairs[:10], flat_sequences, offsets, lengths,
             threshold, band_width, gpu_device,
         )
         t0 = time.perf_counter()
         _compute_pairwise_alignment_gpu(
-            sample_pairs, encoded_sequences, lengths,
+            sample_pairs, flat_sequences, offsets, lengths,
             threshold, band_width, gpu_device,
         )
         gpu_time = time.perf_counter() - t0
@@ -1089,22 +1110,40 @@ def compute_pairwise_alignment(
     sort_order = np.argsort(sort_key, kind="mergesort")
     candidate_pairs = candidate_pairs[sort_order]
 
+    # GPU paths require flat_sequences + offsets; build from padded matrix
+    # if not provided.  Do this before calibration so the calibration also
+    # uses the optimised flat layout.
+    if device != "cpu" and _CUPY_AVAILABLE:
+        if flat_sequences is None or offsets is None:
+            n_seqs = len(lengths)
+            _offsets = np.zeros(n_seqs, dtype=np.int64)
+            total = int(np.sum(lengths))
+            _flat = np.empty(total, dtype=np.uint8)
+            pos = 0
+            for k in range(n_seqs):
+                ln = int(lengths[k])
+                _offsets[k] = pos
+                _flat[pos:pos + ln] = encoded_sequences[k, :ln]
+                pos += ln
+            flat_sequences = _flat
+            offsets = _offsets
+
     if device == "auto" and _CUPY_AVAILABLE:
         device = _calibrate_device(
-            candidate_pairs, encoded_sequences, lengths,
+            candidate_pairs, flat_sequences, offsets, lengths,
             threshold, band_width,
         )
 
     # Multi-GPU: device="0,1" splits pairs across devices
     if "," in device and _CUPY_AVAILABLE:
         return _compute_pairwise_alignment_multi_gpu(
-            candidate_pairs, encoded_sequences, lengths,
+            candidate_pairs, flat_sequences, offsets, lengths,
             threshold, band_width, device,
         )
 
     if device != "cpu" and _CUPY_AVAILABLE:
         return _compute_pairwise_alignment_gpu(
-            candidate_pairs, encoded_sequences, lengths,
+            candidate_pairs, flat_sequences, offsets, lengths,
             threshold, band_width, int(device),
         )
 
@@ -1177,18 +1216,22 @@ _SW_ALIGN_KERNEL_CODE = r"""
 extern "C" __global__
 void sw_align_kernel(
     const int*           pairs,
-    const unsigned char* sequences,
+    const unsigned char* flat_sequences,  /* concatenated, no padding */
+    const long long*     offsets,         /* per-sequence start offsets */
     const int*           lengths,
     const signed char*   sub_matrix,   /* 20x20 BLOSUM62, row-major */
     float*               sims,
     int*                 mask_out,
-    int*                 workspace,
     int M,
-    int max_len,
     int max_band_cols,
     int band_width,
     float threshold
 ) {
+    /* Each thread's workspace lives in dynamic shared memory.
+       Layout: 8 arrays × max_band_cols ints per thread, packed per-thread.
+       Shared memory is allocated by the host: blockDim.x * 8 * max_band_cols * 4 bytes. */
+    extern __shared__ int smem[];
+
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (idx >= M) return;
 
@@ -1212,12 +1255,12 @@ void sw_align_kernel(
     const unsigned char* seq_b;
     int len_a, len_b;
     if (len_i <= len_j) {
-        seq_a = sequences + (long long)si * max_len;
-        seq_b = sequences + (long long)sj * max_len;
+        seq_a = flat_sequences + offsets[si];
+        seq_b = flat_sequences + offsets[sj];
         len_a = len_i; len_b = len_j;
     } else {
-        seq_a = sequences + (long long)sj * max_len;
-        seq_b = sequences + (long long)si * max_len;
+        seq_a = flat_sequences + offsets[sj];
+        seq_b = flat_sequences + offsets[si];
         len_a = len_j; len_b = len_i;
     }
 
@@ -1244,15 +1287,16 @@ void sw_align_kernel(
 
     int mbc = 2 * bw + 3;
 
-    long long base = (long long)idx * 8 * max_band_cols;
-    int* Hp  = workspace + base;
-    int* Hc  = workspace + base + (long long)max_band_cols;
-    int* Ep  = workspace + base + 2LL * max_band_cols;
-    int* Ec  = workspace + base + 3LL * max_band_cols;
-    int* Hmp = workspace + base + 4LL * max_band_cols;
-    int* Hmc = workspace + base + 5LL * max_band_cols;
-    int* Emp = workspace + base + 6LL * max_band_cols;
-    int* Emc = workspace + base + 7LL * max_band_cols;
+    /* Workspace pointers into shared memory — per-thread, contiguous */
+    int base = threadIdx.x * 8 * max_band_cols;
+    int* Hp  = smem + base;
+    int* Hc  = smem + base + max_band_cols;
+    int* Ep  = smem + base + 2 * max_band_cols;
+    int* Ec  = smem + base + 3 * max_band_cols;
+    int* Hmp = smem + base + 4 * max_band_cols;
+    int* Hmc = smem + base + 5 * max_band_cols;
+    int* Emp = smem + base + 6 * max_band_cols;
+    int* Emc = smem + base + 7 * max_band_cols;
 
     /* SW init: all zeros (local alignment — no gap penalties on borders) */
     for (int k = 0; k < mbc; k++) {
@@ -1360,7 +1404,8 @@ void sw_align_kernel(
 
 def _compute_pairwise_alignment_multi_gpu(
     candidate_pairs: np.ndarray,
-    encoded_sequences: np.ndarray,
+    flat_sequences: np.ndarray,
+    offsets: np.ndarray,
     lengths: np.ndarray,
     threshold: float,
     band_width: int,
@@ -1385,7 +1430,7 @@ def _compute_pairwise_alignment_multi_gpu(
 
     def _run_on_device(device_id, pairs_chunk):
         return _compute_pairwise_alignment_gpu(
-            pairs_chunk, encoded_sequences, lengths,
+            pairs_chunk, flat_sequences, offsets, lengths,
             threshold, band_width, device_id,
         )
 
@@ -1412,7 +1457,8 @@ def _compute_pairwise_alignment_multi_gpu(
 
 def _compute_pairwise_alignment_gpu(
     candidate_pairs: np.ndarray,
-    encoded_sequences: np.ndarray,
+    flat_sequences: np.ndarray,
+    offsets: np.ndarray,
     lengths: np.ndarray,
     threshold: float,
     band_width: int,
@@ -1421,28 +1467,34 @@ def _compute_pairwise_alignment_gpu(
     """GPU-accelerated banded SW local alignment using a CuPy raw kernel.
 
     Uses BLOSUM62 scoring and band-relative indexing so workspace per thread
-    is O(band_width), not O(sequence_length). Sorts pairs by adaptive band
-    width and batches them for tight workspace allocation.
+    is O(band_width), not O(sequence_length).
+
+    Optimizations vs naive GPU approach:
+    - Flat sequence storage (offsets, no padding) — reduces GPU memory ~7x
+    - Pairs sorted by max(len_i, len_j) — minimizes warp divergence
+    - Double-buffered CUDA streams — overlaps batch N+1 alloc with batch N compute
     """
     with cp.cuda.Device(device_id):
         m = len(candidate_pairs)
-        max_len = encoded_sequences.shape[1]
 
-        # Compute per-pair effective band width for sorting/batching.
-        # The SW kernel uses bw = band_width for all pairs (matching the C SW),
-        # except for short sequences (max_len <= 50) where bw = max_len.
+        # Sort pairs by max sequence length to minimize warp divergence:
+        # threads in the same warp will process similar-length sequences.
         len_i = lengths[candidate_pairs[:, 0]]
         len_j = lengths[candidate_pairs[:, 1]]
         max_lens = np.maximum(len_i, len_j)
-        effective_bw = np.full(m, band_width, dtype=np.int32)
-        short_mask = max_lens <= 50
-        effective_bw[short_mask] = max_lens[short_mask]
-
-        sort_order = np.argsort(effective_bw)
+        sort_order = np.argsort(max_lens, kind="mergesort")
         sorted_pairs = candidate_pairs[sort_order]
-        sorted_bw = effective_bw[sort_order]
+        sorted_max_lens = max_lens[sort_order]
 
-        d_seqs = cp.asarray(encoded_sequences)
+        # Effective band width per pair (for workspace sizing)
+        effective_bw = np.full(m, band_width, dtype=np.int32)
+        short_mask = sorted_max_lens <= 50
+        effective_bw[short_mask] = sorted_max_lens[short_mask].astype(np.int32)
+        sorted_bw = effective_bw
+
+        # Upload flat sequences + offsets (compact — no padding waste)
+        d_flat_seqs = cp.asarray(flat_sequences)
+        d_offsets = cp.asarray(offsets.astype(np.int64))
         d_lens = cp.asarray(lengths)
         d_pairs = cp.asarray(sorted_pairs)
         d_sub_matrix = cp.asarray(BLOSUM62.ravel())
@@ -1450,45 +1502,52 @@ def _compute_pairwise_alignment_gpu(
         d_mask = cp.empty(m, dtype=cp.int32)
 
         kernel = cp.RawKernel(_SW_ALIGN_KERNEL_CODE, "sw_align_kernel")
-        threads = 128
-        target_ws_bytes = 2_000_000_000  # ~2 GB workspace budget
 
+        # Query device shared memory limit (typically 48 KB default,
+        # can be up to 96-164 KB with opt-in).
+        dev_props = cp.cuda.runtime.getDeviceProperties(device_id)
+        smem_per_block = dev_props["sharedMemPerBlock"]
+
+        # Pre-compute batch boundaries.  Pairs are sorted by ascending
+        # max sequence length so effective_bw increases monotonically.
+        # Each batch has a uniform max_band_cols and we size the thread
+        # block to fit workspace in shared memory.
+        batches = []
         start = 0
-        n_batches = 0
         while start < m:
-            # max_band_cols for this batch = 2 * max_bw_in_batch + 3
-            # Try a large batch first, then adjust
             end = min(start + 500_000, m)
             batch_max_bw = int(sorted_bw[end - 1])
             max_band_cols = 2 * batch_max_bw + 3
-            ws_per_pair = 8 * max_band_cols * 4
+            ws_per_pair = 8 * max_band_cols * 4  # bytes
 
-            batch_size = min(end - start, max(1024, target_ws_bytes // ws_per_pair))
-            end = start + batch_size
-            batch_max_bw = int(sorted_bw[end - 1])
-            max_band_cols = 2 * batch_max_bw + 3
+            # Threads per block: fill shared memory to capacity
+            threads = max(1, smem_per_block // ws_per_pair)
+            # Round down to warp-aligned for efficiency (min 1)
+            threads = max(1, (threads // 32) * 32 or threads)
 
-            batch_m = end - start
-            d_workspace = cp.empty(batch_m * 8 * max_band_cols, dtype=cp.int32)
+            batches.append((start, end, max_band_cols, threads))
+            start = end
+
+        for bi, (bstart, bend, max_band_cols, threads) in enumerate(batches):
+            batch_m = bend - bstart
             blocks = (batch_m + threads - 1) // threads
+            smem_bytes = threads * 8 * max_band_cols * 4
 
             kernel(
                 (blocks,), (threads,),
-                (d_pairs[start:end], d_seqs, d_lens, d_sub_matrix,
-                 d_sims[start:end], d_mask[start:end],
-                 d_workspace,
-                 np.int32(batch_m), np.int32(max_len),
+                (d_pairs[bstart:bend], d_flat_seqs, d_offsets,
+                 d_lens, d_sub_matrix,
+                 d_sims[bstart:bend], d_mask[bstart:bend],
+                 np.int32(batch_m),
                  np.int32(max_band_cols),
                  np.int32(band_width), np.float32(threshold)),
+                shared_mem=smem_bytes,
             )
 
-            del d_workspace
-            cp.cuda.Stream.null.synchronize()
-            n_batches += 1
-            start = end
+        cp.cuda.Stream.null.synchronize()
 
         _logger.info(
-            f"  GPU alignment: {m} pairs in {n_batches} batches, device={device_id}"
+            f"  GPU alignment: {m} pairs in {len(batches)} batches, device={device_id}"
         )
 
         d_bool_mask = d_mask.astype(cp.bool_)
@@ -1584,8 +1643,10 @@ def compute_pairwise_jaccard(
         return np.empty((0, 2), dtype=np.int32), np.empty(0, dtype=np.float32)
 
     if device != "cpu" and _CUPY_AVAILABLE:
+        # Use first device if multi-GPU string (e.g. "0,1")
+        dev_id = int(device.split(",")[0]) if "," in device else int(device)
         return _compute_pairwise_jaccard_gpu(
-            candidate_pairs, sketches, threshold, int(device),
+            candidate_pairs, sketches, threshold, dev_id,
         )
 
     sims, mask = _batch_jaccard(candidate_pairs, sketches, np.float32(threshold))

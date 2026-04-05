@@ -14,3 +14,6 @@ venv/
 benchmarks/data/
 papers/*
 claude_resume.sh
+
+# Manuscript (drafts, collected data, generated documents)
+manuscript/
