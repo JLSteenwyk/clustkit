@@ -1,5 +1,7 @@
-"""Phase 5: Clustering — Parallel connected components / graph clustering (CPU reference)."""
+"""Phase 5: Clustering — Leiden community detection, connected components, or greedy."""
 
+import igraph as ig
+import leidenalg
 import numpy as np
 from scipy import sparse
 
@@ -14,14 +16,6 @@ def _leiden_clustering(graph: sparse.csr_matrix, resolution: float = 1.0) -> np.
     Returns:
         (N,) int32 array of cluster labels.
     """
-    try:
-        import igraph as ig
-        import leidenalg
-    except ImportError:
-        raise ImportError(
-            "Leiden clustering requires the 'leidenalg' and 'python-igraph' packages. "
-            "Install them with: pip install clustkit[leiden]"
-        )
 
     n = graph.shape[0]
 

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "clustkit"
 version = "0.1.0"
-description = "Accurate sequence clustering and search via adaptive banded alignment"
+description = "Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection"
 license = "MIT"
 requires-python = ">=3.10"
 readme = "README.md"
@@ -13,8 +13,8 @@ authors = [
     { name = "ClustKIT Contributors" },
 ]
 keywords = [
-    "bioinformatics", "clustering", "sequence-search", "alignment",
-    "MinHash", "LSH", "Needleman-Wunsch", "protein", "nucleotide",
+    "bioinformatics", "clustering", "alignment", "protein",
+    "MinHash", "LSH", "Smith-Waterman", "Leiden", "community-detection",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -33,13 +33,11 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
     "scipy>=1.11.0",
-]
-
-[project.optional-dependencies]
-leiden = [
     "leidenalg",
     "python-igraph",
 ]
+
+[project.optional-dependencies]
 gpu = [
     "cupy-cuda12x",
 ]
@@ -48,18 +46,14 @@ dev = [
     "pytest-cov>=4.0",
     "scikit-learn>=1.3.0",
 ]
-benchmarks = [
-    "scikit-learn>=1.3.0",
-    "matplotlib>=3.7.0",
-]
 
 [project.scripts]
 clustkit = "clustkit.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/clustkit/clustkit"
-Repository = "https://github.com/clustkit/clustkit"
-Issues = "https://github.com/clustkit/clustkit/issues"
+Homepage = "https://github.com/JLSteenwyk/ClustKIT"
+Repository = "https://github.com/JLSteenwyk/ClustKIT"
+Issues = "https://github.com/JLSteenwyk/ClustKIT/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
