@@ -59,11 +59,6 @@ def cluster(
         min=0.0,
         max=1.0,
     ),
-    mode: str = typer.Option(
-        "protein",
-        "--mode",
-        help="Sequence type: 'protein' or 'nucleotide'.",
-    ),
     alignment: str = typer.Option(
         "align",
         "--alignment",
@@ -83,7 +78,7 @@ def cluster(
         None,
         "-k",
         "--kmer-size",
-        help="K-mer size (default: 5 for protein, 11 for nucleotide).",
+        help="K-mer size for sketching (default: 5).",
     ),
     sensitivity: Optional[str] = typer.Option(
         None,
@@ -118,12 +113,12 @@ def cluster(
         help="Output format: 'tsv' or 'cdhit'.",
     ),
 ):
-    """Cluster sequences by identity threshold."""
+    """Cluster protein sequences by identity threshold."""
     from clustkit.pipeline import run_pipeline
 
     # Resolve k-mer size default
     if kmer_size is None:
-        kmer_size = 5 if mode == "protein" else 11
+        kmer_size = 5
     try:
         sketch_size, sensitivity = resolve_clustering_mode(
             clustering_mode, threshold, sketch_size, sensitivity
@@ -136,7 +131,7 @@ def cluster(
         "output": output,
         "threshold": threshold,
         "clustering_mode": clustering_mode,
-        "mode": mode,
+        "mode": "protein",
         "alignment": alignment,
         "sketch_size": sketch_size,
         "kmer_size": kmer_size,

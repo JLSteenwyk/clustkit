@@ -2,14 +2,13 @@
 
 **Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection.**
 
-ClustKIT is a bioinformatics tool for protein sequence clustering. It combines MinHash sketching, locality-sensitive hashing (LSH), banded Smith-Waterman alignment, and Leiden community detection to achieve high clustering accuracy at all identity thresholds, including the challenging low-identity regime (30-50%) where greedy heuristic methods lose sensitivity.
+ClustKIT is a bioinformatics tool for protein sequence clustering. It combines MinHash sketching, locality-sensitive hashing (LSH), banded Smith-Waterman alignment with BLOSUM62 scoring, and Leiden community detection to achieve high clustering accuracy at all identity thresholds, including the challenging low-identity regime (30-50%) where greedy heuristic methods lose sensitivity.
 
 ## Features
 
 - **Accurate at low identity**: Smith-Waterman alignment with BLOSUM62 scoring and Leiden graph partitioning produce well-connected clusters, especially at thresholds below 50%
 - **Fast**: Multi-stage filtering (LSH + Jaccard pre-filter + length-ratio filter) eliminates >98% of candidate pairs before alignment
 - **Scalable**: C/OpenMP alignment kernel with configurable thread count; optional GPU acceleration via CuPy
-- **Protein and nucleotide**: Supports both sequence types with adaptive k-mer sizing
 - **Flexible clustering**: Leiden community detection (default), connected components, or greedy
 
 ## Installation
@@ -36,16 +35,13 @@ pip install -e ".[dev]"
 
 ```bash
 # Cluster proteins at 50% identity using 8 threads
-clustkit cluster -i sequences.fasta -o output/ -t 0.5 --threads 8
-
-# Cluster nucleotides at 97% identity
-clustkit cluster -i 16s.fasta -o output/ -t 0.97 --mode nucleotide --threads 8
+clustkit cluster -i proteins.fasta -o output/ -t 0.5 --threads 8
 
 # Use connected components instead of Leiden
-clustkit cluster -i sequences.fasta -o output/ -t 0.7 --cluster-method connected --threads 4
+clustkit cluster -i proteins.fasta -o output/ -t 0.7 --cluster-method connected --threads 4
 
 # GPU-accelerated alignment
-clustkit cluster -i sequences.fasta -o output/ -t 0.3 --device 0 --threads 8
+clustkit cluster -i proteins.fasta -o output/ -t 0.3 --device 0 --threads 8
 ```
 
 Output files:
@@ -77,7 +73,6 @@ clustkit cluster   Cluster sequences by identity threshold
 | `-i, --input` | Input FASTA/FASTQ file | required |
 | `-o, --output` | Output directory | required |
 | `-t, --threshold` | Identity threshold (0.0-1.0) | 0.9 |
-| `--mode` | Sequence type: `protein` or `nucleotide` | `protein` |
 | `--threads` | Number of CPU threads | 1 |
 | `--device` | `cpu`, `auto`, or GPU device ID (e.g., `0`) | `cpu` |
 | `--cluster-method` | `leiden` (default), `connected`, or `greedy` | `leiden` |
@@ -85,7 +80,7 @@ clustkit cluster   Cluster sequences by identity threshold
 | `--clustering-mode` | Presets: `balanced`, `accurate`, or `fast` | `balanced` |
 | `--sensitivity` | LSH sensitivity: `low`, `medium`, `high` | per mode |
 | `--sketch-size` | MinHash sketch size | 128 |
-| `-k, --kmer-size` | K-mer size for sketching | 5 (protein), 11 (nucleotide) |
+| `-k, --kmer-size` | K-mer size for sketching | 5 |
 | `--representative` | `longest`, `centroid`, or `most_connected` | `longest` |
 | `--format` | Output format: `tsv` or `cdhit` | `tsv` |
 
