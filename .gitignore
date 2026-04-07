@@ -10,10 +10,25 @@ build/
 htmlcov/
 venv/
 
-# Benchmark data (generated/downloaded — re-create by running benchmarks)
+# Benchmark data and scripts (not part of the package)
+benchmarks/
 benchmarks/data/
-papers/*
-claude_resume.sh
 
-# Manuscript (drafts, collected data, generated documents)
+# Documentation and development notes
+docs/
+idea.md
+
+# Papers and manuscript
+papers/
 manuscript/
+writing_guides/
+s41592-026-03030-z.pdf
+
+# Result files
+*.log
+*.json
+!pyproject.toml
+
+# Misc
+claude_resume.sh
+tmp/
