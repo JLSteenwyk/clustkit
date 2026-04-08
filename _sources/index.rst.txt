@@ -10,6 +10,14 @@ ClustKIT is an accurate protein sequence clustering tool that combines MinHash s
 
 If you found ClustKIT useful, please cite *ClustKIT: GPU-accelerated protein sequence clustering with locality-sensitive hashing and community detection*. Steenwyk et al. 2026.
 
+.. image:: _static/img/figure_hero.png
+   :width: 100%
+   :align: center
+
+**(a)** Clustering accuracy (Adjusted Rand Index) across identity thresholds on the Pfam benchmark (22,343 sequences, 56 families). ClustKIT achieves nearly twice the ARI of existing tools at low identity thresholds (t = 0.3). **(b)** Thread scaling: ClustKIT achieves 41.8x speedup at 192 threads.
+
+|
+
 Quick Start
 -----------
 These two lines represent the simplest method to rapidly install and run ClustKIT.

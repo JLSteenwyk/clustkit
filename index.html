@@ -80,6 +80,12 @@
 <hr class="docutils" />
 <p>ClustKIT is an accurate protein sequence clustering tool that combines MinHash sketching, locality-sensitive hashing (LSH), banded Smith-Waterman alignment with BLOSUM62 scoring, and Leiden community detection to achieve high clustering accuracy at all identity thresholds, including the challenging low-identity regime (30-50%) where greedy heuristic methods lose sensitivity.</p>
 <p>If you found ClustKIT useful, please cite <em>ClustKIT: GPU-accelerated protein sequence clustering with locality-sensitive hashing and community detection</em>. Steenwyk et al. 2026.</p>
+<a class="reference internal image-reference" href="_images/figure_hero.png"><img alt="_images/figure_hero.png" class="align-center" src="_images/figure_hero.png" style="width: 100%;" />
+</a>
+<p><strong>(a)</strong> Clustering accuracy (Adjusted Rand Index) across identity thresholds on the Pfam benchmark (22,343 sequences, 56 families). ClustKIT achieves nearly twice the ARI of existing tools at low identity thresholds (t = 0.3). <strong>(b)</strong> Thread scaling: ClustKIT achieves 41.8x speedup at 192 threads.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 <section id="quick-start">
 <h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
 <p>These two lines represent the simplest method to rapidly install and run ClustKIT.</p>
