@@ -42,6 +42,7 @@ html_theme_options = {
     "body_max_width": "900px",
     "logo_only": True,
 }
+html_logo = "_static/img/logo.png"
 html_show_sourcelink = False
 
 html_static_path = ["_static"]

@@ -1,7 +1,10 @@
-ClustKIT: Accurate protein sequence clustering
-================================================
+.. image:: _static/img/logo.png
+   :width: 55%
+   :align: center
+   :target: https://jlsteenwyk.com/ClustKIT
 
 ^^^^^
+
 
 ClustKIT is an accurate protein sequence clustering tool that combines MinHash sketching, locality-sensitive hashing (LSH), banded Smith-Waterman alignment with BLOSUM62 scoring, and Leiden community detection to achieve high clustering accuracy at all identity thresholds, including the challenging low-identity regime (30-50%) where greedy heuristic methods lose sensitivity.
 

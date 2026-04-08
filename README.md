@@ -1,6 +1,37 @@
-# ClustKIT
-
-**Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection.**
+<p align="center">
+  <a href="https://github.com/JLSteenwyk/ClustKIT">
+    <img src="https://raw.githubusercontent.com/JLSteenwyk/ClustKIT/main/logo.png" alt="Logo" width="400">
+  </a>
+  <p align="center">
+    <a href="https://jlsteenwyk.com/ClustKIT/">Docs</a>
+    ·
+    <a href="https://github.com/JLSteenwyk/ClustKIT/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/JLSteenwyk/ClustKIT/issues">Request Feature</a>
+  </p>
+    <p align="center">
+        <a href="https://github.com/JLSteenwyk/ClustKIT/actions" alt="Build">
+            <img src="https://img.shields.io/github/actions/workflow/status/JLSteenwyk/ClustKIT/docs.yml?branch=main">
+        </a>
+        <a href="https://github.com/JLSteenwyk/ClustKIT/graphs/contributors" alt="Contributors">
+            <img src="https://img.shields.io/github/contributors/JLSteenwyk/ClustKIT">
+        </a>
+        <a href="https://bsky.app/profile/jlsteenwyk.bsky.social" target="_blank" rel="noopener noreferrer">
+          <img src="https://img.shields.io/badge/Bluesky-0285FF?logo=bluesky&logoColor=fff">
+        </a>
+        <br />
+        <a href="https://pepy.tech/badge/clustkit">
+          <img src="https://static.pepy.tech/personalized-badge/clustkit?period=total&units=international_system&left_color=grey&right_color=blue&left_text=PyPi%20Downloads">
+        </a>
+        <a href="https://lbesson.mit-license.org/" alt="License">
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg">
+        </a>
+        <br />
+        <a href="https://pypi.org/project/clustkit/" alt="PyPI - Python Version">
+            <img src="https://img.shields.io/pypi/pyversions/clustkit">
+        </a>
+    </p>
+</p>
 
 ClustKIT is a bioinformatics tool for protein sequence clustering. It combines MinHash sketching, locality-sensitive hashing (LSH), banded Smith-Waterman alignment with BLOSUM62 scoring, and Leiden community detection to achieve high clustering accuracy at all identity thresholds, including the challenging low-identity regime (30-50%) where greedy heuristic methods lose sensitivity.
 
