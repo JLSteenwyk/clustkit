@@ -14,8 +14,10 @@ venv/
 benchmarks/
 benchmarks/data/
 
-# Documentation and development notes
-docs/
+# Documentation build output
+docs/_build/
+
+# Development notes
 idea.md
 
 # Papers and manuscript
