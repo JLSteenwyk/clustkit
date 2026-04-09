@@ -19,6 +19,8 @@ docs/_build/
 
 # Development notes
 idea.md
+docs/*.md
+!docs/README.md
 
 # Papers and manuscript
 papers/
