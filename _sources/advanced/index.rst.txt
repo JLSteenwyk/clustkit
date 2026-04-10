@@ -220,6 +220,27 @@ Default: ``tsv``
 
 |
 
+Plot output
+-----------
+
+The ``--plot`` flag generates a two-panel cluster size distribution figure
+saved as ``cluster_size_distribution.png`` in the output directory.
+
+.. code-block:: shell
+
+	clustkit -i proteins.fasta -o output/ -t 0.5 --threads 8 --plot
+
+.. image:: /_static/img/cluster_size_distribution.png
+   :width: 100%
+   :align: center
+
+The left panel shows a histogram of cluster sizes (log-scaled x-axis) with the
+singleton count annotated. The right panel shows cumulative sequence coverage:
+the fraction of sequences in clusters of at least a given size. Together, these
+panels provide a quick sanity check of clustering granularity.
+
+|
+
 All options
 -----------
 
@@ -272,26 +293,5 @@ All options
    * - ``--plot``
      - Generate cluster size distribution plot
      - off
-
-|
-
-Plot output
------------
-
-The ``--plot`` flag generates a two-panel cluster size distribution figure
-saved as ``cluster_size_distribution.png`` in the output directory.
-
-.. code-block:: shell
-
-	clustkit -i proteins.fasta -o output/ -t 0.5 --threads 8 --plot
-
-.. image:: /_static/img/cluster_size_distribution.png
-   :width: 100%
-   :align: center
-
-The left panel shows a histogram of cluster sizes (log-scaled x-axis) with the
-singleton count annotated. The right panel shows cumulative sequence coverage:
-the fraction of sequences in clusters of at least a given size. Together, these
-panels provide a quick sanity check of clustering granularity.
 
 ^^^^^

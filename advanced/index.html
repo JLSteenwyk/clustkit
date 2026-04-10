@@ -59,8 +59,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#k-mer-size">K-mer size</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#representative-selection">Representative selection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#output-format">Output format</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#all-options">All options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#plot-output">Plot output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#all-options">All options</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
@@ -294,6 +294,23 @@ value set by <code class="docutils literal notranslate"><span class="pre">--clus
 <div class="line"><br /></div>
 </div>
 </section>
+<section id="plot-output">
+<h2>Plot output<a class="headerlink" href="#plot-output" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">--plot</span></code> flag generates a two-panel cluster size distribution figure
+saved as <code class="docutils literal notranslate"><span class="pre">cluster_size_distribution.png</span></code> in the output directory.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span><span class="w"> </span>--plot
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/cluster_size_distribution.png"><img alt="../_images/cluster_size_distribution.png" class="align-center" src="../_images/cluster_size_distribution.png" style="width: 100%;" />
+</a>
+<p>The left panel shows a histogram of cluster sizes (log-scaled x-axis) with the
+singleton count annotated. The right panel shows cumulative sequence coverage:
+the fraction of sequences in clusters of at least a given size. Together, these
+panels provide a quick sanity check of clustering granularity.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
 <section id="all-options">
 <h2>All options<a class="headerlink" href="#all-options" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
@@ -367,23 +384,6 @@ value set by <code class="docutils literal notranslate"><span class="pre">--clus
 </tr>
 </tbody>
 </table>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
-</section>
-<section id="plot-output">
-<h2>Plot output<a class="headerlink" href="#plot-output" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">--plot</span></code> flag generates a two-panel cluster size distribution figure
-saved as <code class="docutils literal notranslate"><span class="pre">cluster_size_distribution.png</span></code> in the output directory.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span><span class="w"> </span>--plot
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="../_images/cluster_size_distribution.png"><img alt="../_images/cluster_size_distribution.png" class="align-center" src="../_images/cluster_size_distribution.png" style="width: 100%;" />
-</a>
-<p>The left panel shows a histogram of cluster sizes (log-scaled x-axis) with the
-singleton count annotated. The right panel shows cumulative sequence coverage:
-the fraction of sequences in clusters of at least a given size. Together, these
-panels provide a quick sanity check of clustering granularity.</p>
 <hr class="docutils" />
 </section>
 </section>
