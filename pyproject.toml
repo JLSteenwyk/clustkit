@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clustkit"
-version = "0.1.1"
+version = "0.1.2"
 description = "Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection"
 license = {text = "MIT"}
 requires-python = ">=3.10"
