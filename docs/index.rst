@@ -1,7 +1,7 @@
 .. image:: _static/img/logo.png
    :width: 55%
    :align: center
-   :target: https://jlsteenwyk.com/ClustKIT
+   :target: https://jlsteenwyk.com/clustkit
 
 ^^^^^
 
@@ -27,7 +27,7 @@ These two lines represent the simplest method to rapidly install and run ClustKI
 	# install
 	pip install clustkit
 	# run
-	clustkit cluster -i proteins.fasta -o output/ -t 0.5 --threads 8
+	clustkit -i proteins.fasta -o output/ -t 0.5 --threads 8
 
 Below are more detailed instructions, including alternative installation methods.
 
@@ -95,7 +95,7 @@ To use ClustKIT in its simplest form, execute the following command:
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/
+	clustkit -i proteins.fasta -o output/
 
 Output files:
 

@@ -12,6 +12,7 @@ app = typer.Typer(
     name="clustkit",
     help="Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection.",
     add_completion=False,
+    invoke_without_command=True,
 )
 
 
@@ -21,32 +22,18 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
-    version: Optional[bool] = typer.Option(
+    input: Optional[Path] = typer.Option(
         None,
-        "--version",
-        "-v",
-        help="Show version and exit.",
-        callback=version_callback,
-        is_eager=True,
-    ),
-):
-    """ClustKIT: Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection."""
-
-
-@app.command()
-def cluster(
-    input: Path = typer.Option(
-        ...,
         "-i",
         "--input",
         help="Input FASTA/FASTQ file.",
         exists=True,
         readable=True,
     ),
-    output: Path = typer.Option(
-        ...,
+    output: Optional[Path] = typer.Option(
+        None,
         "-o",
         "--output",
         help="Output directory.",
@@ -112,11 +99,22 @@ def cluster(
         "--format",
         help="Output format: 'tsv' or 'cdhit'.",
     ),
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        help="Show version and exit.",
+        callback=version_callback,
+        is_eager=True,
+    ),
 ):
-    """Cluster protein sequences by identity threshold."""
+    """Accurate protein sequence clustering via LSH, Smith-Waterman alignment, and Leiden community detection."""
+    if input is None or output is None:
+        typer.echo("Error: --input (-i) and --output (-o) are required.")
+        raise typer.Exit(code=1)
+
     from clustkit.pipeline import run_pipeline
 
-    # Resolve k-mer size default
     if kmer_size is None:
         kmer_size = 5
     try:
@@ -144,5 +142,3 @@ def cluster(
     }
 
     run_pipeline(config)
-
-

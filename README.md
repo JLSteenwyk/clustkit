@@ -3,7 +3,7 @@
     <img src="https://raw.githubusercontent.com/JLSteenwyk/ClustKIT/main/logo.png" alt="Logo" width="400">
   </a>
   <p align="center">
-    <a href="https://jlsteenwyk.com/ClustKIT/">Docs</a>
+    <a href="https://jlsteenwyk.com/clustkit/">Docs</a>
     ·
     <a href="https://github.com/JLSteenwyk/ClustKIT/issues">Report Bug</a>
     ·
@@ -66,13 +66,13 @@ pip install -e ".[dev]"
 
 ```bash
 # Cluster proteins at 50% identity using 8 threads
-clustkit cluster -i proteins.fasta -o output/ -t 0.5 --threads 8
+clustkit -i proteins.fasta -o output/ -t 0.5 --threads 8
 
 # Use connected components instead of Leiden
-clustkit cluster -i proteins.fasta -o output/ -t 0.7 --cluster-method connected --threads 4
+clustkit -i proteins.fasta -o output/ -t 0.7 --cluster-method connected --threads 4
 
 # GPU-accelerated alignment
-clustkit cluster -i proteins.fasta -o output/ -t 0.3 --device 0 --threads 8
+clustkit -i proteins.fasta -o output/ -t 0.3 --device 0 --threads 8
 ```
 
 Output files:
@@ -94,7 +94,7 @@ ClustKIT clusters sequences through six phases:
 ## CLI reference
 
 ```
-clustkit cluster   Cluster sequences by identity threshold
+clustkit   Cluster sequences by identity threshold
 ```
 
 ### Options
