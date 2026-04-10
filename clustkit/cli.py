@@ -99,6 +99,11 @@ def main(
         "--format",
         help="Output format: 'tsv' or 'cdhit'.",
     ),
+    plot: bool = typer.Option(
+        False,
+        "--plot",
+        help="Generate a cluster size distribution plot (requires pypubfigs).",
+    ),
     version: Optional[bool] = typer.Option(
         None,
         "--version",
@@ -142,3 +147,11 @@ def main(
     }
 
     run_pipeline(config)
+
+    if plot:
+        from clustkit.plot import plot_cluster_sizes
+        clusters_tsv = output / "clusters.tsv"
+        if clusters_tsv.exists():
+            out_path = plot_cluster_sizes(clusters_tsv, output)
+            if out_path:
+                typer.echo(f"Plot saved to {out_path}")

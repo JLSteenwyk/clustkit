@@ -35,6 +35,8 @@ REQUIRES = [
     "scipy>=1.11.0",
     "leidenalg",
     "python-igraph",
+    "pypubfigs>=1.1.0",
+    "matplotlib>=3.7.0",
 ]
 
 EXTRAS = {

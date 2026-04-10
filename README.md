@@ -79,6 +79,7 @@ Output files:
 - `output/clusters.tsv` — Cluster assignments (sequence_id, cluster_id, is_representative)
 - `output/representatives.fasta` — Representative sequences
 - `output/run_info.json` — Run parameters and statistics
+- `output/cluster_size_distribution.png` — Size distribution plot (with `--plot`)
 
 ## Pipeline overview
 
@@ -114,6 +115,7 @@ clustkit   Cluster sequences by identity threshold
 | `-k, --kmer-size` | K-mer size for sketching | 5 |
 | `--representative` | `longest`, `centroid`, or `most_connected` | `longest` |
 | `--format` | Output format: `tsv` or `cdhit` | `tsv` |
+| `--plot` | Generate cluster size distribution plot | off |
 
 ## Dependencies
 
@@ -128,6 +130,7 @@ clustkit   Cluster sequences by identity threshold
 | leidenalg | Leiden community detection |
 | python-igraph | Graph representation for Leiden |
 | typer + rich | CLI framework |
+| matplotlib + pypubfigs | Cluster size distribution plot (`--plot`) |
 
 **Optional**:
 
