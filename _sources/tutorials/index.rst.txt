@@ -18,7 +18,7 @@ This tutorial walks through a basic clustering run at 50% identity.
 .. code-block:: shell
 
 	# Cluster proteins at 50% identity using 8 threads
-	clustkit cluster -i proteins.fasta -o results_50/ -t 0.5 --threads 8
+	clustkit -i proteins.fasta -o results_50/ -t 0.5 --threads 8
 
 This produces three output files:
 
@@ -49,7 +49,7 @@ sequence similarity is sparse.
 .. code-block:: shell
 
 	# Cluster at 30% identity with accurate mode
-	clustkit cluster -i proteins.fasta -o results_30/ -t 0.3 \
+	clustkit -i proteins.fasta -o results_30/ -t 0.3 \
 		--clustering-mode accurate --threads 8
 
 For maximum sensitivity at low thresholds, use ``--clustering-mode accurate``.
@@ -69,7 +69,7 @@ This requires the ``clustkit[gpu]`` installation.
 	pip install clustkit[gpu]
 
 	# Cluster using a single GPU
-	clustkit cluster -i large_proteins.fasta -o results_gpu/ -t 0.3 \
+	clustkit -i large_proteins.fasta -o results_gpu/ -t 0.3 \
 		--device 0 --threads 8
 
 The ``--device`` option accepts:
@@ -93,15 +93,15 @@ same input.
 .. code-block:: shell
 
 	# Leiden community detection (default)
-	clustkit cluster -i proteins.fasta -o results_leiden/ -t 0.5 \
+	clustkit -i proteins.fasta -o results_leiden/ -t 0.5 \
 		--cluster-method leiden --threads 8
 
 	# Connected components
-	clustkit cluster -i proteins.fasta -o results_cc/ -t 0.5 \
+	clustkit -i proteins.fasta -o results_cc/ -t 0.5 \
 		--cluster-method connected --threads 8
 
 	# Greedy centroid-based
-	clustkit cluster -i proteins.fasta -o results_greedy/ -t 0.5 \
+	clustkit -i proteins.fasta -o results_greedy/ -t 0.5 \
 		--cluster-method greedy --threads 8
 
 **When to use each method:**
@@ -125,7 +125,7 @@ If your downstream pipeline expects CD-HIT-format ``.clstr`` files, use the
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o results_cdhit/ -t 0.5 \
+	clustkit -i proteins.fasta -o results_cdhit/ -t 0.5 \
 		--format cdhit --threads 8
 
 This produces output in the standard CD-HIT cluster format for compatibility
@@ -142,13 +142,13 @@ each cluster:
 .. code-block:: shell
 
 	# Longest sequence (default)
-	clustkit cluster -i proteins.fasta -o results/ --representative longest
+	clustkit -i proteins.fasta -o results/ --representative longest
 
 	# Centroid (highest average similarity to cluster members)
-	clustkit cluster -i proteins.fasta -o results/ --representative centroid
+	clustkit -i proteins.fasta -o results/ --representative centroid
 
 	# Most connected (most edges in the similarity graph)
-	clustkit cluster -i proteins.fasta -o results/ --representative most_connected
+	clustkit -i proteins.fasta -o results/ --representative most_connected
 
 The ``longest`` strategy is the default and matches the behavior of CD-HIT and
 VSEARCH. The ``centroid`` strategy may be preferred when the representative

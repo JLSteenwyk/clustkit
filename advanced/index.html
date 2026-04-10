@@ -103,7 +103,7 @@ can be tuned via command-line options.</p>
 </div>
 <section id="general-usage">
 <h2>General usage<a class="headerlink" href="#general-usage" title="Link to this heading"></a></h2>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>&lt;input.fasta&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output_dir&gt;<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>&lt;input.fasta&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;output_dir&gt;<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
 </pre></div>
 </div>
 <div class="line-block">
@@ -115,10 +115,10 @@ can be tuned via command-line options.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">-t</span></code> / <code class="docutils literal notranslate"><span class="pre">--threshold</span></code> option sets the sequence identity threshold (0.0-1.0).
 Pairs with identity below this threshold are excluded from the similarity graph.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cluster at 30% identity (low-identity regime)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3
 
 <span class="c1"># cluster at 90% identity (high-identity regime)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.9
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.9
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">0.9</span></code></p>
@@ -135,7 +135,7 @@ configure sketch size, LSH sensitivity, and other internal parameters.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">accurate</span></code> – Maximum sensitivity, slower</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fast</span></code> – Speed-optimized, lower sensitivity at low thresholds</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--clustering-mode<span class="w"> </span>accurate
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--clustering-mode<span class="w"> </span>accurate
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">balanced</span></code></p>
@@ -155,13 +155,13 @@ component becomes one cluster. Fast but may merge distinct families.</p></li>
 each unassigned high-degree node claims its unassigned neighbors.</p></li>
 </ul>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Leiden community detection (default, recommended)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--cluster-method<span class="w"> </span>leiden
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--cluster-method<span class="w"> </span>leiden
 
 <span class="c1"># Connected components</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--cluster-method<span class="w"> </span>connected
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--cluster-method<span class="w"> </span>connected
 
 <span class="c1"># Greedy centroid-based</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--cluster-method<span class="w"> </span>greedy
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--cluster-method<span class="w"> </span>greedy
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">leiden</span></code></p>
@@ -178,10 +178,10 @@ Accurate, especially at low identity thresholds. This is the default.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">kmer</span></code> – K-mer overlap scoring. Faster but less accurate below ~50% identity.</p></li>
 </ul>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Smith-Waterman alignment (default, accurate)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--alignment<span class="w"> </span>align
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--alignment<span class="w"> </span>align
 
 <span class="c1"># K-mer scoring (fast)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--alignment<span class="w"> </span>kmer
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span>--alignment<span class="w"> </span>kmer
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">align</span></code></p>
@@ -192,7 +192,7 @@ clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"
 <section id="threads">
 <h2>Threads<a class="headerlink" href="#threads" title="Link to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">--threads</span></code> option controls the number of CPU threads used for alignment.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">1</span></code></p>
@@ -210,10 +210,10 @@ This requires the <code class="docutils literal notranslate"><span class="pre">c
 <li><p><code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>, … – Specific GPU device ID</p></li>
 </ul>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use first GPU</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span>
 
 <span class="c1"># Auto-detect fastest device</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--device<span class="w"> </span>auto
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--device<span class="w"> </span>auto
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">cpu</span></code></p>
@@ -230,7 +230,7 @@ Higher sensitivity finds more candidate pairs but is slower.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">medium</span></code> – Balanced</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">high</span></code> – More candidates, slower</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--sensitivity<span class="w"> </span>high
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--sensitivity<span class="w"> </span>high
 </pre></div>
 </div>
 <p>Default: set by <code class="docutils literal notranslate"><span class="pre">--clustering-mode</span></code></p>
@@ -243,7 +243,7 @@ Higher sensitivity finds more candidate pairs but is slower.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">--sketch-size</span></code> option sets the number of MinHash signatures per sequence.
 Larger sketches improve candidate recall but increase memory usage. Overrides the
 value set by <code class="docutils literal notranslate"><span class="pre">--clustering-mode</span></code>.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--sketch-size<span class="w"> </span><span class="m">256</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--sketch-size<span class="w"> </span><span class="m">256</span>
 </pre></div>
 </div>
 <p>Default: set by <code class="docutils literal notranslate"><span class="pre">--clustering-mode</span></code></p>
@@ -254,7 +254,7 @@ value set by <code class="docutils literal notranslate"><span class="pre">--clus
 <section id="k-mer-size">
 <h2>K-mer size<a class="headerlink" href="#k-mer-size" title="Link to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">-k</span></code> / <code class="docutils literal notranslate"><span class="pre">--kmer-size</span></code> option sets the k-mer length for MinHash sketching.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-k<span class="w"> </span><span class="m">3</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>-k<span class="w"> </span><span class="m">3</span>
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">5</span></code></p>
@@ -270,7 +270,7 @@ value set by <code class="docutils literal notranslate"><span class="pre">--clus
 <li><p><code class="docutils literal notranslate"><span class="pre">centroid</span></code> – Sequence with highest average similarity to other cluster members</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">most_connected</span></code> – Sequence with the most edges in the similarity graph</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--representative<span class="w"> </span>centroid
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--representative<span class="w"> </span>centroid
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">longest</span></code></p>
@@ -285,7 +285,7 @@ value set by <code class="docutils literal notranslate"><span class="pre">--clus
 <li><p><code class="docutils literal notranslate"><span class="pre">tsv</span></code> – Tab-separated file with columns: sequence_id, cluster_id, is_representative (default)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cdhit</span></code> – CD-HIT-style <code class="docutils literal notranslate"><span class="pre">.clstr</span></code> format for compatibility with existing pipelines</p></li>
 </ul>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--format<span class="w"> </span>cdhit
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>output/<span class="w"> </span>--format<span class="w"> </span>cdhit
 </pre></div>
 </div>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">tsv</span></code></p>

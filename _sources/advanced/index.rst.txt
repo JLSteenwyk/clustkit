@@ -18,7 +18,7 @@ General usage
 
 .. code-block:: shell
 
-	clustkit cluster -i <input.fasta> -o <output_dir> [options]
+	clustkit -i <input.fasta> -o <output_dir> [options]
 
 |
 
@@ -31,10 +31,10 @@ Pairs with identity below this threshold are excluded from the similarity graph.
 .. code-block:: shell
 
 	# cluster at 30% identity (low-identity regime)
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3
+	clustkit -i proteins.fasta -o output/ -t 0.3
 
 	# cluster at 90% identity (high-identity regime)
-	clustkit cluster -i proteins.fasta -o output/ -t 0.9
+	clustkit -i proteins.fasta -o output/ -t 0.9
 
 Default: ``0.9``
 
@@ -52,7 +52,7 @@ configure sketch size, LSH sensitivity, and other internal parameters.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3 --clustering-mode accurate
+	clustkit -i proteins.fasta -o output/ -t 0.3 --clustering-mode accurate
 
 Default: ``balanced``
 
@@ -73,13 +73,13 @@ The ``--cluster-method`` option selects how the similarity graph is partitioned 
 .. code-block:: shell
 
 	# Leiden community detection (default, recommended)
-	clustkit cluster -i proteins.fasta -o output/ -t 0.5 --cluster-method leiden
+	clustkit -i proteins.fasta -o output/ -t 0.5 --cluster-method leiden
 
 	# Connected components
-	clustkit cluster -i proteins.fasta -o output/ -t 0.7 --cluster-method connected
+	clustkit -i proteins.fasta -o output/ -t 0.7 --cluster-method connected
 
 	# Greedy centroid-based
-	clustkit cluster -i proteins.fasta -o output/ -t 0.7 --cluster-method greedy
+	clustkit -i proteins.fasta -o output/ -t 0.7 --cluster-method greedy
 
 Default: ``leiden``
 
@@ -97,10 +97,10 @@ The ``--alignment`` option controls how pairwise similarity is computed.
 .. code-block:: shell
 
 	# Smith-Waterman alignment (default, accurate)
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3 --alignment align
+	clustkit -i proteins.fasta -o output/ -t 0.3 --alignment align
 
 	# K-mer scoring (fast)
-	clustkit cluster -i proteins.fasta -o output/ -t 0.7 --alignment kmer
+	clustkit -i proteins.fasta -o output/ -t 0.7 --alignment kmer
 
 Default: ``align``
 
@@ -113,7 +113,7 @@ The ``--threads`` option controls the number of CPU threads used for alignment.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ -t 0.5 --threads 8
+	clustkit -i proteins.fasta -o output/ -t 0.5 --threads 8
 
 Default: ``1``
 
@@ -132,10 +132,10 @@ This requires the ``clustkit[gpu]`` installation.
 .. code-block:: shell
 
 	# Use first GPU
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3 --device 0
+	clustkit -i proteins.fasta -o output/ -t 0.3 --device 0
 
 	# Auto-detect fastest device
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3 --device auto
+	clustkit -i proteins.fasta -o output/ -t 0.3 --device auto
 
 Default: ``cpu``
 
@@ -153,7 +153,7 @@ Higher sensitivity finds more candidate pairs but is slower.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ -t 0.3 --sensitivity high
+	clustkit -i proteins.fasta -o output/ -t 0.3 --sensitivity high
 
 Default: set by ``--clustering-mode``
 
@@ -168,7 +168,7 @@ value set by ``--clustering-mode``.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ --sketch-size 256
+	clustkit -i proteins.fasta -o output/ --sketch-size 256
 
 Default: set by ``--clustering-mode``
 
@@ -181,7 +181,7 @@ The ``-k`` / ``--kmer-size`` option sets the k-mer length for MinHash sketching.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ -k 3
+	clustkit -i proteins.fasta -o output/ -k 3
 
 Default: ``5``
 
@@ -198,7 +198,7 @@ The ``--representative`` option controls how a representative sequence is chosen
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ --representative centroid
+	clustkit -i proteins.fasta -o output/ --representative centroid
 
 Default: ``longest``
 
@@ -214,7 +214,7 @@ The ``--format`` option controls the output format.
 
 .. code-block:: shell
 
-	clustkit cluster -i proteins.fasta -o output/ --format cdhit
+	clustkit -i proteins.fasta -o output/ --format cdhit
 
 Default: ``tsv``
 

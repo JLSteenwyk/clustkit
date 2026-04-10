@@ -95,7 +95,7 @@
 <h2>Tutorial 1: Basic clustering<a class="headerlink" href="#tutorial-1-basic-clustering" title="Link to this heading"></a></h2>
 <p>This tutorial walks through a basic clustering run at 50% identity.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Cluster proteins at 50% identity using 8 threads</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_50/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_50/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
 <p>This produces three output files:</p>
@@ -123,7 +123,7 @@ greatest advantage over greedy methods like CD-HIT and Linclust. The Leiden
 community detection algorithm produces well-connected clusters even when
 sequence similarity is sparse.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Cluster at 30% identity with accurate mode</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_30/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="se">\</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_30/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--clustering-mode<span class="w"> </span>accurate<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
@@ -141,7 +141,7 @@ This requires the <code class="docutils literal notranslate"><span class="pre">c
 pip<span class="w"> </span>install<span class="w"> </span>clustkit<span class="o">[</span>gpu<span class="o">]</span>
 
 <span class="c1"># Cluster using a single GPU</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>large_proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_gpu/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="se">\</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>large_proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_gpu/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
@@ -163,15 +163,15 @@ speedup over 8 CPU threads, and dual GPUs provide ~2.7x speedup.</p>
 <p>ClustKIT supports three clustering methods. This tutorial compares them on the
 same input.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Leiden community detection (default)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_leiden/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_leiden/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--cluster-method<span class="w"> </span>leiden<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 
 <span class="c1"># Connected components</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_cc/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_cc/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--cluster-method<span class="w"> </span>connected<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 
 <span class="c1"># Greedy centroid-based</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_greedy/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_greedy/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--cluster-method<span class="w"> </span>greedy<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
@@ -194,7 +194,7 @@ high identity thresholds (t &gt;= 0.7) where clusters are dense.</p></li>
 <h2>Tutorial 5: CD-HIT-compatible output<a class="headerlink" href="#tutorial-5-cd-hit-compatible-output" title="Link to this heading"></a></h2>
 <p>If your downstream pipeline expects CD-HIT-format <code class="docutils literal notranslate"><span class="pre">.clstr</span></code> files, use the
 <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">cdhit</span></code> option:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_cdhit/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results_cdhit/<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
 <span class="w">        </span>--format<span class="w"> </span>cdhit<span class="w"> </span>--threads<span class="w"> </span><span class="m">8</span>
 </pre></div>
 </div>
@@ -209,13 +209,13 @@ with existing workflows.</p>
 <p>ClustKIT offers three strategies for selecting representative sequences from
 each cluster:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Longest sequence (default)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>longest
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>longest
 
 <span class="c1"># Centroid (highest average similarity to cluster members)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>centroid
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>centroid
 
 <span class="c1"># Most connected (most edges in the similarity graph)</span>
-clustkit<span class="w"> </span>cluster<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>most_connected
+clustkit<span class="w"> </span>-i<span class="w"> </span>proteins.fasta<span class="w"> </span>-o<span class="w"> </span>results/<span class="w"> </span>--representative<span class="w"> </span>most_connected
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">longest</span></code> strategy is the default and matches the behavior of CD-HIT and
